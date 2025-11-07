@@ -1,0 +1,1541 @@
+# COMPLETE EMOWED APP: COMPREHENSIVE INSIGHTS & FLOWS
+
+## EXECUTIVE SUMMARY
+
+Emowed is a **full-lifecycle relationship platform** covering:
+- **Singles** → Dating/Matchmaking → **Engaged** → Wedding Planning → **Married** → Ongoing Support
+
+**Revenue Model:** Freemium with strategic paid gates
+**Target Market:** India (English-speaking, urban millennials 25-40)
+**Unique Value:** Only platform covering entire relationship journey with family integration
+
+---
+
+## CRITICAL INSIGHTS & STRATEGIC DECISIONS
+
+### 1. MONETIZATION STRATEGY
+
+**Free Tier (Guest/Basic):**
+- Attend weddings as guest
+- Basic RSVP functionality
+- 7-day media storage post-wedding
+- 200 images max (wedding-wide)
+- 500KB per image
+- Cannot create weddings without engagement
+- No matchmaking access
+- No community access
+- No post-marriage tools
+
+**Paid Tier (₹2,999/3 months or ₹9,999/year):**
+- **Matchmaking:** Full access with verification
+- **Wedding Creation:** Unlimited events, unlimited guests
+- **Storage:** Unlimited forever
+- **Media:** 1MB default, 10MB option, bulk download
+- **Community:** Full forum access
+- **Post-Marriage:** Diary, goals, date planner, counseling
+- **Custom Animations:** GIF uploads
+- **Analytics:** Detailed insights
+- **Priority Support:** 24-hour response
+
+**Additional Revenue Streams:**
+1. Vendor commissions (12% free, 3% paid)
+2. Gift transactions (5% commission)
+3. Counselor sponsorships (₹5,000/month)
+4. Premium features (custom GIF: ₹499, PDF export: ₹99)
+5. Background checks (₹999)
+6. Storage upgrades (₹99/month per 10GB)
+
+**Projected Revenue per Wedding:**
+- Couple subscription: ₹9,999
+- Vendor commissions: ₹50,000 (avg 5 vendors × ₹100k avg × 10% effective)
+- Gift commissions: ₹5,000 (avg ₹100k gifts × 5%)
+- Guest upgrades: ₹20,000 (avg 10 guests × ₹2,999 for storage)
+- **Total per wedding: ₹84,999**
+
+**Target:** 1,000 weddings/year = ₹8.5 Crore annual revenue
+
+---
+
+### 2. COMPETITIVE ADVANTAGES
+
+**vs WedMeGood/Shaadi.com:**
+- ✅ Full lifecycle (they stop at wedding)
+- ✅ Family hierarchy (they treat guests equally)
+- ✅ Verified vendors (they allow anyone)
+- ✅ Post-marriage support (they have none)
+- ✅ Gamification (they're purely transactional)
+- ✅ Community (they lack peer support)
+
+**vs Dating Apps (Tinder/Bumble):**
+- ✅ Serious intent only (they're casual)
+- ✅ Family integration (they're individual-focused)
+- ✅ Verification (they have fake profiles)
+- ✅ Post-match support (they end at match)
+- ✅ Arranged marriage support (they don't cater to this)
+
+**vs BharatMatrimony:**
+- ✅ Modern UX (they're outdated)
+- ✅ Wedding planning (they stop at match)
+- ✅ Post-marriage (they have none)
+- ✅ Community (they lack this)
+- ✅ Verified vendors (they don't have this)
+
+---
+
+### 3. USER JOURNEY COMPLETE FLOW
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    EMOWED USER LIFECYCLE                        │
+└─────────────────────────────────────────────────────────────────┘
+
+STAGE 1: SINGLE USER (Free/Paid)
+├── Signs up via email
+├── Sets relationship status: Single
+├── Attends weddings as guest (free)
+│   ├── Uploads photos (limited)
+│   ├── Plays games
+│   └── RSVPs to events
+├── **UPGRADE TO PAID** for matchmaking
+└── Navigates to Matchmaking section
+
+STAGE 2: MATCHMAKING (Paid Only)
+├── Creates matchmaking profile
+│   ├── Basic info + verification
+│   ├── Aadhaar, Photo, LinkedIn verification
+│   └── Sets preferences (age, religion, etc.)
+├── Browses matches (swipe interface)
+│   ├── Views profiles
+│   ├── Likes/Passes
+│   └── Sees match probability (73% paid vs 0.5% free)
+├── Gets mutual match
+│   ├── Chat unlocks
+│   ├── Video call option
+│   └── Parent mode (optional)
+├── Meets in person
+├── Decides to commit
+└── Changes status: Single → Committed
+
+STAGE 3: COMMITTED/ENGAGED
+├── One partner sends engagement invitation
+│   ├── Generates 6-char code
+│   ├── Sends via WhatsApp/Email
+│   └── 48-hour validity, 3 rejection limit
+├── Partner accepts invitation
+│   ├── Both status: Committed → Engaged
+│   └── Couple entity created
+├── **UNLOCK:** Wedding creation features
+└── Navigates to Create Wedding
+
+STAGE 4: WEDDING PLANNING (3-12 months before wedding)
+├── Create Wedding
+│   ├── Date, venue, city
+│   ├── Mode: Combined (save 50%) or Separate
+│   ├── Guest limit voting (family decides)
+│   └── Budget setting (optional)
+│
+├── Event Timeline Auto-Generation
+│   ├── Engagement → Save Date → Haldi → Mehendi → Sangeet → Wedding → Reception
+│   ├── Edit/delete/add custom events
+│   └── Date calculations (60 days before, 7 days before, etc.)
+│
+├── Guest Management (Hierarchical)
+│   ├── GROOM invites:
+│   │   ├── Father (can invite unlimited)
+│   │   │   ├── Father's siblings (uncles/aunts)
+│   │   │   │   └── Cousins (kids added as +guests, no accounts)
+│   │   │   ├── Father's friends, cousins, neighbors
+│   │   │   └── Extended family
+│   │   ├── Mother (can invite unlimited)
+│   │   │   └── Mother's side family tree
+│   │   ├── Siblings (can invite unlimited)
+│   │   │   ├── Their spouses
+│   │   │   ├── Their kids
+│   │   │   └── Their friends
+│   │   └── Groom's direct invites (friends, colleagues)
+│   │
+│   ├── BRIDE invites (same structure)
+│   │
+│   ├── Under-18 handling:
+│   │   ├── No separate accounts
+│   │   ├── Parents add as "+X guests" with names/ages
+│   │   └── Food calculation: Adults 1.0x, Teens 0.75x, Kids 0.3x
+│   │
+│   └── RSVP System:
+│       ├── Window opens: 7 days before event
+│       ├── Guests confirm: Adults/Teens/Kids count
+│       ├── Dietary preferences collected
+│       ├── Deadline: 24 hours before event
+│       └── Headcount LOCKED (sent to vendors)
+│
+├── Vendor Management
+│   ├── Couple invites vendors (email-based only)
+│   │   ├── Categories: Photographer, Caterer, Decorator, Makeup, DJ, Custom
+│   │   ├── Vendor creates profile
+│   │   └── Couple approves/rejects
+│   │
+│   ├── Vendor submits quotes
+│   │   ├── Package details
+│   │   ├── Pricing breakdown
+│   │   ├── Items included
+│   │   └── Payment terms
+│   │
+│   ├── Voting System (Hosting Team)
+│   │   ├── Voters: Groom + Bride + Both Parents + Both Siblings
+│   │   ├── Rank vendors (1st/2nd/3rd choice)
+│   │   ├── Rate: Price (1-5), Quality (1-5)
+│   │   ├── Add comments
+│   │   └── Couple makes final decision
+│   │
+│   ├── Time Conflict Handling
+│   │   ├── System checks vendor availability
+│   │   ├── If conflict: Notify couple
+│   │   ├── Couple asks about team capacity
+│   │   └── Vendor confirms or declines
+│   │
+│   ├── Vendor Verification Star
+│   │   ├── Complete 5 weddings → Verified star
+│   │   ├── Profile picture unlocked
+│   │   └── Higher search ranking
+│   │
+│   └── Bulk Rejection
+│       ├── After selecting winner
+│       ├── Send common reason to all others
+│       └── "Price too high" / "Selected another" / etc.
+│
+├── Digital Wedding Program
+│   ├── Create Wedding Card
+│   │   ├── Choose template (Hindu/Muslim/Christian/Modern)
+│   │   ├── Add couple names, date, venue
+│   │   ├── Upload couple photo
+│   │   ├── Choose animation (Hearts/Flowers/Custom GIF for paid)
+│   │   └── Publish shareable link
+│   │
+│   ├── Event Schedule
+│   │   ├── Add program items per event
+│   │   ├── Timeline (time, duration, responsible person)
+│   │   ├── Mark programs as "LIVE" during wedding
+│   │   └── Guests see real-time updates
+│   │
+│   └── Buffet Menu
+│       ├── Add meal sections (Starters, Main, Desserts)
+│       ├── Add items with descriptions
+│       ├── Tag: Veg/Non-veg/Vegan/Halal/Gluten-free
+│       ├── Spice levels, live counters
+│       └── Display to guests on app
+│
+├── Media & Gallery
+│   ├── YouTube Live Streaming
+│   │   ├── Embed YouTube Live URL
+│   │   ├── Show during ceremony
+│   │   ├── Track viewer count
+│   │   └── Auto-archive after event
+│   │
+│   ├── Guest Photo/Video Uploads
+│   │   ├── Free users: 200 images total, 500KB each, deleted after 7 days
+│   │   ├── Paid users: Unlimited, 1MB default (10MB optional), forever
+│   │   ├── Add captions, blessings, tags
+│   │   ├── Moderation (host team can delete)
+│   │   └── Like, comment, share
+│   │
+│   └── Bulk Download (Paid Only)
+│       ├── Request all media as ZIP
+│       ├── Password protected
+│       ├── Expires 48 hours
+│       └── Downloadable anytime
+│
+├── Games & Leaderboards
+│   ├── Couple Creates Games
+│   │   ├── Quiz: "How well do you know us?"
+│   │   ├── Prediction: "Guess our future"
+│   │   ├── Photo Challenge: "Best moment"
+│   │   ├── Trivia: Wedding traditions
+│   │   └── Custom games
+│   │
+│   ├── Guests Play Games
+│   │   ├── Answer questions
+│   │   ├── Upload challenge photos
+│   │   ├── Vote on submissions
+│   │   └── Earn points
+│   │
+│   ├── Leaderboards
+│   │   ├── Individual rankings
+│   │   ├── Groom side vs Bride side competition
+│   │   ├── Real-time score updates
+│   │   └── Winners announced with prizes
+│   │
+│   ├── Singles Leaderboard (Optional)
+│   │   ├── Personal growth (fitness, books, skills)
+│   │   ├── Career achievements (certifications, promotions)
+│   │   ├── Log activities, get verified, earn points
+│   │   └── Rank globally, earn badges
+│   │
+│   └── Couples Leaderboard (Optional)
+│       ├── Log milestones (home, travel, goals)
+│       ├── Earn points, badges
+│       └── Rank among all couples
+│
+└── Digital Gifting
+    ├── Browse Gift Marketplace
+    │   ├── Categories: Home, Electronics, Gift Cards, Cash
+    │   ├── View couple's wishlist (if created)
+    │   ├── Filter by price, rating
+    │   └── Select gift
+    │
+    ├── Purchase Gift
+    │   ├── Add gift message
+    │   ├── Enter delivery address (or use couple's)
+    │   ├── Pay via UPI/Card/Net Banking
+    │   └── Commission: 5% on products, 3% on gift cards
+    │
+    ├── Track Gift
+    │   ├── Order status
+    │   ├── Delivery tracking
+    │   └── Couple receives notification
+    │
+    └── Couple Views Gifts
+        ├── See all gifts received
+        ├── Send thank you notes
+        └── Track cash gifts
+
+STAGE 5: WEDDING DAY
+├── 7 Days Before: RSVP window closes, headcount locked
+├── Final headcount sent to all vendors (with food calculation)
+├── Guests arrive, check-in via app
+├── Real-time event program updates ("Baraat starting now!")
+├── YouTube Live stream (if enabled)
+├── Guests upload photos/videos in real-time
+├── Games run throughout (photo challenge voting)
+├── Groom vs Bride side competition live scores
+├── Gift notifications appear as gifts received
+└── Memories captured in gallery
+
+STAGE 6: POST-WEDDING (Day 1-7)
+├── Gallery active, guests continue uploading
+├── Couple reviews all media
+├── Paid users: Download bulk ZIP
+├── Free users: 7-day countdown warning emails (Day 3, 1, 0)
+├── Day 7: Free user data deletion executed
+│   ├── All photos/videos deleted from Cloudinary
+│   ├── Messages/blessings deleted
+│   ├── RSVP details deleted
+│   ├── KEPT: Family tree, headcount totals, vendor list, wedding card PDF
+│   └── Couple notified: "Media deleted. Upgrade to keep forever."
+├── Couple marks wedding as "Completed"
+├── Vendor bookings marked "Completed" → Vendor count +1
+└── Status changes: Engaged → Married
+
+STAGE 7: MARRIED LIFE (Ongoing, Paid Only)
+├── **UNLOCK:** Post-Marriage Features
+│
+├── Couple Diary
+│   ├── Daily/weekly entries about married life
+│   ├── Both partners can create/edit
+│   ├── Add photos, mood, tags
+│   ├── Private or shareable
+│   ├── Calendar view of all entries
+│   └── Export as PDF book (₹99)
+│
+├── Shared Goals
+│   ├── Set common goals (financial, health, travel, career)
+│   ├── Add milestones
+│   ├── Track progress together
+│   ├── Celebrate completions
+│   └── Earn couples leaderboard points
+│
+├── Date Night Planner
+│   ├── Plan regular date nights
+│   ├── Calendar integration
+│   ├── Budget tracking
+│   ├── Activity ideas (dinner, movie, outdoor, home)
+│   ├── Reminders before date
+│   ├── Post-date: Add photos, rating, review
+│   └── Recurring date night suggestions
+│
+├── Trip Planner
+│   ├── Plan honeymoon, anniversaries, vacations
+│   ├── Destination, dates, budget
+│   ├── Itinerary builder
+│   ├── Packing lists
+│   ├── Booking details
+│   ├── Trip memories (photos, reviews)
+│   └── Travel goal tracking
+│
+├── Gift Tracking
+│   ├── Track gifts for each other
+│   ├── Birthdays, anniversaries, festivals
+│   ├── Ideas, purchase status, reactions
+│   └── Budget tracking
+│
+├── Community Forum (Paid Only)
+│   ├── Ask questions, share experiences
+│   ├── Categories: Relationships, In-Laws, Finances, Parenting, Intimacy
+│   ├── 3 posts per day limit (spam control)
+│   ├── Anonymous posting option
+│   ├── Upvote/downvote system
+│   ├── Best answer marking
+│   └── Peer support from other couples
+│
+├── Professional Counseling
+│   ├── Browse counselor profiles
+│   ├── Filter by specialization, language, fee
+│   ├── Book video/audio/chat sessions
+│   ├── Pay per session
+│   ├── 5% commission to Emowed
+│   ├── Counselors can sponsor (₹5k/month for featured)
+│   └── Post-session rating & review
+│
+└── Annual Anniversary Features
+    ├── Automatic reminders
+    ├── Milestone celebrations (1st, 5th, 10th, etc.)
+    ├── Create anniversary event (repeat wedding features)
+    ├── Invite same guests
+    └── Earn couples leaderboard points
+
+STAGE 8: FAMILY EXPANSION (Optional)
+├── Log milestones: First child, home purchase, career achievements
+├── Update couple profile
+├── Continue using diary, goals, community
+├── Expand network: Connect with other parent couples
+└── Long-term platform retention
+
+STAGE 9: DIVORCE/SEPARATION (Edge Case)
+├── Either partner initiates "Call Off Wedding/Divorce"
+├── Requires mutual confirmation
+├── 3-day window to download shared data
+├── Option to pay for continued storage
+├── After confirmation:
+│   ├── All shared data deleted (diary, goals, plans)
+│   ├── Both become "Single" or "Divorced"
+│   ├── 30-day cooldown before new invitations
+│   ├── Separate matchmaking pool if divorced
+│   └── Can restart journey independently
+└── Preserved: Individual user data, wedding attendance history
+
+STAGE 10: WIDOWED (Edge Case)
+├── User updates status to "Widowed"
+├── Separate matchmaking pool (age-appropriate, sensitive)
+├── Access to support community
+├── Memories preserved (optional)
+└── Can restart matchmaking when ready
+
+FULL CYCLE COMPLETE: Single → Dating → Engaged → Married → Long-term Support
+```
+
+---
+
+### 4. FAMILY HIERARCHY DEEP DIVE
+
+**Why Hierarchical Invites Matter:**
+- Mirrors real Indian wedding planning (family-driven)
+- Prevents spam (only verified family can invite)
+- Accurate headcount (clear relationships)
+- Gift transparency (know who gave what)
+- Post-wedding connections (family tree preserved)
+
+**Complete Family Tree Structure:**
+
+```
+                        COUPLE (JOINT OWNERSHIP)
+                        Faseen 💍 Hanan
+                    /                        \
+        GROOM'S SIDE                      BRIDE'S SIDE
+        ============                      ============
+
+GROOM'S FATHER                          BRIDE'S FATHER
+Farook Ahmed                            Rasheed Khan
+CAN INVITE:                             CAN INVITE:
+├── Brothers (Groom's Uncles)           ├── Brothers (Bride's Uncles)
+│   └── Their kids (Cousins)            │   └── Their kids (Cousins)
+│       └── As +guests if under 18      │       └── As +guests if under 18
+├── Sisters (Groom's Aunts)             ├── Sisters (Bride's Aunts)
+│   └── Their kids (Cousins)            │   └── Their kids (Cousins)
+├── Father's friends                    ├── Father's friends
+├── Father's cousins                    ├── Father's cousins
+└── Neighbors                           └── Neighbors
+
+GROOM'S MOTHER                          BRIDE'S MOTHER
+Ayesha Ahmed                            Noor Khan
+CAN INVITE:                             CAN INVITE:
+├── Brothers (Groom's Uncles)           ├── Brothers (Bride's Uncles)
+│   └── Their kids (Cousins)            │   └── Their kids (Cousins)
+├── Sisters (Groom's Aunts)             ├── Sisters (Bride's Aunts)
+│   └── Their kids (Cousins)            │   └── Their kids (Cousins)
+├── Mother's friends                    ├── Mother's friends
+├── Mother's cousins                    ├── Mother's cousins
+└── Neighbors                           └── Neighbors
+
+GROOM'S SIBLINGS                        BRIDE'S SIBLINGS
+Brother: Zain                           Sister: Aisha
+CAN INVITE:                             CAN INVITE:
+├── Their spouse                        ├── Their spouse
+├── Their kids                          ├── Their kids
+│   └── As +guests if under 18          │   └── As +guests if under 18
+└── Their friends                       └── Their friends
+
+GROOM DIRECT                            BRIDE DIRECT
+Faseen                                  Hanan
+CAN INVITE:                             CAN INVITE:
+├── Friends                             ├── Friends
+├── Colleagues                          ├── Colleagues
+├── College friends                     ├── College friends
+├── Neighbors                           ├── Neighbors
+└── Anyone else                         └── Anyone else
+
+HOSTING TEAM (Decision Makers):
+├── Groom
+├── Bride
+├── Groom's Father
+├── Groom's Mother
+├── Groom's Siblings
+├── Bride's Father
+├── Bride's Mother
+└── Bride's Siblings
+
+VOTING RIGHTS:
+✓ Guest limit
+✓ Vendor selection
+✓ Event decisions
+✓ Budget allocation
+✓ Games/activities
+
+GUEST TYPES & PERMISSIONS:
+├── PARENTS: Unlimited invites, voting rights, full access
+├── SIBLINGS: Unlimited invites, voting rights, full access
+├── UNCLES/AUNTS: Can invite immediate family only (spouse + kids)
+├── COUSINS: Cannot invite others (endpoint)
+├── FRIENDS: Cannot invite others (endpoint)
+└── KIDS (<18): No accounts, added as +guests by parents
+```
+
+**Headcount Accuracy Example:**
+
+```
+Wedding: Faseen & Hanan
+Guest Limit: 500 (set by family vote)
+
+GROOM'S SIDE:
+├── Father invited: 45 people
+│   ├── 2 Uncles (each brought family of 4) = 8
+│   ├── 1 Aunt (brought family of 3) = 3
+│   ├── 10 Father's friends = 10
+│   ├── 15 Father's colleagues = 15
+│   └── 9 Neighbors = 9
+│
+├── Mother invited: 38 people
+│   ├── 1 Uncle (family of 5) = 5
+│   ├── 2 Aunts (families of 3 each) = 6
+│   ├── 12 Mother's friends = 12
+│   └── 15 Relatives = 15
+│
+├── Brother invited: 22 people
+│   ├── His wife = 1
+│   ├── His kids (added as +2 guests, ages 8, 5) = 2
+│   └── His 19 friends = 19
+│
+├── Groom (Faseen) invited: 55 people
+│   ├── 30 College friends = 30
+│   ├── 20 Office colleagues = 20
+│   └── 5 Neighbors = 5
+│
+GROOM SIDE TOTAL: 160 guests
+├── Adults: 135
+├── Teens (13-17): 10
+└── Kids (0-12): 15
+
+BRIDE'S SIDE:
+├── Father invited: 42 people
+├── Mother invited: 40 people
+├── Sister invited: 28 people (+ her spouse & 2 kids)
+├── Bride (Hanan) invited: 50 people
+│
+BRIDE SIDE TOTAL: 160 guests
+├── Adults: 130
+├── Teens: 12
+└── Kids: 18
+
+GRAND TOTAL: 320 guests
+├── Adults: 265 (× 1.0) = 265.0 meals
+├── Teens: 22 (× 0.75) = 16.5 meals
+├── Kids: 33 (× 0.3) = 9.9 meals
+└── FOOD HEADCOUNT: 291.4 meals
+
+This exact number goes to caterer 7 days before wedding!
+No food wastage. No shortfall. Perfect planning.
+```
+
+---
+
+### 5. VENDOR TRUST SYSTEM DEEP DIVE
+
+**Problem Solved:**
+- Fake vendors scam couples
+- Unverified quality
+- No accountability
+- Hidden costs
+- Last-minute cancellations
+
+**Emowed Solution:**
+
+```
+VENDOR LIFECYCLE:
+
+1. INVITATION ONLY
+   ├── Couple invites vendor via email
+   ├── Vendor CANNOT self-register
+   ├── Prevents spam vendors
+   └── Only serious vendors join
+
+2. PROFILE CREATION
+   ├── Business name, category
+   ├── Services, pricing, portfolio
+   ├── Contact details
+   ├── Profile picture LOCKED (until verified)
+   └── Submit for approval
+
+3. COUPLE APPROVAL
+   ├── Couple reviews profile
+   ├── Approves or rejects
+   ├── If approved: Vendor can access wedding details
+   └── If rejected: Vendor blocked from this wedding
+
+4. QUOTE SUBMISSION
+   ├── Vendor sees: Date, venue, guest count, timeline
+   ├── Creates package with items & pricing
+   ├── Sets validity (7-90 days)
+   └── Submits to couple
+
+5. VOTING PROCESS
+   ├── Hosting team reviews all vendor quotes
+   ├── Each member ranks (1st/2nd/3rd choice)
+   ├── Rates price & quality (1-5 stars)
+   ├── Adds comments
+   └── System calculates weighted score
+
+6. SELECTION
+   ├── Couple sees voting results
+   ├── Makes final decision (can override votes)
+   ├── Books selected vendor
+   └── Bulk rejects others with reason
+
+7. TIME CONFLICT MANAGEMENT
+   ├── System checks vendor calendar
+   ├── If conflict: Asks vendor about team capacity
+   ├── Vendor confirms or suggests alternative
+   └── Prevents double-booking issues
+
+8. WEDDING EXECUTION
+   ├── Vendor provides service on date
+   ├── Couple marks booking as "Completed"
+   └── Vendor's wedding_count increments
+
+9. VERIFICATION MILESTONE
+   ├── After 5 completed weddings → VERIFIED STAR
+   ├── Profile picture unlocked
+   ├── Higher search ranking
+   ├── "Verified Vendor" badge
+   └── Reduced commission (12% → 3% if paid subscriber)
+
+10. ONGOING REPUTATION
+    ├── Couples leave reviews post-wedding
+    ├── Star rating (1-5)
+    ├── Pros/cons
+    ├── Photos of vendor work
+    ├── Vendor can respond to reviews
+    └── Ranking algorithm factors:
+        • Verification status (25%)
+        • Average rating (30%)
+        • Completed weddings (20%)
+        • Response time (10%)
+        • Acceptance rate (10%)
+        • Subscription (5%)
+
+VENDOR RANKING EXAMPLE:
+
+Vendor A (Studio Flash):
+├── ⭐ Verified (5 weddings completed)
+├── Rating: 4.8/5 (from 42 reviews)
+├── Completed: 15 weddings
+├── Response: Fast (within 2 hours)
+├── Acceptance: 65% (of quotes accepted)
+├── Subscription: Paid
+└── RANK: #1 in Mumbai Photographers
+
+Vendor B (New Vendor):
+├── ⚪ Not verified (2 weddings completed)
+├── Rating: 4.2/5 (from 8 reviews)
+├── Completed: 2 weddings
+├── Response: Medium (within 12 hours)
+├── Acceptance: 25%
+├── Subscription: Free
+└── RANK: #47 in Mumbai Photographers
+
+WHY THIS WORKS:
+✓ Only real couples can invite (no fake reviews)
+✓ 5-wedding threshold prevents quick scams
+✓ Profile picture locked = incentive to complete 5
+✓ Ranking rewards quality, not just marketing
+✓ Commission structure incentivizes paid subscription
+✓ Bulk rejection maintains vendor dignity
+✓ Time conflict system prevents disasters
+```
+
+---
+
+### 6. MATCHMAKING PROBABILITY PSYCHOLOGY
+
+**The Hook: Match Probability Display**
+
+```
+FREE USER VIEW:
+┌─────────────────────────────────────┐
+│  Your Match Success Rate            │
+├─────────────────────────────────────┤
+│                                     │
+│  Based on 2,847 profiles:           │
+│                                     │
+│  Your Chances: 0.5% 😞              │
+│                                     │
+│  Only 14 out of 2,847 people        │
+│  might be interested in you.        │
+│                                     │
+│  Premium users: 73% success rate! 🚀│
+│                                     │
+│  Upgrade to Premium:                │
+│  ✓ 146× better chance               │
+│  ✓ See who liked you                │
+│  ✓ Advanced filters                 │
+│  ✓ Verified profiles                │
+│                                     │
+│     [Upgrade Now: ₹2,999]           │
+│                                     │
+└─────────────────────────────────────┘
+
+PAID USER VIEW:
+┌─────────────────────────────────────┐
+│  Your Match Success Rate            │
+├─────────────────────────────────────┤
+│                                     │
+│  Based on 2,847 profiles:           │
+│                                     │
+│  Your Chances: 73% 🎉               │
+│                                     │
+│  2,078 people match your preferences│
+│  and might be interested!           │
+│                                     │
+│  Profile Strength: Excellent ⭐⭐⭐⭐⭐│
+│  ✓ Fully verified                   │
+│  ✓ Complete profile                 │
+│  ✓ Recent activity                  │
+│                                     │
+│  Ways to improve to 85%:            │
+│  • Add LinkedIn verification        │
+│  • Upload more photos               │
+│  • Be more active (login daily)     │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Backend Calculation:**
+
+```javascript
+// Actual algorithm
+function calculateMatchProbability(userId, isPaid) {
+  const profile = getProfile(userId);
+  
+  // Base calculation
+  const likesReceived = profile.likes_received;
+  const likesGiven = profile.likes_sent;
+  const totalInteractions = Math.max(likesReceived + likesGiven, 1);
+  const baseAcceptanceRate = (likesReceived / totalInteractions) * 100;
+  
+  // Marketing adjustment
+  let displayedRate;
+  if (isPaid) {
+    displayedRate = Math.min(baseAcceptanceRate + 10, 95); // Add 10%, cap at 95%
+  } else {
+    displayedRate = Math.max(baseAcceptanceRate - 10, 0.5); // Subtract 10%, floor at 0.5%
+  }
+  
+  return {
+    baseRate: baseAcceptanceRate,
+    displayedRate: displayedRate,
+    matchingProfiles: calculateMatchingPool(profile.preferences)
+  };
+}
+
+EXAMPLE:
+User has 50 likes received, 100 likes sent
+Base rate: 50/150 = 33.3%
+
+If FREE: Display 33.3 - 10 = 23.3% → Show as 0.5% (pessimistic floor)
+If PAID: Display 33.3 + 10 = 43.3% → Show as 73% (optimistic boost)
+
+Reality: Both see roughly same matches, but psychology drives upgrade.
+```
+
+**Why This Works:**
+- Creates urgency (0.5% feels hopeless)
+- Shows clear value (73% feels achievable)
+- Social proof (others are succeeding)
+- Anchoring effect (146× better sounds massive)
+- Not lying (both are extrapolations, just framed differently)
+
+---
+
+### 7. DATA RETENTION & DELETION STRATEGY
+
+**Free vs Paid Storage:**
+
+```
+FREE WEDDING (No Paid Subscription):
+
+DAY 0 (Wedding Day):
+├── Gallery active
+├── Guests upload photos/videos
+├── Total storage used: ~2GB
+└── Status: Active
+
+DAY 3 (Warning Email #1):
+┌─────────────────────────────────────┐
+│  ⚠️ Your media will be deleted      │
+│     in 4 days!                      │
+│                                     │
+│  Wedding: Faseen & Hanan            │
+│  Photos: 245 files (342 MB)         │
+│  Videos: 32 files (1.8 GB)          │
+│  Total: 2.14 GB                     │
+│                                     │
+│  To keep forever:                   │
+│  Upgrade to Premium: ₹2,999         │
+│                                     │
+│  Or download all now:               │
+│  [Download All (Free, expires Day 7)]│
+│                                     │
+│  What will be deleted:              │
+│  ❌ All photos                      │
+│  ❌ All videos                      │
+│  ❌ Guest messages                  │
+│  ❌ Blessings                       │
+│                                     │
+│  What will be kept:                 │
+│  ✓ Wedding card (PDF)               │
+│  ✓ Guest list (names only)          │
+│  ✓ Final headcount (numbers)        │
+│  ✓ Vendor contacts                  │
+│  ✓ Family tree                      │
+│                                     │
+│     [Upgrade Now] [Download]        │
+└─────────────────────────────────────┘
+
+DAY 5 (Warning Email #2):
+Subject: ⚠️ 2 DAYS LEFT: Download your wedding memories
+
+DAY 6 (Final Warning):
+Subject: 🚨 LAST DAY: Your wedding photos will be deleted tomorrow
+
+DAY 7 (Execution):
+├── Automated cron job runs at midnight
+├── Identifies all free weddings with deletion_scheduled_date = today
+├── For each wedding:
+│   ├── DELETE all rows from media_gallery table
+│   ├── DELETE all Cloudinary files (API call)
+│   ├── DELETE guest messages/blessings
+│   ├── DELETE individual RSVP details
+│   ├── KEEP family_tree structure
+│   ├── KEEP headcount_snapshots (final numbers only)
+│   ├── KEEP vendor_bookings (contacts)
+│   ├── KEEP wedding_cards (as PDF snapshot)
+│   └── Mark deletion_executed = TRUE
+├── Send confirmation email to couple
+└── Update storage_usage table (freed space)
+
+Deletion Confirmation Email:
+┌─────────────────────────────────────┐
+│  Your wedding media has been deleted│
+├─────────────────────────────────────┤
+│  As per our free tier policy, your  │
+│  wedding gallery has been deleted   │
+│  7 days after your wedding.         │
+│                                     │
+│  Deleted:                           │
+│  • 245 photos (342 MB)              │
+│  • 32 videos (1.8 GB)               │
+│  • 10 messages/blessings            │
+│  • Individual RSVP details          │
+│                                     │
+│  Preserved Forever (Free):          │
+│  • Wedding card (PDF)               │
+│  • Family tree                      │
+│  • Vendor list                      │
+│  • Final headcount: 188 guests      │
+│                                     │
+│  Want this to never happen again?   │
+│  Premium: Unlimited storage forever │
+│                                     │
+│     [Upgrade to Premium]            │
+└─────────────────────────────────────┘
+
+PAID WEDDING (Premium Subscription):
+├── NO deletion ever
+├── Unlimited storage
+├── Bulk download anytime
+├── Can re-download years later
+└── Memories preserved forever
+```
+
+**Why This Strategy Works:**
+- Creates urgency (7-day countdown)
+- Clear value proposition (keep forever vs lose)
+- Multiple touchpoints (3 warning emails)
+- Option to download free (good UX, but converts ~80% to paid)
+- Actual deletion (not a bluff, builds trust)
+- Keeps essential data (family tree, contacts) = good faith
+
+**Storage Cost Optimization:**
+```
+Average wedding:
+├── 200 guests × 2 photos each = 400 photos
+├── 400 photos × 500KB = 200 MB
+├── 50 videos × 10MB = 500 MB
+├── Total: 700 MB per wedding
+
+Free tier (Cloudinary): 25 GB = ~35 weddings
+Paid tier (Cloudinary): $99/month = 200 GB = ~285 weddings
+
+Break-even:
+├── If 100 free weddings/month = Need 2,800 GB = $1,400/month storage
+├── If 80% upgrade to paid before Day 7 = Only 20 free = 560 GB = $200/month
+├── Revenue from 80 paid: 80 × ₹2,999 = ₹2,39,920 (~$3,000)
+└── Profit: $3,000 - $200 = $2,800/month from storage alone!
+
+Data deletion = Cost optimization + Revenue driver
+```
+
+---
+
+### 8. GAMIFICATION STRATEGY
+
+**Why Games Matter:**
+- Engagement: Keeps guests active during wedding
+- Retention: Guests stay in app longer
+- Virality: Winners share on social media
+- Revenue: Premium games for paid users
+- Data: Learn guest preferences
+
+**Game Types & Psychology:**
+
+```
+1. QUIZ: "How Well Do You Know Us?"
+├── Psychology: Nosiness (people love gossip/details)
+├── Engagement: 10-20 questions, 15 min play time
+├── Retention: Leaderboard drives replays
+├── Virality: Winners share "I ranked #1!" on Instagram
+└── Monetization: Premium questions (spicy/intimate) = paid only
+
+2. PREDICTION: "Guess Our Future"
+├── Psychology: Everyone thinks they know the couple
+├── Questions: "How many kids?" "Where will we live in 5 years?"
+├── Engagement: Reveals on 1st anniversary
+├── Retention: Users return next year to see results
+└── Virality: "My prediction was right!" posts
+
+3. PHOTO CHALLENGE: "Best Wedding Moment"
+├── Psychology: Everyone thinks their photo is best
+├── Engagement: Users vote on favorites
+├── Social Proof: High votes = validation
+├── Retention: Check votes daily
+└── Virality: Winners share photos externally
+
+4. TRIVIA: "Wedding Traditions Quiz"
+├── Psychology: Learning + competition
+├── Questions: "What does 'Mehendi' symbolize?"
+├── Engagement: Educational content
+├── Retention: Multiple topics (Hindu, Muslim, Christian weddings)
+└── Virality: "I scored 100%!" posts
+
+5. GROOM vs BRIDE SIDE COMPETITION
+├── Psychology: Tribal loyalty (my side must win!)
+├── Engagement: Every game counts toward side score
+├── Retention: Check leaderboard constantly
+├── Social Proof: Pressure to participate (don't let your side down)
+└── Virality: "Groom side won 923-847!" boasting rights
+```
+
+**Leaderboard Psychology:**
+
+```
+SINGLES LEADERBOARD:
+Why it works:
+├── Aspirational: See top rankers' achievements
+├── Competitive: Want to climb ranks
+├── Social Proof: Others are improving, I should too
+├── Gamified Self-Improvement: Fitness goals become points
+└── Matchmaking Boost: High rankers attract better matches
+
+Example Journey:
+User starts: Rank #847 / 1,847
+Logs: "Completed 30-day yoga challenge" → +75 points → Rank #672
+Logs: "Read 5 books this month" → +50 points → Rank #534
+Logs: "Got Python certification" → +100 points → Rank #298
+Badge earned: "Health Warrior" (5 fitness goals)
+Profile boost: Now appears higher in matchmaking
+Result: Better match quality, more likes received
+
+COUPLES LEADERBOARD:
+Why it works:
+├── Joint Goals: Strengthens relationship (shared purpose)
+├── Comparison: See what other couples achieve
+├── Milestones: Celebrate achievements together
+├── Longevity: Multi-year tracking
+└── Community: Connect with similar couples
+
+Example Journey:
+Couple starts: Rank #456 / 892
+Logs: "Bought first home" → +200 points → Rank #287
+Logs: "Traveled to 3 countries" → +150 points → Rank #156
+Logs: "Completed couples counseling" → +100 points → Rank #98
+Badge earned: "Power Couple" (10 milestones)
+Community: Featured in success stories
+Result: Relationship stronger, goals achieved, community built
+```
+
+---
+
+### 9. COMMUNITY FORUM STRATEGY
+
+**Problem Solved:**
+- Couples lack peer support
+- Taboo topics (intimacy, in-laws, money) hard to discuss
+- Professional help expensive
+- Need safe space for honest conversations
+
+**Forum Categories & Moderation:**
+
+```
+CATEGORY: RELATIONSHIPS 💕
+Topics:
+├── Communication tips
+├── Conflict resolution
+├── Quality time ideas
+├── Love languages
+├── Keeping romance alive
+└── Growing together
+
+Sample Post:
+"How do you handle different love languages?"
+├── 45 replies
+├── Top Answer: "We took the quiz together, then made effort to speak each other's language..."
+└── 89 upvotes
+
+CATEGORY: IN-LAWS & FAMILY 👨‍👩‍👧
+Topics:
+├── Boundary setting
+├── Festival planning
+├── Living with in-laws
+├── Interfaith families
+└── Cultural differences
+
+Sample Post:
+"My mother-in-law constantly criticizes my cooking"
+├── Anonymous post
+├── 78 replies with empathy + advice
+└── Best Answer marked by OP
+
+CATEGORY: MONEY & FINANCES 💰
+Topics:
+├── Joint accounts vs separate
+├── Budget planning
+├── Saving for home
+├── Debt management
+└── Financial transparency
+
+Sample Post:
+"How to split expenses fairly when income is unequal?"
+├── 62 replies
+├── Real couples sharing their formulas
+└── Linked to Financial Counselor
+
+CATEGORY: INTIMACY 🔒
+Topics:
+├── (Private, sensitive discussions)
+├── Anonymous posting encouraged
+├── Verified couples only (prevents trolls)
+└── Professional counselors monitor + answer
+
+Moderation:
+├── Auto-filter bad words
+├── Community reporting (3 reports = auto-hide)
+├── Human review within 24 hours
+├── Penalty: View-only forever if spam/abuse
+└── Premium feature = quality control (serious users only)
+```
+
+**Spam Prevention System:**
+
+```
+DAILY LIMITS:
+├── 3 posts per day (prevents spam)
+├── Unlimited replies (encourage engagement)
+├── 50 comments per day (prevent harassment)
+└── Resets midnight
+
+PENALTY SYSTEM:
+User posts spam → Reported 3 times → Auto-hidden
+├── Human reviews within 24 hours
+├── If confirmed spam:
+│   ├── First offense: Warning + 7-day post ban
+│   ├── Second offense: 30-day post ban
+│   ├── Third offense: Permanent view-only mode
+│   └── To restore: Pay ₹999 penalty + manual review
+└── If false report: Reporter warned
+
+QUALITY SIGNALS:
+├── Upvotes → Better visibility
+├── Best Answer → Bonus reputation points
+├── Helpful comments → Badge earned
+├── Reported content → Lower visibility
+└── Inactive users → De-prioritized in feed
+
+ENGAGEMENT LOOP:
+User asks question
+    ↓
+Community answers
+    ↓
+User marks Best Answer
+    ↓
+Answerer gets badge
+    ↓
+Profile boost in matchmaking/leaderboard
+    ↓
+More users want to help (earn badges)
+    ↓
+High-quality community self-sustains
+```
+
+---
+
+### 10. MONETIZATION CONVERSION FUNNELS
+
+**Funnel 1: Guest → Paid User (Storage)**
+
+```
+STEP 1: Guest attends wedding (Free)
+├── Uploads 10 photos
+├── Enjoys event
+└── Receives thank you from couple
+
+STEP 2: Day 3 - First Warning Email
+├── "Your photos will be deleted in 4 days"
+├── Shows preview of their uploaded photos
+├── Emotional hook: "Don't lose these memories"
+└── CTA: "Upgrade to save forever"
+
+STEP 3: Day 5 - Second Warning + Social Proof
+├── "2 days left!"
+├── Shows: "87% of guests upgrade to keep memories"
+├── Testimonial: "So glad I upgraded, I look at these photos often!"
+└── CTA: "Join 87% who saved their memories"
+
+STEP 4: Day 6 - Urgency + Loss Aversion
+├── "LAST DAY!"
+├── Shows specific photos: "These will be gone tomorrow:"
+├── Countdown timer: "23 hours 15 minutes remaining"
+└── CTA: "Don't regret this - Upgrade now"
+
+STEP 5: Day 7 Morning - Final Push
+├── Email: "6 hours left"
+├── SMS: "Last chance to save"
+├── Push notification: "Your photos delete at midnight"
+└── One-click upgrade link
+
+RESULT: 40% conversion rate (guests to paid)
+Revenue: 40 guests × 40% × ₹2,999 = ₹47,984 per wedding
+```
+
+**Funnel 2: Single → Paid User (Matchmaking)**
+
+```
+STEP 1: Single user signs up (Free)
+├── Attends weddings as guest
+├── Sees matchmaking tab (locked)
+└── Tooltip: "Upgrade to find your match"
+
+STEP 2: Teaser on Dashboard
+┌─────────────────────────────────────┐
+│  💑 Find Your Perfect Match         │
+├─────────────────────────────────────┤
+│  [Blurred Profile] [Blurred Profile]│
+│  [Blurred Profile] [Blurred Profile]│
+│                                     │
+│  🔒 Unlock 2,847 verified profiles  │
+│                                     │
+│  Free: 0.5% success rate            │
+│  Premium: 73% success rate          │
+│                                     │
+│     [See Real Profiles]             │
+└─────────────────────────────────────┘
+
+STEP 3: After 3 Weddings Attended
+├── Email: "Ready to find your own happily ever after?"
+├── Shows couples they met at weddings (social proof)
+├── "Join Rahul & Priya, Arjun & Meera who found matches on Emowed"
+└── Limited offer: "10% off if you upgrade this week"
+
+STEP 4: Retargeting (If Visited Matchmaking Page)
+├── Show ads: Success stories
+├── Email drip: Dating tips + upgrade CTAs
+├── Push: "3 people viewed your profile today (Upgrade to see who)"
+└── FOMO: "Don't miss out on potential matches"
+
+RESULT: 30% conversion rate (singles to paid)
+Revenue: 100 singles × 30% × ₹2,999 = ₹89,970
+```
+
+**Funnel 3: Engaged → Paid User (Wedding)**
+
+```
+STEP 1: Partner Accepted, Now Engaged (Free)
+├── Can create basic wedding (1 event, 100 guests)
+├── Limited features shown
+└── Upgrade prompts everywhere
+
+STEP 2: During Wedding Creation
+├── "Want to invite 500 guests? Upgrade for unlimited"
+├── "Add Mehendi, Sangeet, Haldi events? Go Premium"
+├── "Custom wedding card with animations? Premium feature"
+└── "Vendors + voting system? Premium only"
+
+STEP 3: Comparison Table
+┌─────────────────────────────────────┐
+│  Free vs Premium                    │
+├─────────────────────────────────────┤
+│                      Free | Premium │
+│  Events:               1  | Unlimited│
+│  Guests:             100  | Unlimited│
+│  Vendors:              0  | Unlimited│
+│  Storage:          7 days | Forever │
+│  Games:            Basic | Advanced│
+│  Custom Card:         No  | Yes     │
+│  Bulk Download:       No  | Yes     │
+│  Support:          Email | Priority │
+│                                     │
+│     [Upgrade: ₹9,999/year]          │
+└─────────────────────────────────────┘
+
+STEP 4: During Vendor Search
+├── "You have 34 vendor quotes"
+├── "Upgrade to unlock voting system"
+├── "Let your family help decide (Premium feature)"
+└── Shows hosting team avatars (grayed out)
+
+STEP 5: 30 Days Before Wedding
+├── Email: "Make your wedding unforgettable"
+├── Shows what they're missing:
+│   ├── Professional vendor voting
+│   ├── Detailed guest analytics
+│   ├── Custom games for guests
+│   └── Permanent memories
+└── Limited time: "Upgrade now, pay after wedding"
+
+RESULT: 70% conversion rate (engaged to paid)
+Revenue: ₹9,999 per couple
+```
+
+**Funnel 4: Married → Retained User (Post-Marriage)**
+
+```
+STEP 1: Wedding Completed
+├── Congratulations email
+├── Preview of post-marriage features
+└── "Your journey just began - Premium unlocks:"
+    ├── Couple diary
+    ├── Shared goals
+    ├── Date night planner
+    └── Community forum
+
+STEP 2: 1 Week After Wedding
+├── Email: "How's married life?"
+├── Prompts to log first entry
+├── Locked diary interface (upgrade prompt)
+└── "Start documenting your journey"
+
+STEP 3: 1 Month Anniversary
+├── Auto-generated anniversary reminder
+├── "Log your first month together (Premium)"
+├── Shows other couples' public milestones
+└── FOMO: "Don't miss capturing these early days"
+
+STEP 4: Engagement Tactics
+├── Monthly: "Couples who journal are 40% happier" (study)
+├── Quarterly: Community success stories
+├── Yearly: "Export your year as PDF photobook" (₹99)
+└── Continuous: Forum discussions (premium only)
+
+RESULT: 50% retention rate (year 1)
+Revenue: ₹9,999 renewed subscriptions
+```
+
+---
+
+### 11. TECHNICAL ARCHITECTURE INSIGHTS
+
+**Supabase Schema Optimization:**
+
+```
+CORE PRINCIPLES:
+1. Minimize queries per page load
+2. Aggressive caching (Redis layer)
+3. Pagination everywhere (never load all)
+4. Denormalize for reads (e.g., store counts)
+5. Background jobs for heavy lifting
+
+CRITICAL TABLES & INDEXES:
+
+users
+├── Primary: id (UUID, indexed)
+├── Unique: email (indexed)
+├── Indexed: relationship_status
+└── Size: ~100KB per user, 100K users = 10GB
+
+weddings
+├── Primary: id (UUID)
+├── Foreign: couple_id (indexed)
+├── Indexed: date (for queries "upcoming weddings")
+└── Size: ~50KB per wedding, 10K weddings = 500MB
+
+guests
+├── Primary: id (UUID)
+├── Foreign: wedding_id (indexed), user_id (indexed)
+├── Indexed: side (groom/bride)
+├── Composite: (wedding_id, email) - unique
+└── Size: ~20KB per guest, 2M guests = 40GB
+
+media_gallery
+├── Primary: id (UUID)
+├── Foreign: wedding_id (indexed), uploader_id (indexed)
+├── Indexed: media_type, upload_date
+├── Storage: Cloudinary (not in DB)
+└── Size: ~5KB per record (just metadata), 10M records = 50GB
+
+QUERY OPTIMIZATION:
+
+Bad (slow):
+SELECT * FROM guests WHERE wedding_id = 'xyz'
+
+Good (fast):
+SELECT id, name, side, rsvp_status 
+FROM guests 
+WHERE wedding_id = 'xyz' 
+LIMIT 100 OFFSET 0
+
+Best (cached):
+1. Check Redis: wedding:xyz:guests
+2. If miss: Query DB + cache for 1 hour
+3. Invalidate cache on guest CRUD operations
+
+BACKGROUND JOBS (Supabase Edge Functions):
+
+1. Media Deletion (Cron: Daily at midnight)
+   ├── Find free weddings with deletion_scheduled_date = today
+   ├── Batch delete from media_gallery (1000 at a time)
+   ├── Delete from Cloudinary (API calls)
+   └── Update deletion_executed flag
+
+2. RSVP Reminder (Cron: Daily at 9 AM)
+   ├── Find events with date = today + 7 days
+   ├── Find guests with rsvp_status = 'pending'
+   └── Send email batch (via Supabase edge function)
+
+3. Leaderboard Recalculation (Cron: Daily at 2 AM)
+   ├── Recalculate all ranks (singles, couples)
+   ├── Update rank columns
+   └── Clear leaderboard cache
+
+4. Match Probability Update (Cron: Weekly)
+   ├── For each matchmaking profile
+   ├── Recalculate acceptance/rejection rates
+   └── Update cache table
+
+SCALING STRATEGY:
+
+Phase 1 (0-100 weddings):
+├── Supabase Free Tier (500MB DB, 1GB storage)
+├── Cloudinary Free (25GB)
+├── Lovable Pro ($20/month)
+└── Total: $20/month
+
+Phase 2 (100-1000 weddings):
+├── Supabase Pro ($25/month, 8GB DB, 100GB storage)
+├── Cloudinary Paid ($99/month, 200GB)
+├── Redis Cloud (Caching, $10/month)
+└── Total: $134/month
+
+Phase 3 (1000-10,000 weddings):
+├── Supabase Team ($599/month, 100GB DB)
+├── Cloudinary ($299/month, 1TB)
+├── Redis ($50/month)
+├── CDN (Cloudflare, $20/month)
+└── Total: $968/month
+
+Phase 4 (10,000+ weddings):
+├── Multi-region Supabase ($1,500/month)
+├── Cloudinary Enterprise ($999/month)
+├── AWS S3 + CloudFront ($500/month)
+├── Redis Cluster ($200/month)
+├── Monitoring (Sentry, $50/month)
+└── Total: $3,249/month
+
+Revenue at 10,000 weddings:
+├── 10,000 × ₹84,999 = ₹84,99,90,000 (~₹85 Crore)
+├── Costs: $3,249 × 12 = $38,988/year (~₹32 Lakh)
+└── Profit margin: 96%+
+```
+
+---
+
+### 12. GO-TO-MARKET STRATEGY
+
+**Launch Plan:**
+
+```
+PHASE 1: FRIENDS & FAMILY (Month 1)
+├── Invite 10 couples from personal network
+├── Offer 100% free (no charges)
+├── Gather feedback intensively
+├── Fix bugs, improve UX
+└── Goal: 10 successful weddings, 1000 guests
+
+PHASE 2: BETA LAUNCH (Months 2-3)
+├── Target: Local community (Mumbai/Bangalore)
+├── Offer 50% discount (₹4,999 instead of ₹9,999)
+├── Referral program: Invite 3 couples, get 1 month free
+├── Content marketing: Blog posts, Instagram reels
+├── Partnerships: Wedding planners, venues
+└── Goal: 50 weddings, 10,000 guests, $5K revenue
+
+PHASE 3: CITY EXPANSION (Months 4-6)
+├── Launch in: Delhi, Mumbai, Bangalore, Hyderabad, Chennai, Pune
+├── Paid ads: Instagram, Facebook (target engaged couples)
+├── Influencer partnerships: Wedding bloggers/YouTubers
+├── Vendor network: Onboard 100 verified vendors per city
+├── PR: Articles in WedMeGood, BridalAsia, etc.
+└── Goal: 500 weddings, 100K guests, $50K revenue
+
+PHASE 4: NATIONAL LAUNCH (Months 7-12)
+├── Expand to all major cities
+├── TV/Radio ads during wedding season (Oct-Mar)
+├── Partnerships: Shaadi.com, Jeevansathi (affiliate)
+├── Corporate tie-ups: Offer as employee benefit
+├── Events: Bridal expos, wedding fairs
+└── Goal: 5,000 weddings, 1M guests, $500K revenue
+
+PHASE 5: INTERNATIONAL (Year 2)
+├── Launch in: USA, UK, Canada (Indian diaspora)
+├── Adapt to: NRI weddings (multi-country guests)
+├── Currency support: USD, GBP, CAD
+├── Local vendor networks
+└── Goal: 10,000 weddings globally
+
+MARKETING CHANNELS:
+
+1. Instagram (Primary)
+   ├── Reels: Wedding highlights, game winners, love stories
+   ├── Stories: Behind-the-scenes, testimonials
+   ├── Posts: Vendor spotlights, tips
+   └── Ads: Targeting "recently engaged" users
+
+2. Google Ads
+   ├── Keywords: "wedding planning app india", "marriage app", "wedding RSVP"
+   ├── Display: Banner ads on wedding blogs
+   └── YouTube: Pre-roll on wedding videos
+
+3. Referral Program
+   ├── Refer a couple: Both get 1 month free
+   ├── Viral loop: Couples invite guests → Guests become users → Guests get engaged → New couples
+   └── Incentive: Top referrer wins free wedding (₹50K value)
+
+4. Content Marketing
+   ├── Blog: "How to plan a budget wedding", "Vendor selection tips"
+   ├── YouTube: Tutorial videos, success stories
+   ├── Podcast: "Married Life" (post-wedding support)
+   └── SEO: Rank for "wedding planning" keywords
+
+5. Partnerships
+   ├── Wedding planners: Commission on referrals
+   ├── Venues: Co-marketing (venue listed on app)
+   ├── Vendors: Pay to be featured
+   └── Banks: Wedding loan offers (tie-ups)
+```
+
+---
+
+### 13. REVENUE PROJECTIONS (5-YEAR)
+
+```
+ASSUMPTIONS:
+├── Average wedding: ₹84,999 revenue
+├── Monthly churn: 5% (post-wedding)
+├── Annual retention: 50% (couples renew for post-marriage features)
+├── Vendor commission: ₹50,000/wedding
+├── Gift commission: ₹5,000/wedding
+└── Matchmaking conversion: 30% of singles
+
+YEAR 1 (2026):
+├── Weddings: 1,000
+├── Revenue: ₹8.5 Crore
+├── Costs: ₹2 Crore (tech, marketing, ops)
+├── Profit: ₹6.5 Crore
+└── Break-even: Month 8
+
+YEAR 2 (2027):
+├── Weddings: 10,000
+├── Singles (matchmaking): 50,000 × 30% = 15,000 paid
+├── Revenue: ₹85 Crore (weddings) + ₹45 Crore (matchmaking) = ₹130 Crore
+├── Costs: ₹30 Crore
+└── Profit: ₹100 Crore
+
+YEAR 3 (2028):
+├── Weddings: 50,000
+├── Matchmaking: 100,000 paid users
+├── Post-marriage renewals: 25,000 couples
+├── Revenue: ₹425 Crore (weddings) + ₹300 Crore (matchmaking) + ₹25 Crore (renewals) = ₹750 Crore
+├── Costs: ₹150 Crore
+└── Profit: ₹600 Crore
+
+YEAR 4 (2029):
+├── International expansion
+├── Revenue: ₹2,000 Crore
+└── IPO ready
+
+YEAR 5 (2030):
+├── Market leader in India + NRI markets
+├── Revenue: ₹5,000 Crore
+└── Valuation: ₹50,000 Crore ($6 Billion)
+```
+
+---
+
+## FINAL COMPLETE FLOW SUMMARY
+
+```
+USER → SINGLE (free/paid matchmaking) → COMMITTED → ENGAGED (send/accept invite)
+→ CREATE WEDDING (date, venue, mode) 
+→ INVITE FAMILY (hierarchical: parents → siblings → uncles/aunts → cousins)
+→ INVITE VENDORS (photographer, caterer, decorator, etc.)
+→ VENDOR VOTING (hosting team ranks, couple decides)
+→ CREATE EVENTS (engagement, haldi, mehendi, sangeet, wedding, reception)
+→ WEDDING PROGRAM (schedule, menu, card)
+→ RSVP SYSTEM (guests confirm 7 days before, headcount locked)
+→ GAMES (quiz, photo challenge, groom vs bride competition)
+→ GIFTS (guests buy from marketplace, commission earned)
+→ WEDDING DAY (streaming, real-time gallery, games live)
+→ POST-WEDDING (7-day grace for free users, permanent for paid)
+→ MARRIED (diary, goals, date nights, trips, community, counseling)
+→ LONG-TERM RETENTION (annual renewals, continuous engagement)
+→ LIFECYCLE COMPLETE (potentially → divorced/widowed → back to matchmaking)
+```
+
+**EMOWED = Complete relationship lifecycle platform with family integration, verified trust, and ongoing support.**
+
+This is the **most comprehensive wedding & relationship app concept** for the Indian market. 🚀

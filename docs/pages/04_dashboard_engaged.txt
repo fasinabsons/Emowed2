@@ -1,0 +1,614 @@
+# PAGE SPECIFICATION: ENGAGED COUPLE DASHBOARD
+
+## PAGE DETAILS
+- **URL:** `/dashboard` (conditional render based on relationship_status = 'engaged')
+- **Access:** Authenticated (Engaged couples only)
+- **Purpose:** Central hub for wedding planning
+- **Parent Layout:** DashboardLayout
+
+---
+
+## LAYOUT STRUCTURE
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  HEADER                                                     │
+│  Logo | Dashboard | Wedding | Guests | Vendors | Settings │
+└────────────────────────────────────────────────────────────┘
+│                                                              │
+│  COUPLE HEADER                                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  👫 Faseen & Hanan                                   │  │
+│  │  💍 Engaged since Nov 3, 2025                       │  │
+│  │  📅 Wedding in 45 days                               │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  MAIN CONTENT (Grid Layout)                                │
+│  ┌──────────────────┐  ┌──────────────────┐               │
+│  │ QUICK STATS      │  │ WEDDING STATUS   │               │
+│  ├──────────────────┤  ├──────────────────┤               │
+│  │ 👥 Guests: 87/500│  │ Progress: 65%    │               │
+│  │ 📷 Vendors: 3/8  │  │ [████████░░░]   │               │
+│  │ 📧 RSVPs: 45/87  │  │                  │               │
+│  │ 📸 Photos: 0     │  │ Next: Invite     │               │
+│  └──────────────────┘  │ vendors          │               │
+│                         └──────────────────┘               │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ CREATE WEDDING (if no wedding)                     │    │
+│  ├────────────────────────────────────────────────────┤    │
+│  │                                                     │    │
+│  │  🎉 Ready to create your wedding?                  │    │
+│  │                                                     │    │
+│  │  👰‍♀️🤵‍♂️                                            │    │
+│  │                                                     │    │
+│  │  [ Create Our Wedding ]                            │    │
+│  │                                                     │    │
+│  │  Plan your dream celebration together              │    │
+│  │                                                     │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+│  OR (if wedding exists)                                     │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ WEDDING OVERVIEW                                    │    │
+│  ├────────────────────────────────────────────────────┤    │
+│  │ Faseen & Hanan's Wedding                           │    │
+│  │ 📅 December 15, 2025                               │    │
+│  │ 📍 Grand Palace Hotel, Mumbai                      │    │
+│  │ 💰 Budget: ₹10,00,000                             │    │
+│  │ 👥 Guest Limit: 500                                │    │
+│  │ 🎊 Mode: Combined                                  │    │
+│  │                                                     │    │
+│  │ [ View Details ] [ Edit ] [ Settings ]             │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+│  QUICK ACTIONS (Grid)                                       │
+│  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌──────────┐   │
+│  │ 📋 Events │ │ 👥 Guests │ │ 📷 Vendors│ │ 🎁 Gifts │   │
+│  │ 7 events  │ │ 87 invited│ │ 3 booked  │ │ 0 received   │
+│  │ [Manage]  │ │ [Manage]  │ │ [Find]    │ │ [View]   │   │
+│  └───────────┘ └───────────┘ └───────────┘ └──────────┘   │
+│                                                              │
+│  TIMELINE (Next Steps)                                      │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ 🎯 Your Next Steps                                 │    │
+│  ├────────────────────────────────────────────────────┤    │
+│  │ ✅ Create wedding                                  │    │
+│  │ ✅ Set event timeline (7 events)                   │    │
+│  │ ⏳ Invite family (87/500 invited)                  │    │
+│  │ ⏳ Select vendors (3/8 categories)                 │    │
+│  │ ❌ Create wedding card                             │    │
+│  │ ❌ Launch photo gallery                            │    │
+│  │ ❌ Set up games                                    │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+│  RECENT ACTIVITY                                            │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ • Uncle Ahmed accepted invitation (2 min ago)      │    │
+│  │ • Vendor "Studio Flash" submitted quote (1h ago)   │    │
+│  │ • 5 new RSVPs confirmed (3h ago)                   │    │
+│  │ • Hanan updated budget (Yesterday)                 │    │
+│  └────────────────────────────────────────────────────┘    │
+└────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## COMPONENT SPECIFICATIONS
+
+### 1. Couple Header
+
+```tsx
+<CoupleHeader>
+  <CoupleInfo>
+    <CoupleNames>
+      <Avatar src={groomAvatar} />
+      <Names>
+        <Name>{groomName}</Name>
+        <Ampersand>&</Ampersand>
+        <Name>{brideName}</Name>
+      </Names>
+      <Avatar src={brideAvatar} />
+    </CoupleNames>
+    
+    <CoupleDetails>
+      <Detail>
+        <HeartIcon /> Engaged since {formatDate(engagedDate)}
+      </Detail>
+      {weddingDate && (
+        <Detail>
+          <CalendarIcon /> 
+          Wedding in {daysUntilWedding} days
+        </Detail>
+      )}
+    </CoupleDetails>
+  </CoupleInfo>
+  
+  <QuickActions>
+    <IconButton tooltip="Notifications">
+      <BellIcon />
+      {notificationCount > 0 && <Badge>{notificationCount}</Badge>}
+    </IconButton>
+    <IconButton tooltip="Settings">
+      <SettingsIcon />
+    </IconButton>
+  </QuickActions>
+</CoupleHeader>
+```
+
+---
+
+### 2. Quick Stats Cards
+
+```tsx
+<QuickStatsGrid>
+  <StatCard>
+    <StatIcon><UsersIcon /></StatIcon>
+    <StatValue>{guestCount}/{guestLimit}</StatValue>
+    <StatLabel>Guests Invited</StatLabel>
+    <StatProgress value={(guestCount / guestLimit) * 100} />
+    <StatAction href="/wedding/guests">Manage →</StatAction>
+  </StatCard>
+  
+  <StatCard>
+    <StatIcon><CameraIcon /></StatIcon>
+    <StatValue>{vendorCount}/8</StatValue>
+    <StatLabel>Vendors Booked</StatLabel>
+    <StatProgress value={(vendorCount / 8) * 100} />
+    <StatAction href="/wedding/vendors">Find Vendors →</StatAction>
+  </StatCard>
+  
+  <StatCard>
+    <StatIcon><MailIcon /></StatIcon>
+    <StatValue>{rsvpCount}/{guestCount}</StatValue>
+    <StatLabel>RSVPs Received</StatLabel>
+    <StatProgress value={(rsvpCount / guestCount) * 100} />
+    <StatAction href="/wedding/rsvp">View RSVPs →</StatAction>
+  </StatCard>
+  
+  <StatCard>
+    <StatIcon><ImageIcon /></StatIcon>
+    <StatValue>{photoCount}</StatValue>
+    <StatLabel>Photos Uploaded</StatLabel>
+    <StatAction href="/wedding/gallery">View Gallery →</StatAction>
+  </StatCard>
+</QuickStatsGrid>
+```
+
+---
+
+### 3. Wedding Status Card
+
+```tsx
+<WeddingStatusCard>
+  <StatusHeader>
+    <Title>Wedding Planning Progress</Title>
+    <Percentage>{completionPercentage}%</Percentage>
+  </StatusHeader>
+  
+  <ProgressBar value={completionPercentage} />
+  
+  <NextStep>
+    <Label>Next Step:</Label>
+    <StepText>{nextStepText}</StepText>
+    <StepButton onClick={goToNextStep}>
+      {nextStepAction} →
+    </StepButton>
+  </NextStep>
+  
+  <Milestones>
+    <Milestone completed>✅ Wedding created</Milestone>
+    <Milestone completed>✅ Timeline set</Milestone>
+    <Milestone active>⏳ Inviting guests (87/500)</Milestone>
+    <Milestone>❌ Select vendors</Milestone>
+    <Milestone>❌ Create wedding card</Milestone>
+  </Milestones>
+</WeddingStatusCard>
+```
+
+**Progress Calculation:**
+```typescript
+const calculateWeddingProgress = (wedding) => {
+  const milestones = [
+    { complete: !!wedding.id, weight: 10 },
+    { complete: wedding.events?.length > 0, weight: 10 },
+    { complete: wedding.guests?.length >= 50, weight: 20 },
+    { complete: wedding.vendors?.length >= 3, weight: 20 },
+    { complete: !!wedding.wedding_card_id, weight: 15 },
+    { complete: wedding.media?.length > 0, weight: 10 },
+    { complete: wedding.games?.length > 0, weight: 10 },
+    { complete: wedding.rsvp_rate >= 0.8, weight: 5 }
+  ];
+  
+  const completed = milestones
+    .filter(m => m.complete)
+    .reduce((sum, m) => sum + m.weight, 0);
+  
+  return completed;
+};
+```
+
+---
+
+### 4. Create Wedding Card (If No Wedding)
+
+```tsx
+<CreateWeddingCard>
+  <CardHeader>
+    <Emoji>🎉</Emoji>
+    <Title>Ready to create your wedding?</Title>
+  </CardHeader>
+  
+  <CardBody>
+    <Illustration>
+      <LottieAnimation src="/animations/wedding-planning.json" />
+    </Illustration>
+    
+    <Description>
+      Let's plan your dream celebration together! Create your wedding 
+      to unlock guest management, vendor selection, and more.
+    </Description>
+    
+    <Features>
+      <Feature>
+        <CheckIcon /> Invite family & friends hierarchically
+      </Feature>
+      <Feature>
+        <CheckIcon /> Manage RSVPs with dietary preferences
+      </Feature>
+      <Feature>
+        <CheckIcon /> Select vendors with family voting
+      </Feature>
+      <Feature>
+        <CheckIcon /> Create stunning wedding card
+      </Feature>
+      <Feature>
+        <CheckIcon /> Real-time photo gallery
+      </Feature>
+    </Features>
+    
+    <CTAButton 
+      size="lg" 
+      variant="primary"
+      href="/wedding/create"
+    >
+      👰‍♀️🤵‍♂️ Create Our Wedding
+    </CTAButton>
+    
+    <SubText>Takes only 5 minutes to set up!</SubText>
+  </CardBody>
+</CreateWeddingCard>
+```
+
+---
+
+### 5. Wedding Overview Card (If Wedding Exists)
+
+```tsx
+<WeddingOverviewCard>
+  <OverviewHeader>
+    <WeddingName>{wedding.name}</WeddingName>
+    <WeddingMode badge={wedding.mode}>
+      {wedding.mode === 'combined' ? '🤝 Combined' : '👫 Separate'}
+    </WeddingMode>
+  </OverviewHeader>
+  
+  <WeddingDetails>
+    <DetailRow>
+      <DetailIcon><CalendarIcon /></DetailIcon>
+      <DetailText>{formatDate(wedding.date, 'full')}</DetailText>
+    </DetailRow>
+    
+    <DetailRow>
+      <DetailIcon><MapPinIcon /></DetailIcon>
+      <DetailText>{wedding.venue}, {wedding.city}</DetailText>
+    </DetailRow>
+    
+    <DetailRow>
+      <DetailIcon><DollarIcon /></DetailIcon>
+      <DetailText>
+        Budget: {formatCurrency(wedding.budget_limit)}
+      </DetailText>
+    </DetailRow>
+    
+    <DetailRow>
+      <DetailIcon><UsersIcon /></DetailIcon>
+      <DetailText>
+        Guest Limit: {wedding.guest_limit}
+      </DetailText>
+    </DetailRow>
+  </WeddingDetails>
+  
+  <WeddingActions>
+    <Button variant="primary" href={`/wedding/${wedding.id}`}>
+      <EyeIcon /> View Full Details
+    </Button>
+    <Button variant="outline" href={`/wedding/${wedding.id}/edit`}>
+      <EditIcon /> Edit Wedding
+    </Button>
+    <Button variant="ghost" href={`/wedding/${wedding.id}/settings`}>
+      <SettingsIcon /> Settings
+    </Button>
+  </WeddingActions>
+</WeddingOverviewCard>
+```
+
+---
+
+### 6. Quick Action Cards
+
+```tsx
+<QuickActionsGrid>
+  <ActionCard href="/wedding/events">
+    <ActionIcon><CalendarIcon /></ActionIcon>
+    <ActionTitle>Events</ActionTitle>
+    <ActionStat>{eventCount} events</ActionStat>
+    <ActionDescription>
+      Manage timeline from engagement to reception
+    </ActionDescription>
+    <ActionButton>Manage Events</ActionButton>
+  </ActionCard>
+  
+  <ActionCard href="/wedding/guests">
+    <ActionIcon><UsersIcon /></ActionIcon>
+    <ActionTitle>Guests</ActionTitle>
+    <ActionStat>{guestCount} invited</ActionStat>
+    <ActionDescription>
+      Invite family hierarchically, track RSVPs
+    </ActionDescription>
+    <ActionButton>Manage Guests</ActionButton>
+  </ActionCard>
+  
+  <ActionCard href="/wedding/vendors">
+    <ActionIcon><CameraIcon /></ActionIcon>
+    <ActionTitle>Vendors</ActionTitle>
+    <ActionStat>{vendorCount} booked</ActionStat>
+    <ActionDescription>
+      Find & book verified wedding vendors
+    </ActionDescription>
+    <ActionButton>Find Vendors</ActionButton>
+  </ActionCard>
+  
+  <ActionCard href="/wedding/gifts">
+    <ActionIcon><GiftIcon /></ActionIcon>
+    <ActionTitle>Gifts</ActionTitle>
+    <ActionStat>{giftCount} received</ActionStat>
+    <ActionDescription>
+      Track gifts, send thank you notes
+    </ActionDescription>
+    <ActionButton>View Gifts</ActionButton>
+  </ActionCard>
+</QuickActionsGrid>
+```
+
+---
+
+### 7. Timeline (Next Steps)
+
+```tsx
+<TimelineCard>
+  <TimelineHeader>
+    <Icon>🎯</Icon>
+    <Title>Your Next Steps</Title>
+  </TimelineHeader>
+  
+  <TimelineBody>
+    {steps.map((step, index) => (
+      <TimelineStep key={step.id} status={step.status}>
+        <StepIndicator>
+          {step.status === 'completed' && <CheckIcon />}
+          {step.status === 'active' && <Spinner />}
+          {step.status === 'pending' && <CircleIcon />}
+        </StepIndicator>
+        
+        <StepContent>
+          <StepTitle status={step.status}>
+            {step.title}
+          </StepTitle>
+          {step.description && (
+            <StepDescription>{step.description}</StepDescription>
+          )}
+          {step.status === 'active' && (
+            <StepAction onClick={() => goToStep(step)}>
+              {step.actionText} →
+            </StepAction>
+          )}
+        </StepContent>
+      </TimelineStep>
+    ))}
+  </TimelineBody>
+  
+  <TimelineFooter>
+    <ProgressText>
+      {completedSteps}/{totalSteps} completed
+    </ProgressText>
+    <ProgressBar value={(completedSteps / totalSteps) * 100} />
+  </TimelineFooter>
+</TimelineCard>
+```
+
+**Steps Logic:**
+```typescript
+const generateWeddingSteps = (wedding) => [
+  {
+    id: '1',
+    title: 'Create wedding',
+    description: 'Set date, venue, and basic details',
+    status: wedding.id ? 'completed' : 'pending',
+    actionText: 'Create now',
+    action: () => router.push('/wedding/create')
+  },
+  {
+    id: '2',
+    title: 'Set event timeline',
+    description: '7 events from engagement to reception',
+    status: wedding.events?.length > 0 ? 'completed' : 
+            wedding.id ? 'active' : 'pending',
+    actionText: 'Set timeline',
+    action: () => router.push('/wedding/events')
+  },
+  {
+    id: '3',
+    title: `Invite family (${wedding.guests?.length || 0}/500)`,
+    description: 'Hierarchical invitations for both sides',
+    status: wedding.guests?.length >= 50 ? 'completed' :
+            wedding.events?.length > 0 ? 'active' : 'pending',
+    actionText: 'Invite guests',
+    action: () => router.push('/wedding/guests')
+  },
+  // ... more steps
+];
+```
+
+---
+
+### 8. Recent Activity Feed
+
+```tsx
+<RecentActivityCard>
+  <ActivityHeader>
+    <Icon>🔔</Icon>
+    <Title>Recent Activity</Title>
+    <FilterButton>
+      <FilterIcon /> All
+    </FilterButton>
+  </ActivityHeader>
+  
+  <ActivityList>
+    {activities.map(activity => (
+      <ActivityItem key={activity.id}>
+        <ActivityIcon type={activity.type}>
+          {getActivityIcon(activity.type)}
+        </ActivityIcon>
+        
+        <ActivityContent>
+          <ActivityText>{activity.message}</ActivityText>
+          <ActivityTime>{formatTimeAgo(activity.created_at)}</ActivityTime>
+        </ActivityContent>
+        
+        {activity.actionable && (
+          <ActivityAction onClick={() => handleActivity(activity)}>
+            View →
+          </ActivityAction>
+        )}
+      </ActivityItem>
+    ))}
+  </ActivityList>
+  
+  <ActivityFooter>
+    <ViewAllButton href="/wedding/activity">
+      View All Activity →
+    </ViewAllButton>
+  </ActivityFooter>
+</RecentActivityCard>
+```
+
+**Activity Types:**
+```typescript
+enum ActivityType {
+  GUEST_ACCEPTED = 'guest_accepted',
+  GUEST_RSVP = 'guest_rsvp',
+  VENDOR_QUOTE = 'vendor_quote',
+  VENDOR_BOOKED = 'vendor_booked',
+  PHOTO_UPLOADED = 'photo_uploaded',
+  GIFT_RECEIVED = 'gift_received',
+  BUDGET_UPDATED = 'budget_updated',
+  EVENT_UPDATED = 'event_updated',
+  SYSTEM_ALERT = 'system_alert'
+}
+
+const getActivityIcon = (type: ActivityType) => {
+  switch (type) {
+    case ActivityType.GUEST_ACCEPTED:
+      return <UserCheckIcon color="green" />;
+    case ActivityType.GUEST_RSVP:
+      return <MailCheckIcon color="blue" />;
+    case ActivityType.VENDOR_QUOTE:
+      return <FileTextIcon color="orange" />;
+    case ActivityType.PHOTO_UPLOADED:
+      return <ImageIcon color="pink" />;
+    case ActivityType.GIFT_RECEIVED:
+      return <GiftIcon color="gold" />;
+    default:
+      return <BellIcon />;
+  }
+};
+```
+
+---
+
+## REAL-TIME UPDATES
+
+```typescript
+useEffect(() => {
+  // Subscribe to wedding changes
+  const weddingChannel = supabase
+    .channel(`wedding:${weddingId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'guests',
+        filter: `wedding_id=eq.${weddingId}`
+      },
+      (payload) => {
+        if (payload.eventType === 'INSERT') {
+          toast.success(`${payload.new.full_name} was invited!`);
+          fetchGuestCount();
+        }
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'rsvps',
+        filter: `wedding_id=eq.${weddingId}`
+      },
+      (payload) => {
+        if (payload.new.status === 'attending') {
+          toast.success('New RSVP confirmed!');
+          fetchRSVPCount();
+        }
+      }
+    )
+    .subscribe();
+  
+  return () => {
+    weddingChannel.unsubscribe();
+  };
+}, [weddingId]);
+```
+
+---
+
+## CONDITIONAL RENDERING
+
+```typescript
+// Redirect based on relationship status
+useEffect(() => {
+  if (user.relationship_status === 'single') {
+    router.push('/dashboard'); // Single dashboard
+  } else if (user.relationship_status === 'married') {
+    router.push('/post-marriage'); // Married dashboard
+  }
+  // Engaged users stay on this page
+}, [user.relationship_status]);
+```
+
+---
+
+## SUCCESS METRICS
+
+- **Wedding Creation Rate:** 80%+ create wedding within 24 hours of engagement
+- **First Guest Invite:** Within 48 hours of wedding creation
+- **Dashboard Engagement:** 5+ page views per day
+- **Action Completion:** 60%+ complete all next steps
+
+---
+
+This engaged dashboard is designed to guide couples through wedding planning with clear next steps and progress tracking! 💍
+

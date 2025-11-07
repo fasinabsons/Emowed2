@@ -1,0 +1,53 @@
+# PAGE 08: GUEST MANAGEMENT
+
+## 📄 PAGE DETAILS
+
+**URL:** `/wedding/{weddingId}/guests`  
+**Access Level:** Authenticated (Couple + Inviting guests)  
+**Purpose:** Hierarchical guest invitation and management  
+**Priority:** HIGH - Required for MVP  
+
+---
+
+## 🎯 PAGE GOAL
+
+Manage wedding guest list with hierarchical invitations.
+
+---
+
+## 📐 LAYOUT
+
+```
+┌───────────────────────────────────────────────┐
+│  Guest Management            [+ Invite Guest] │
+├───────────────────────────────────────────────┤
+│                                               │
+│  Summary:                                     │
+│  Total: 187/500  |  Groom: 95  |  Bride: 92  │
+│  Confirmed: 165  |  Pending: 22               │
+│                                               │
+├───────────────────────────────────────────────┤
+│                                               │
+│  Tabs: [All] [Groom Side] [Bride Side]       │
+│  Filters: Role ▼  Status ▼  Search...        │
+│                                               │
+│  Guest List:                                  │
+│  ┌─────────────────────────────────────────┐ │
+│  │ 👤 Farook Ahmed (Father - Groom)       │ │
+│  │    ✓ Confirmed | Can invite others     │ │
+│  │    Invited: 45 people                   │ │
+│  │    [View Details] [Send Reminder]      │ │
+│  └─────────────────────────────────────────┘ │
+│                                               │
+│  [More guests...]                             │
+│                                               │
+└───────────────────────────────────────────────┘
+```
+
+---
+
+*Full spec continues with invite modal, permissions, family tree...*
+
+**Status:** Ready for implementation  
+**Est. Time:** 16 hours
+

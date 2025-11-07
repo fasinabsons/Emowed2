@@ -1,0 +1,1359 @@
+# EMOWED - COMPLETE TASKS & READING GUIDE
+
+## 🎯 HOW TO USE THIS FILE
+
+This file provides a **sequential, step-by-step guide** for reading documentation and implementing Emowed.
+
+**Format:**
+- Each task has: Reading → Understanding → Implementation
+- Exact file paths and line numbers provided
+- Estimated time for each task
+- Clear completion checkboxes
+
+**Color Code:**
+- 🟢 Foundation (Read first)
+- 🔵 Backend (Database & APIs)
+- 🟡 Frontend (UI & Components)
+- 🟣 Integration (Connect everything)
+- 🔴 Launch (Testing & Deploy)
+
+---
+
+## 📖 PHASE 0: FOUNDATION (Day 1-2)
+
+### TASK 0.1: Project Overview (30 minutes)
+**Goal:** Understand what Emowed is and why it exists
+
+**Read:**
+- [ ] `README.txt` - Lines 1-150 (complete file)
+  - What: Emowed overview
+  - Why: Problem & solution
+  - How: Key features
+
+**Understand:**
+- What is Emowed? (Full-lifecycle relationship platform)
+- Who is it for? (Indian couples, singles, families)
+- What makes it unique? (Family integration, post-marriage support)
+
+**Action:**
+- [ ] Write down in your own words: "Emowed is..."
+- [ ] List the 5 core features that differentiate us
+
+**Time:** 30 minutes
+
+---
+
+### TASK 0.2: Business Model (1 hour)
+**Goal:** Understand monetization and revenue strategy
+
+**Read:**
+- [ ] `Prd.txt` - Lines 1-200
+  - Target market
+  - User personas
+  - Value propositions
+  
+- [ ] `Prd.txt` - Lines 350-550
+  - Freemium model
+  - Pricing tiers
+  - Revenue projections
+
+**Understand:**
+- Free vs Paid features
+- Why users will upgrade
+- Revenue per wedding: ₹84,999
+- Year 1 target: ₹8.5 Crore
+
+**Action:**
+- [ ] Draw the freemium conversion funnel
+- [ ] List all revenue streams
+
+**Time:** 1 hour
+
+---
+
+### TASK 0.3: User Journey Overview (1.5 hours)
+**Goal:** Understand complete user lifecycle
+
+**Read:**
+- [ ] `completeflow.txt` - Lines 1-100 (Executive summary)
+- [ ] `completeflow.txt` - Lines 88-423 (Complete lifecycle)
+  - Single → Dating → Engaged → Married → Post-Marriage
+  - Read the ASCII flow diagram carefully
+
+**Understand:**
+- 10 lifecycle stages
+- Critical conversion points
+- Family hierarchy system
+- Vendor trust system
+
+**Action:**
+- [ ] Draw your own user journey diagram
+- [ ] Identify 3 key monetization hooks
+
+**Time:** 1.5 hours
+
+---
+
+### TASK 0.4: Development Roadmap (2 hours) ⭐ CRITICAL
+**Goal:** Understand 12-week implementation plan
+
+**Read:**
+- [ ] `IMPLEMENTATION_GUIDE.txt` - Lines 1-150 (Quick start)
+- [ ] `IMPLEMENTATION_GUIDE.txt` - Lines 152-450 (Week-by-week plan)
+  - Week 1-12 detailed breakdown
+- [ ] `IMPLEMENTATION_GUIDE.txt` - Lines 452-600 (Budget & setup)
+
+**Understand:**
+- Week 1: Auth & Dashboard
+- Week 2: Partner Invitation
+- Week 3-4: Wedding Creation
+- Week 5-8: Guest & RSVP
+- Week 9-12: Polish & Launch
+- Budget: ₹5K (DIY) vs ₹3L (Hire) vs ₹5-8L (Agency)
+
+**Action:**
+- [ ] Choose your budget option (A, B, or C)
+- [ ] Mark Week 1 start date on calendar
+- [ ] Set up project management tool (Trello/Notion)
+
+**Time:** 2 hours
+
+---
+
+## 🔵 PHASE 1: BACKEND SETUP (Day 3-4)
+
+### TASK 1.1: Technology Stack (1 hour)
+**Goal:** Understand tech choices and why
+
+**Read:**
+- [ ] `architecture.txt` - Lines 1-100
+  - Tech stack overview
+  - Frontend: React + TypeScript + Tailwind
+  - Backend: Supabase (PostgreSQL + Auth + RLS)
+  - Media: Cloudinary
+  - Payments: Razorpay
+
+**Understand:**
+- Why Supabase? (Built-in auth, real-time, scalable)
+- Why React? (Component reuse, large ecosystem)
+- Why Tailwind? (Rapid UI development, consistency)
+
+**Action:**
+- [ ] Install Node.js (v18+)
+- [ ] Install VS Code
+- [ ] Install Git
+
+**Time:** 1 hour
+
+---
+
+### TASK 1.2: Database Schema Overview (2 hours)
+**Goal:** Understand database architecture
+
+**Read:**
+- [ ] `architecture.txt` - Lines 150-400 (Table overview)
+  - 45+ tables explained
+  - Relationships between tables
+  - Key indexes
+
+**Key Tables to Focus On:**
+- [ ] `users` table (Lines 250-280)
+- [ ] `partner_invitations` table (Lines 285-320)
+- [ ] `couples` table (Lines 325-350)
+- [ ] `weddings` table (Lines 355-385)
+- [ ] `guests` table (Lines 580-620)
+- [ ] `rsvps` table (Lines 625-655)
+
+**Understand:**
+- How users become couples
+- How invitations work
+- How weddings are structured
+- How guests are managed
+
+**Action:**
+- [ ] Draw ER diagram for these 6 core tables
+- [ ] Understand foreign key relationships
+
+**Time:** 2 hours
+
+---
+
+### TASK 1.3: Supabase Setup (2 hours)
+**Goal:** Set up backend infrastructure
+
+**Read:**
+- [ ] `IMPLEMENTATION_GUIDE.txt` - Lines 600-750 (Backend setup)
+- [ ] `architecture.txt` - Lines 100-150 (Supabase config)
+
+**Steps:**
+1. [ ] Go to supabase.com
+2. [ ] Create account (free)
+3. [ ] Create new project
+   - Name: Emowed
+   - Password: [create strong password]
+   - Region: ap-south-1 (Mumbai, India)
+4. [ ] Wait 2-3 minutes for provisioning
+5. [ ] Copy project URL and API keys
+
+**Action:**
+- [ ] Save credentials in password manager
+- [ ] Test connection with provided code snippet
+
+**Time:** 2 hours (including account setup)
+
+---
+
+### TASK 1.4: Database Migration (2 hours)
+**Goal:** Create all database tables
+
+**Read:**
+- [ ] `architecture.txt` - Lines 400-1200 (Complete SQL schema)
+  - All CREATE TABLE statements
+  - All indexes
+  - All triggers and functions
+
+**Steps:**
+1. [ ] Open Supabase Dashboard → SQL Editor
+2. [ ] Copy SQL from architecture.txt (Lines 400-650) - Phase 1 tables
+3. [ ] Run migration - Check for errors
+4. [ ] Copy SQL from architecture.txt (Lines 650-900) - Phase 2 tables
+5. [ ] Run migration - Check for errors
+6. [ ] Verify in Table Editor - Count tables (should see 15+ tables)
+
+**Verify:**
+- [ ] Users table exists with correct columns
+- [ ] Partner_invitations table exists
+- [ ] Couples table exists
+- [ ] Weddings table exists
+- [ ] All indexes created successfully
+
+**Time:** 2 hours
+
+---
+
+### TASK 1.5: Row Level Security (RLS) (1.5 hours)
+**Goal:** Set up security policies
+
+**Read:**
+- [ ] `architecture.txt` - Lines 1200-1400 (RLS policies)
+  - What is RLS?
+  - Why it matters
+  - Policy examples
+
+**Key Policies:**
+- [ ] Users can read their own profile
+- [ ] Users can create partner invitations
+- [ ] Only receiver can accept invitation
+- [ ] Couples can create weddings
+- [ ] Couples can view their wedding data
+
+**Action:**
+1. [ ] Copy RLS SQL from architecture.txt
+2. [ ] Run in Supabase SQL Editor
+3. [ ] Test with Supabase Auth UI
+
+**Time:** 1.5 hours
+
+---
+
+## 🟡 PHASE 2: FRONTEND SETUP (Day 5)
+
+### TASK 2.1: Design System Study (2 hours)
+**Goal:** Understand design language
+
+**Read:**
+- [ ] `theme.txt` - Lines 1-200 (Overview & Colors)
+  - Primary color: #FF6B9D (pink/rose)
+  - Secondary colors
+  - Color usage rules
+
+- [ ] `theme.txt` - Lines 200-400 (Typography)
+  - Font family: Inter
+  - Font sizes (text-sm to text-6xl)
+  - Font weights (400, 500, 600, 700)
+  - Line heights
+
+- [ ] `theme.txt` - Lines 400-600 (Spacing & Layout)
+  - 8px base unit
+  - Spacing scale (space-1 to space-32)
+  - Container widths
+  - Grid system
+
+**Understand:**
+- Why pink/rose? (Romantic, wedding theme)
+- Why Inter font? (Modern, readable, free)
+- Why 8px base? (Consistent spacing, easy math)
+
+**Action:**
+- [ ] Create a cheat sheet with common values
+- [ ] Bookmark theme.txt for reference
+
+**Time:** 2 hours
+
+---
+
+### TASK 2.2: Component Library Study (2 hours)
+**Goal:** Understand reusable components
+
+**Read:**
+- [ ] `theme.txt` - Lines 600-900 (Buttons)
+  - 6 button variants
+  - Button sizes
+  - Button states (hover, active, disabled)
+
+- [ ] `theme.txt` - Lines 900-1100 (Forms)
+  - Input fields
+  - Textareas
+  - Select dropdowns
+  - Checkboxes & radios
+  - Validation states
+
+- [ ] `theme.txt` - Lines 1100-1400 (Cards, Modals, etc.)
+  - Card components
+  - Modal dialogs
+  - Badges
+  - Avatars
+  - Progress bars
+
+**Understand:**
+- These are building blocks - don't recreate!
+- Use consistent variants across app
+- Follow hover/active states exactly
+
+**Action:**
+- [ ] List all component variants
+- [ ] Note which props each component accepts
+
+**Time:** 2 hours
+
+---
+
+### TASK 2.3: Project Setup (2 hours)
+**Goal:** Create React project with dependencies
+
+**Read:**
+- [ ] `IMPLEMENTATION_GUIDE.txt` - Lines 750-900 (Frontend setup)
+
+**Option A: Using Lovable.dev (Recommended)**
+1. [ ] Go to lovable.dev
+2. [ ] Sign up for Pro ($20/month)
+3. [ ] Create new project: "Emowed"
+4. [ ] Connect to GitHub
+5. [ ] Start with provided prompts
+
+**Option B: Local React**
+```bash
+# Terminal commands:
+1. [ ] npx create-react-app emowed --template typescript
+2. [ ] cd emowed
+3. [ ] npm install @supabase/supabase-js
+4. [ ] npm install @tanstack/react-query
+5. [ ] npm install react-router-dom
+6. [ ] npm install tailwindcss
+7. [ ] npm install react-hot-toast
+8. [ ] npm install zod react-hook-form
+9. [ ] npx tailwindcss init
+```
+
+**Action:**
+- [ ] Choose Option A or B
+- [ ] Complete setup
+- [ ] Verify project runs: `npm start`
+
+**Time:** 2 hours
+
+---
+
+### TASK 2.4: Environment Configuration (30 minutes)
+**Goal:** Configure API keys and environment
+
+**Read:**
+- [ ] `IMPLEMENTATION_GUIDE.txt` - Lines 900-1000
+
+**Steps:**
+1. [ ] Create `.env.local` file
+2. [ ] Add Supabase URL (from Supabase dashboard)
+3. [ ] Add Supabase Anon Key (from Supabase dashboard)
+4. [ ] Add other keys (placeholder for now)
+
+**File content:**
+```
+NEXT_PUBLIC_SUPABASE_URL=your_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key_here
+```
+
+**Action:**
+- [ ] Test connection with simple Supabase query
+- [ ] Verify .env is in .gitignore
+
+**Time:** 30 minutes
+
+---
+
+## 🟢 WEEK 1: HOMEPAGE & AUTH (Day 6-12)
+
+### TASK 3.1: Homepage Study (2 hours)
+**Goal:** Understand homepage requirements
+
+**Read:**
+- [ ] `pages/01_homepage.txt` - Lines 1-200 (Overview & Layout)
+  - Header/Navigation
+  - Hero section
+  - Features section
+
+- [ ] `pages/01_homepage.txt` - Lines 200-500 (Components)
+  - Hero component specification
+  - Feature cards
+  - CTA buttons
+
+- [ ] `pages/01_homepage.txt` - Lines 500-800 (SEO & Analytics)
+  - Meta tags
+  - Open Graph
+  - Analytics events
+
+**Understand:**
+- Homepage goals: Convert visitors → Signups
+- 3 main sections: Hero, Features, CTA
+- Mobile-first design
+- Fast loading (< 2s)
+
+**Action:**
+- [ ] Sketch homepage layout on paper
+- [ ] Identify which theme.txt components to use
+
+**Time:** 2 hours
+
+---
+
+### TASK 3.2: Homepage Implementation (8 hours)
+**Goal:** Build functional homepage
+
+**Reference Files:**
+- `pages/01_homepage.txt` - Complete specification
+- `theme.txt` - Lines 600-1400 (Components)
+
+**Steps:**
+
+1. [ ] **Header Component (1 hour)**
+   - Logo (left)
+   - Navigation links (center)
+   - Login + Signup buttons (right)
+   - Reference: `theme.txt` Lines 1200-1250
+
+2. [ ] **Hero Section (2 hours)**
+   - Large heading: "From First Swipe to Forever"
+   - Subheading with value prop
+   - Primary CTA button
+   - Hero image/illustration
+   - Reference: `pages/01_homepage.txt` Lines 200-350
+
+3. [ ] **Features Section (3 hours)**
+   - 6 feature cards
+   - Icons for each feature
+   - Short descriptions
+   - Reference: `pages/01_homepage.txt` Lines 350-550
+
+4. [ ] **Footer (1 hour)**
+   - Links (About, Privacy, Terms)
+   - Social media icons
+   - Copyright
+   - Reference: `theme.txt` Lines 1350-1400
+
+5. [ ] **Mobile Responsive (1 hour)**
+   - Test on mobile viewport
+   - Adjust spacing
+   - Hamburger menu
+
+**Test:**
+- [ ] Run `npm start`
+- [ ] Visit http://localhost:3000
+- [ ] Check mobile view (Chrome DevTools)
+
+**Time:** 8 hours
+
+---
+
+### TASK 3.3: Signup Page Study (1 hour)
+**Goal:** Understand signup requirements
+
+**Read:**
+- [ ] `pages/02_signup_login.txt` - Lines 1-300 (Signup spec)
+  - Form fields required
+  - Validation rules
+  - Error handling
+
+**Key Fields:**
+- [ ] Email (validated, unique)
+- [ ] Password (8+ chars, 1 uppercase, 1 number, 1 special)
+- [ ] Confirm Password (must match)
+- [ ] Full Name (min 2 words)
+- [ ] Phone (optional, Indian format)
+- [ ] Age (18+)
+- [ ] Relationship Status (default: Single)
+
+**Validation Rules:**
+- Email regex: `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`
+- Password regex: `/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/`
+- Age check: `>= 18`
+
+**Action:**
+- [ ] List all validation rules
+- [ ] Plan error message wording
+
+**Time:** 1 hour
+
+---
+
+### TASK 3.4: Signup Implementation (6 hours)
+**Goal:** Build working signup with Supabase
+
+**Reference Files:**
+- `pages/02_signup_login.txt` - Lines 1-600
+- `phase1.txt` - Lines 1100-1400 (Auth code examples)
+- `theme.txt` - Lines 900-1100 (Form components)
+
+**Steps:**
+
+1. [ ] **Form UI (2 hours)**
+   - Create SignupForm component
+   - Add all input fields
+   - Apply theme.txt styling
+   - Reference: `theme.txt` Lines 900-1000
+
+2. [ ] **Validation (1.5 hours)**
+   - Install Zod: `npm install zod`
+   - Create validation schema
+   - Add inline error messages
+   - Reference: `pages/02_signup_login.txt` Lines 400-500
+
+3. [ ] **Supabase Integration (2 hours)**
+   - `supabase.auth.signUp()` for auth
+   - Insert into users table
+   - Handle errors (email exists, weak password)
+   - Reference: `phase1.txt` Lines 1200-1300
+
+4. [ ] **Success Flow (30 min)**
+   - Show success toast
+   - Redirect to email verification page
+   - Reference: `pages/02_signup_login.txt` Lines 550-600
+
+**Code Reference:**
+```typescript
+// See phase1.txt Lines 1150-1250 for complete code
+const handleSubmit = async (data) => {
+  const { data: authData, error } = await supabase.auth.signUp({
+    email: data.email,
+    password: data.password
+  });
+  
+  if (!error) {
+    await supabase.from('users').insert({
+      id: authData.user.id,
+      email: data.email,
+      full_name: data.fullName,
+      age: data.age,
+      relationship_status: data.relationshipStatus
+    });
+  }
+};
+```
+
+**Test:**
+- [ ] Fill form with valid data → Success
+- [ ] Fill with invalid email → Error shown
+- [ ] Fill with weak password → Error shown
+- [ ] Fill with age < 18 → Error shown
+- [ ] Submit with duplicate email → Error shown
+- [ ] Check Supabase Dashboard → User created
+- [ ] Check email → Verification email received
+
+**Time:** 6 hours
+
+---
+
+### TASK 3.5: Login Implementation (3 hours)
+**Goal:** Build login page with authentication
+
+**Read:**
+- [ ] `pages/02_signup_login.txt` - Lines 600-900 (Login spec)
+
+**Steps:**
+
+1. [ ] **Login Form (1 hour)**
+   - Email field
+   - Password field
+   - "Remember me" checkbox
+   - "Forgot password?" link
+   - Submit button
+
+2. [ ] **Authentication (1.5 hours)**
+   - `supabase.auth.signInWithPassword()`
+   - Handle errors (wrong password, user not found)
+   - Store session
+   - Reference: `phase1.txt` Lines 1300-1400
+
+3. [ ] **Redirect Logic (30 min)**
+   - On success: Check relationship_status
+   - If 'single': → `/dashboard` (single view)
+   - If 'engaged': → `/dashboard` (engaged view)
+   - If 'married': → `/post-marriage` (married view)
+
+**Test:**
+- [ ] Login with created user → Success
+- [ ] Login with wrong password → Error
+- [ ] Login with non-existent email → Error
+- [ ] Check localStorage → Session saved
+- [ ] Verify redirect to correct dashboard
+
+**Time:** 3 hours
+
+---
+
+### TASK 3.6: Protected Routes (2 hours)
+**Goal:** Implement authentication guards
+
+**Read:**
+- [ ] `phase1.txt` - Lines 1400-1500 (Protected routes)
+
+**Steps:**
+1. [ ] Create ProtectedRoute component
+2. [ ] Check if user is authenticated
+3. [ ] If not: Redirect to /login
+4. [ ] If yes: Show requested page
+
+**Code:**
+```typescript
+// See phase1.txt Lines 1450-1500
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) return <LoadingSpinner />;
+  if (!user) return <Navigate to="/login" />;
+  
+  return children;
+};
+```
+
+**Apply to:**
+- [ ] /dashboard
+- [ ] /profile
+- [ ] /wedding/*
+
+**Time:** 2 hours
+
+---
+
+## 🟢 WEEK 2: DASHBOARDS (Day 13-19)
+
+### TASK 4.1: Single Dashboard Study (2 hours)
+**Goal:** Understand single user dashboard
+
+**Read:**
+- [ ] `pages/03_dashboard_single.txt` - Lines 1-200 (Layout)
+- [ ] `pages/03_dashboard_single.txt` - Lines 200-500 (Components)
+  - Profile card
+  - Partner invitation card
+  - Matchmaking preview (locked)
+  - Wedding invitations
+  - Activity feed
+
+**Key Features:**
+- Profile completion tracker
+- Partner invitation with code generation
+- Wedding invitations from others
+- Real-time updates
+
+**Understand:**
+- Goal: Get user to invite partner
+- Primary CTA: "Generate Invitation Code"
+- Secondary: "Have a code?" (to accept)
+
+**Action:**
+- [ ] Sketch dashboard layout
+- [ ] List all components needed
+
+**Time:** 2 hours
+
+---
+
+### TASK 4.2: Single Dashboard Implementation (10 hours)
+**Goal:** Build functional single user dashboard
+
+**Reference:**
+- `pages/03_dashboard_single.txt` - Complete file
+- `theme.txt` - Component library
+
+**Steps:**
+
+1. [ ] **Profile Card (2 hours)**
+   - Avatar with upload
+   - User info (name, age, city)
+   - Profile completion percentage
+   - Edit button
+   - Reference: Lines 100-250
+
+2. [ ] **Partner Invitation Card (4 hours)**
+   - Email input field
+   - "Generate Code" button
+   - Code generation logic (see below)
+   - Share buttons (WhatsApp, Email, Copy)
+   - 48-hour expiry countdown
+   - Reference: Lines 250-550
+
+   **Code Generation Logic:**
+   ```typescript
+   // See architecture.txt Lines 1000-1050
+   const generateCode = async () => {
+     // 1. Check if user can invite (not in cooldown)
+     // 2. Check 3-rejection limit
+     // 3. Generate 6-char code (A-Z, 0-9)
+     // 4. Set expiry: NOW() + 48 hours
+     // 5. Insert into partner_invitations table
+     // 6. Return code
+   };
+   ```
+
+3. [ ] **Matchmaking Preview (2 hours)**
+   - Blurred profile cards
+   - "🔒 Premium Only" overlay
+   - "Upgrade to unlock" CTA
+   - Reference: Lines 550-700
+
+4. [ ] **Wedding Invitations (1 hour)**
+   - List of weddings user is invited to
+   - RSVP button for each
+   - Event details
+   - Reference: Lines 700-850
+
+5. [ ] **Activity Feed (1 hour)**
+   - Recent updates
+   - System notifications
+   - Reference: Lines 850-950
+
+**Test:**
+- [ ] Login as single user
+- [ ] See profile completion tracker
+- [ ] Click "Generate Code" → Code appears
+- [ ] Copy code → Success toast
+- [ ] Share via WhatsApp → Opens WhatsApp
+- [ ] Verify code in database
+
+**Time:** 10 hours
+
+---
+
+### TASK 4.3: Partner Invitation Backend (4 hours)
+**Goal:** Implement complete invitation flow
+
+**Read:**
+- [ ] `phase1.txt` - Lines 1500-1700 (Invitation logic)
+- [ ] `completeflow.txt` - Lines 100-300 (Invitation flow)
+
+**Steps:**
+
+1. [ ] **Generate Code Function (2 hours)**
+   ```typescript
+   // Reference: phase1.txt Lines 1520-1600
+   async function generateInvitationCode(senderId, receiverEmail) {
+     // 1. Validate: Check cooldown
+     // 2. Validate: Check can_invite flag
+     // 3. Validate: Check receiver status
+     // 4. Generate: 6-char random code
+     // 5. Insert: partner_invitations table
+     // 6. Send: Email notification
+     // 7. Return: Code + expiry
+   }
+   ```
+
+2. [ ] **Accept Code Function (2 hours)**
+   ```typescript
+   // Reference: phase1.txt Lines 1600-1700
+   async function acceptInvitation(code, receiverId) {
+     // 1. Validate: Code exists & not expired
+     // 2. Validate: Receiver email matches
+     // 3. Update: Invitation status = 'accepted'
+     // 4. Create: Couple record
+     // 5. Update: Both users status = 'engaged'
+     // 6. Notify: Sender (acceptance)
+   }
+   ```
+
+**Database Operations:**
+- [ ] INSERT into partner_invitations
+- [ ] UPDATE invitation status
+- [ ] INSERT into couples
+- [ ] UPDATE users relationship_status
+
+**Test:**
+- [ ] User A generates code
+- [ ] Check database: Invitation exists
+- [ ] User B accepts code
+- [ ] Check database: Couple created
+- [ ] Check database: Both users = 'engaged'
+- [ ] User A receives notification
+
+**Time:** 4 hours
+
+---
+
+### TASK 4.4: Engaged Dashboard Study (2 hours)
+**Goal:** Understand engaged couple dashboard
+
+**Read:**
+- [ ] `pages/04_dashboard_engaged.txt` - Lines 1-200 (Overview)
+- [ ] `pages/04_dashboard_engaged.txt` - Lines 200-600 (Components)
+  - Couple header (both names + avatars)
+  - Quick stats (guests, vendors, RSVPs)
+  - Wedding progress tracker
+  - "Create Wedding" CTA
+  - Quick action cards
+
+**Key Differences from Single:**
+- Shows both partner names/avatars
+- Shows wedding planning progress
+- Primary CTA: "Create Wedding"
+- Shows guest/vendor stats (if wedding exists)
+
+**Understand:**
+- Goal: Get couple to create wedding
+- Two states: Before wedding / After wedding
+- Real-time updates from partner's actions
+
+**Action:**
+- [ ] Sketch engaged dashboard
+- [ ] Note conditional rendering logic
+
+**Time:** 2 hours
+
+---
+
+### TASK 4.5: Engaged Dashboard Implementation (8 hours)
+**Goal:** Build engaged couple dashboard
+
+**Reference:**
+- `pages/04_dashboard_engaged.txt` - Complete file
+
+**Steps:**
+
+1. [ ] **Couple Header (2 hours)**
+   - Both avatars
+   - Couple names
+   - Engaged date
+   - Days until wedding (if set)
+   - Reference: Lines 100-200
+
+2. [ ] **Create Wedding CTA (If No Wedding) (2 hours)**
+   - Large card with illustration
+   - "Create Our Wedding" button
+   - Feature list
+   - Reference: Lines 300-450
+
+3. [ ] **Wedding Overview (If Wedding Exists) (2 hours)**
+   - Wedding name
+   - Date, venue, city
+   - Budget, guest limit
+   - Mode (combined/separate)
+   - Quick stats
+   - Reference: Lines 450-600
+
+4. [ ] **Quick Action Cards (2 hours)**
+   - Events card (7 events)
+   - Guests card (87/500)
+   - Vendors card (3/8)
+   - Gifts card (0 received)
+   - Reference: Lines 600-750
+
+**Conditional Logic:**
+```typescript
+// Show different content based on couple.wedding_id
+if (!wedding) {
+  return <CreateWeddingCTA />;
+} else {
+  return <WeddingOverview wedding={wedding} />;
+}
+```
+
+**Test:**
+- [ ] Login as engaged user (no wedding)
+- [ ] See "Create Wedding" CTA
+- [ ] Create wedding (next task)
+- [ ] Refresh page
+- [ ] See wedding overview instead
+
+**Time:** 8 hours
+
+---
+
+## 🟢 WEEK 3: WEDDING CREATION (Day 20-26)
+
+### TASK 5.1: Wedding Creation Study (3 hours)
+**Goal:** Understand wedding creation requirements
+
+**Read:**
+- [ ] `phase1.txt` - Lines 450-750 (Wedding creation spec)
+- [ ] `architecture.txt` - Lines 355-385 (Weddings table)
+
+**Wedding Form Fields:**
+- [ ] Wedding Name (required)
+- [ ] Wedding Date (required, future date)
+- [ ] Venue (required)
+- [ ] City (required)
+- [ ] Mode: Combined vs Separate (radio)
+- [ ] Budget Limit (optional, number)
+- [ ] Guest Limit (optional, default 500)
+
+**Validation:**
+- Date must be future
+- Venue and city required
+- Mode default: Combined
+- Show warning if Separate mode selected
+
+**Understand:**
+- Wedding creation = unlocks all other features
+- Combined mode = saves 50% (shared vendors)
+- Separate mode = 2x vendors, 2x cost
+- Guest limit can be voted on by family
+
+**Action:**
+- [ ] List all form fields
+- [ ] Note validation rules
+- [ ] Plan multi-step form flow
+
+**Time:** 3 hours
+
+---
+
+### TASK 5.2: Wedding Creation Implementation (12 hours)
+**Goal:** Build complete wedding creation wizard
+
+**Reference:**
+- `phase1.txt` - Lines 450-750
+
+**Multi-Step Form (3 steps):**
+
+**Step 1: Basic Details (4 hours)**
+- [ ] Wedding Name input
+- [ ] Date picker (future dates only)
+- [ ] Venue input
+- [ ] City dropdown/input
+- [ ] "Next" button
+
+**Step 2: Mode Selection (4 hours)**
+- [ ] Combined radio button (recommended)
+  - Show benefits: "Save 50%", "Shared vendors"
+- [ ] Separate radio button
+  - Show warning modal if selected
+  - Reference: `phase1.txt` Lines 540-570
+- [ ] Guest Limit input (optional)
+- [ ] Budget input (optional)
+- [ ] "Previous" and "Next" buttons
+
+**Step 3: Review & Confirm (2 hours)**
+- [ ] Show all entered data
+- [ ] Edit buttons for each field
+- [ ] Terms checkbox
+- [ ] "Create Wedding" button
+
+**Backend Integration (2 hours):**
+```typescript
+// Reference: phase1.txt Lines 1630-1690
+const createWedding = async (weddingData) => {
+  // 1. Verify couple exists & is engaged
+  // 2. Validate all fields
+  // 3. Check wedding doesn't already exist
+  // 4. INSERT into weddings table
+  // 5. Generate event timeline (7 events)
+  // 6. Notify both partners
+  // 7. Update couple record
+};
+```
+
+**Test:**
+- [ ] Fill Step 1 → Click Next → Goes to Step 2
+- [ ] Select Separate mode → Warning appears
+- [ ] Fill Step 2 → Click Next → Goes to Step 3
+- [ ] Review data → Click Create → Success
+- [ ] Check database → Wedding created
+- [ ] Check events table → 7 events auto-generated
+- [ ] Refresh dashboard → Wedding overview shows
+
+**Time:** 12 hours
+
+---
+
+### TASK 5.3: Event Timeline Generation (4 hours)
+**Goal:** Auto-generate wedding events
+
+**Read:**
+- [ ] `phase2.txt` - Lines 172-200 (Timeline generation)
+- [ ] `architecture.txt` - Lines 16-35 (Events table)
+
+**Auto-Generated Events:**
+1. Engagement Ceremony (Wedding Date - 60 days)
+2. Save The Date (Wedding Date - 30 days)
+3. Haldi Ceremony (Wedding Date - 2 days)
+4. Mehendi Ceremony (Wedding Date - 1 day)
+5. Sangeet Night (Wedding Date - 1 day, evening)
+6. Wedding Ceremony (Wedding Date)
+7. Reception (Wedding Date, evening)
+
+**Implementation:**
+```sql
+-- See architecture.txt Lines 172-199
+CREATE FUNCTION generate_event_timeline(
+  p_wedding_id UUID,
+  p_wedding_date DATE
+)
+-- Generates 7 events with calculated dates
+```
+
+**Steps:**
+1. [ ] Create SQL function in Supabase
+2. [ ] Call function after wedding creation
+3. [ ] Insert events into events table
+4. [ ] Set auto_generated = true flag
+
+**Test:**
+- [ ] Create wedding with date Dec 15, 2025
+- [ ] Check events table
+- [ ] Should see 7 events:
+  - Engagement: Oct 16, 2025
+  - Save Date: Nov 15, 2025
+  - Haldi: Dec 13, 2025
+  - Mehendi: Dec 14, 2025
+  - Sangeet: Dec 14, 2025
+  - Wedding: Dec 15, 2025
+  - Reception: Dec 15, 2025
+
+**Time:** 4 hours
+
+---
+
+## 📊 PROGRESS CHECKPOINT
+
+**At this point, you have:**
+✅ Complete database setup
+✅ Authentication working
+✅ Homepage live
+✅ Single user dashboard
+✅ Partner invitation system
+✅ Engaged couple dashboard
+✅ Wedding creation wizard
+✅ Event timeline generation
+
+**Total time:** ~26 days (3-4 weeks at 8 hours/day)
+
+**Next steps:** Guest management, RSVP system, Vendors (Weeks 4-12)
+
+---
+
+## 🟢 WEEK 4-6: GUEST MANAGEMENT (Continuing...)
+
+### TASK 6.1: Guest System Study (4 hours)
+**Goal:** Understand hierarchical guest invitations
+
+**Read:**
+- [ ] `phase2.txt` - Lines 1-100 (Overview)
+- [ ] `phase2.txt` - Lines 314-450 (Guest hierarchy)
+- [ ] `completeflow.txt` - Lines 430-510 (Family tree structure)
+
+**Key Concepts:**
+- Hierarchical invitations (Couple → Parents → Uncles → Cousins)
+- Role-based permissions
+- Under-18 handling (+guests, no accounts)
+- Invite limits by role
+
+**Hierarchy:**
+```
+Groom/Bride (unlimited invites)
+├── Parents (unlimited invites)
+│   ├── Uncles/Aunts (immediate family only)
+│   │   └── Cousins (cannot invite)
+│   ├── Friends (cannot invite)
+│   └── Colleagues (cannot invite)
+├── Siblings (unlimited invites)
+│   ├── Their spouse
+│   ├── Their kids
+│   └── Their friends (cannot invite)
+└── Groom/Bride direct (friends, colleagues)
+```
+
+**Understand:**
+- Why hierarchy? (Mirrors real Indian weddings, prevents spam)
+- Role permissions matter (parents ≠ cousins)
+- Kids added as +guests (no separate accounts)
+
+**Action:**
+- [ ] Draw the family hierarchy diagram
+- [ ] List permissions for each role
+
+**Time:** 4 hours
+
+---
+
+### TASK 6.2: Guest Invitation Implementation (16 hours)
+
+**Reference:**
+- `phase2.txt` - Lines 450-600 (Guest invitation)
+
+**Steps:**
+
+1. [ ] **Guest Invite UI (4 hours)**
+   - Modal/form to invite guest
+   - Fields: Email, Name, Role, Side
+   - Role dropdown (Parent, Sibling, Uncle, etc.)
+   - Side radio (Groom/Bride)
+   - Permissions checkbox (Can invite others?)
+   - Reference: `phase2.txt` Lines 400-470
+
+2. [ ] **Invite Validation (3 hours)**
+   ```typescript
+   // Check permissions before allowing invite
+   function canInviteRole(inviterRole, inviteeRole) {
+     if (inviterRole === 'groom' || inviterRole === 'bride') return true;
+     if (inviterRole === 'parent') return true;
+     if (inviterRole === 'sibling') return true;
+     if (inviterRole === 'uncle' && inviteeRole === 'spouse') return true;
+     if (inviterRole === 'uncle' && inviteeRole === 'child') return true;
+     return false; // Friends, cousins cannot invite
+   }
+   ```
+
+3. [ ] **Database Operations (3 hours)**
+   - INSERT into guest_invitations table
+   - Send email notification
+   - Track invitation status
+   - Reference: `phase2.txt` Lines 1034-1075
+
+4. [ ] **Guest Acceptance (3 hours)**
+   - Email with accept link
+   - Guest creates account (or logs in)
+   - Accept invitation
+   - INSERT into guests table
+   - Reference: `phase2.txt` Lines 1057-1075
+
+5. [ ] **Guest List View (3 hours)**
+   - Table showing all guests
+   - Filters: Side, Role, Status
+   - Search functionality
+   - Reference: `phase2.txt` Lines 720-790
+
+**Test:**
+- [ ] Groom invites Father → Success
+- [ ] Father accepts → Creates account
+- [ ] Father invites Uncle → Success
+- [ ] Uncle accepts → Success
+- [ ] Uncle tries to invite friend → Blocked!
+- [ ] Check guests table → All guests exist
+- [ ] Check family_tree → Relationships correct
+
+**Time:** 16 hours
+
+---
+
+### TASK 6.3: RSVP System Study (3 hours)
+**Goal:** Understand RSVP requirements
+
+**Read:**
+- [ ] `phase2.txt` - Lines 488-550 (RSVP system)
+- [ ] `completeflow.txt` - Lines 488-565 (RSVP flow)
+
+**Key Features:**
+- RSVP window: Opens 7 days before event
+- RSVP deadline: 24 hours before event
+- Headcount tracking: Adults/Teens/Children
+- Dietary preferences: Vegetarian, Vegan, Halal, etc.
+- Headcount lock: Automatic 7 days before
+- Food calculation: Adults 1.0x, Teens 0.75x, Children 0.3x
+
+**Understand:**
+- Why 7-day lock? (Give vendors time to prepare)
+- Why different multipliers? (Accurate food portions)
+- Why dietary preferences? (Avoid food waste, allergies)
+
+**Action:**
+- [ ] Note RSVP timing rules
+- [ ] Calculate food example manually
+
+**Time:** 3 hours
+
+---
+
+### TASK 6.4: RSVP Implementation (12 hours)
+
+**Reference:**
+- `phase2.txt` - Lines 488-612
+
+**Steps:**
+
+1. [ ] **RSVP Form UI (4 hours)**
+   - Event selector dropdown
+   - Attendance radio (Attending/Not Attending/Maybe)
+   - Headcount inputs (Adults, Teens, Children)
+   - Dietary checkboxes
+   - Special requirements textarea
+   - Submit button
+   - Reference: `phase2.txt` Lines 510-535
+
+2. [ ] **RSVP Validation (2 hours)**
+   - Check: RSVP window open (7 days before)
+   - Check: Before deadline (24 hours before)
+   - Validate: At least 1 adult if attending
+   - Validate: Dietary preferences
+
+3. [ ] **Headcount Calculation (3 hours)**
+   ```typescript
+   // Reference: phase2.txt Lines 208-214
+   function calculateFoodHeadcount(adults, teens, children) {
+     return (adults * 1.0) + (teens * 0.75) + (children * 0.3);
+   }
+   
+   // Example:
+   // 2 adults + 1 teen + 1 child
+   // = 2.0 + 0.75 + 0.3 = 3.05 meals
+   ```
+
+4. [ ] **Real-time Headcount Dashboard (3 hours)**
+   - Show total headcount by side
+   - Show food servings calculation
+   - Show dietary breakdown
+   - Update real-time as RSVPs come in
+   - Reference: `phase2.txt` Lines 549-612
+
+**Database:**
+- [ ] INSERT into rsvps table
+- [ ] UPDATE headcount_snapshots table
+- [ ] Trigger: Recalculate totals on RSVP change
+
+**Test:**
+- [ ] Guest submits RSVP (2 adults, 1 teen)
+- [ ] Check rsvps table → Record exists
+- [ ] Check headcount dashboard → Shows 2.75 meals
+- [ ] Another guest RSVPs (1 adult, 2 children)
+- [ ] Dashboard updates → Shows 2.75 + 1.6 = 4.35 meals
+- [ ] Try RSVP 6 hours before event → Blocked (deadline passed)
+
+**Time:** 12 hours
+
+---
+
+## 🔵 REMAINING WEEKS (Summary)
+
+**WEEK 7-8: Vendor System**
+- [ ] Read `phase3.txt` completely
+- [ ] Implement vendor invitations
+- [ ] Implement quote management
+- [ ] Implement family voting system
+- [ ] Implement vendor verification (5-wedding threshold)
+**Time:** 80 hours
+
+**WEEK 9-10: Media & Program**
+- [ ] Read `phase4.txt` completely
+- [ ] Set up Cloudinary
+- [ ] Implement photo/video upload
+- [ ] Implement gallery view
+- [ ] Implement 7-day deletion for free users
+- [ ] Create wedding card designer
+**Time:** 80 hours
+
+**WEEK 11-12: Polish & Launch**
+- [ ] Payment integration (Razorpay)
+- [ ] Email notifications (Resend)
+- [ ] Performance optimization
+- [ ] Mobile responsiveness
+- [ ] Security audit
+- [ ] User testing
+- [ ] Bug fixes
+- [ ] Deploy to production
+**Time:** 80 hours
+
+---
+
+## 📋 DAILY CHECKLIST TEMPLATE
+
+**Copy this for each day:**
+
+```
+Date: __________
+Week: __________
+Focus: __________
+
+Morning (4 hours):
+- [ ] Read: ________________ (file, lines)
+- [ ] Understand: ________________
+- [ ] Code: ________________
+
+Afternoon (4 hours):
+- [ ] Code: ________________
+- [ ] Test: ________________
+- [ ] Debug: ________________
+
+End of Day:
+- [ ] Commit code to Git
+- [ ] Update tasks.txt (mark completed)
+- [ ] Plan tomorrow's tasks
+- [ ] Total hours: _____ / 8
+
+Blockers:
+- 
+- 
+
+Learnings:
+- 
+- 
+```
+
+---
+
+## 🎯 SUCCESS METRICS
+
+Track weekly:
+- [ ] Hours coded: ___ / 40
+- [ ] Tasks completed: ___ / planned
+- [ ] Tests passing: ____%
+- [ ] Bugs found: ___
+- [ ] Bugs fixed: ___
+
+After 12 weeks:
+- [ ] All core features working
+- [ ] Database fully functional
+- [ ] Frontend responsive
+- [ ] Tests passing
+- [ ] Deployed to production
+- [ ] First users onboarded
+
+---
+
+## 💡 PRODUCTIVITY TIPS
+
+1. **Follow the sequence** - Don't jump ahead
+2. **Read before coding** - Understanding > Speed
+3. **Test after every feature** - Don't accumulate bugs
+4. **Commit often** - Small commits > Big commits
+5. **Take breaks** - Pomodoro: 25 min work, 5 min break
+6. **Ask for help** - Use ChatGPT/Claude for debugging
+7. **Document as you go** - Add comments, update README
+
+---
+
+## 🚀 LET'S BUILD EMOWED!
+
+**You have:**
+✅ Complete task breakdown
+✅ Exact file references
+✅ Line-by-line reading guide
+✅ Step-by-step implementation
+✅ Testing checklist
+✅ Time estimates
+
+**Start with TASK 0.1 and work sequentially!**
+
+**From First Swipe to Forever! 💕**
+
+---
+
+*Last Updated: November 4, 2025*
+*Total Tasks: 50+ detailed tasks*
+*Total Time: 480 hours (12 weeks × 40 hours)*
+*Status: Ready to execute!*
+

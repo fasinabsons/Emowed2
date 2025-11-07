@@ -1,0 +1,786 @@
+# PAGE SPECIFICATION: HOMEPAGE
+
+## PAGE DETAILS
+- **URL:** `/` or `/home`
+- **Access:** Public (non-authenticated)
+- **Purpose:** Convert visitors into sign-ups
+- **Target Audience:** Indian millennials (25-35) looking for relationships/weddings
+- **Success Metrics:** 
+  - Bounce rate < 40%
+  - Sign-up conversion > 5%
+  - Time on page > 45 seconds
+
+---
+
+## LAYOUT STRUCTURE
+
+### Desktop Layout (1440px wide)
+```
+┌────────────────────────────────────────────────────────────┐
+│  HEADER (Fixed, Transparent → Solid on scroll)             │
+│  Logo (left) | Features | Pricing | About | Login | Signup │
+└────────────────────────────────────────────────────────────┘
+│                                                              │
+│  HERO SECTION (Full viewport height)                        │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │                                                        │  │
+│  │        "From First Swipe to Forever" ❤️               │  │
+│  │                                                        │  │
+│  │   The only platform for your entire relationship      │  │
+│  │   journey - from dating to wedding to happily         │  │
+│  │   ever after.                                          │  │
+│  │                                                        │  │
+│  │   [Start Free] [Watch Video]                          │  │
+│  │                                                        │  │
+│  │   [Animated illustration: Couple meeting → Wedding    │  │
+│  │    → Anniversary cake → Growing old together]          │  │
+│  │                                                        │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  SOCIAL PROOF BAR                                           │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ ⭐ 4.8 from 5,000+ couples | 💍 10,000+ weddings      │  │
+│  │ planned | 📸 1M+ photos shared | Featured in: TOI,    │  │
+│  │ WeddingSutra, BridalAsia                              │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  PROBLEM SECTION                                            │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  "Tired of juggling multiple apps?"                   │  │
+│  │                                                        │  │
+│  │  ❌ Shaadi.com for matchmaking                        │  │
+│  │  ❌ WedMeGood for wedding planning                    │  │
+│  │  ❌ WhatsApp for family coordination                  │  │
+│  │  ❌ Google Sheets for guest lists                     │  │
+│  │  ❌ Separate apps for photos                          │  │
+│  │                                                        │  │
+│  │  ✅ Emowed does it ALL in ONE place                  │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  FEATURES SHOWCASE (3 columns)                              │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐                 │
+│  │ 💑       │  │ 💍       │  │ ❤️       │                 │
+│  │ DATING   │  │ WEDDING  │  │ MARRIAGE │                 │
+│  │ Modern   │  │ Complete │  │ Forever  │                 │
+│  │ matching │  │ planning │  │ support  │                 │
+│  │ [Learn]  │  │ [Learn]  │  │ [Learn]  │                 │
+│  └──────────┘  └──────────┘  └──────────┘                 │
+│                                                              │
+│  HOW IT WORKS (Step-by-step)                                │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  1→ 2→ 3→ 4→ 5                                        │  │
+│  │  Sign up | Match | Engage | Plan Wedding | Forever   │  │
+│  │  [Interactive timeline with animations]               │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  TESTIMONIALS (Carousel)                                    │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  "We met on Emowed, planned our entire wedding, and  │  │
+│  │  still use it for our anniversary reminders!"         │  │
+│  │  - Rahul & Priya, Mumbai                              │  │
+│  │  [Photo] [← →]                                        │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  PRICING PREVIEW                                            │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐                 │
+│  │ FREE     │  │ PREMIUM  │  │ LIFETIME │                 │
+│  │ ₹0       │  │ ₹9,999   │  │ ₹24,999  │                 │
+│  │ [Details]│  │ [Details]│  │ [Details]│                 │
+│  └──────────┘  └──────────┘  └──────────┘                 │
+│                                                              │
+│  CTA SECTION                                                │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  "Ready to start your forever?"                       │  │
+│  │  [Start Free - It's Free Forever]                     │  │
+│  │  No credit card required | 10,000+ couples trust us   │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  FOOTER                                                     │
+│  About | Features | Pricing | Blog | Contact | Privacy |   │
+│  Terms | © 2025 Emowed                                     │
+└────────────────────────────────────────────────────────────┘
+```
+
+### Mobile Layout (375px wide)
+- Stack all sections vertically
+- Hamburger menu for navigation
+- Sticky CTA button at bottom
+- Simplified animations (performance)
+
+---
+
+## COMPONENT SPECIFICATIONS
+
+### 1. Header Component
+
+**Desktop:**
+```tsx
+<Header>
+  <Logo src="/emowed-logo.svg" />
+  <Nav>
+    <NavLink href="#features">Features</NavLink>
+    <NavLink href="#pricing">Pricing</NavLink>
+    <NavLink href="#about">About</NavLink>
+    <NavLink href="/blog">Blog</NavLink>
+  </Nav>
+  <Actions>
+    <Button variant="ghost" href="/login">Login</Button>
+    <Button variant="primary" href="/signup">Sign Up</Button>
+  </Actions>
+</Header>
+```
+
+**States:**
+- Initial: Transparent background, white text
+- Scrolled (>100px): Solid white background, colored text, shadow
+- Mobile: Always solid, hamburger menu
+
+**Styling:**
+```css
+.header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 50;
+  transition: all 0.3s ease;
+}
+
+.header.transparent {
+  background: transparent;
+  color: white;
+}
+
+.header.solid {
+  background: white;
+  color: var(--color-gray-900);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+```
+
+---
+
+### 2. Hero Section
+
+**Content:**
+```tsx
+<HeroSection>
+  <HeroContent>
+    <Badge>💍 Trusted by 10,000+ couples</Badge>
+    <Heading level={1}>
+      From First Swipe to Forever
+    </Heading>
+    <Subheading>
+      The only platform for your entire relationship journey - 
+      from dating to wedding to happily ever after.
+    </Subheading>
+    <CTAButtons>
+      <Button size="lg" variant="primary" href="/signup">
+        Start Free <ArrowRight />
+      </Button>
+      <Button size="lg" variant="secondary" onClick={openVideo}>
+        <Play /> Watch How It Works
+      </Button>
+    </CTAButtons>
+    <TrustSignals>
+      <TrustBadge>✅ No credit card required</TrustBadge>
+      <TrustBadge>⚡ Setup in 2 minutes</TrustBadge>
+      <TrustBadge>🔒 Your data is safe</TrustBadge>
+    </TrustSignals>
+  </HeroContent>
+  
+  <HeroImage>
+    <LottieAnimation src="/animations/couple-journey.json" />
+  </HeroImage>
+</HeroSection>
+```
+
+**Animation Sequence:**
+1. Couple meeting (dating phase) - 0-3s
+2. Getting engaged (ring animation) - 3-6s
+3. Wedding ceremony (confetti) - 6-9s
+4. Growing old together - 9-12s
+5. Loop back to start
+
+**Styling:**
+```css
+.hero {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  padding: var(--space-20) var(--container-padding-desktop);
+  background: linear-gradient(135deg, 
+    var(--color-primary-50) 0%, 
+    var(--color-gold-50) 100%);
+}
+
+.hero-heading {
+  font-family: var(--font-display);
+  font-size: var(--text-6xl);
+  font-weight: var(--font-bold);
+  background: linear-gradient(135deg, 
+    var(--color-primary-600) 0%, 
+    var(--color-gold-600) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: var(--space-6);
+}
+```
+
+---
+
+### 3. Social Proof Bar
+
+**Content:**
+```tsx
+<SocialProofBar>
+  <ProofItem>
+    <StarIcon /> 4.8 from 5,000+ reviews
+  </ProofItem>
+  <Divider />
+  <ProofItem>
+    <HeartIcon /> 10,000+ weddings planned
+  </ProofItem>
+  <Divider />
+  <ProofItem>
+    <CameraIcon /> 1M+ photos shared
+  </ProofItem>
+  <Divider />
+  <ProofItem>
+    Featured in: 
+    <LogoBar>
+      <img src="/logos/toi.svg" alt="Times of India" />
+      <img src="/logos/weddingsutra.svg" alt="WeddingSutra" />
+      <img src="/logos/bridal-asia.svg" alt="BridalAsia" />
+    </LogoBar>
+  </ProofItem>
+</SocialProofBar>
+```
+
+**Purpose:** Build trust immediately after hero section
+
+---
+
+### 4. Problem Section
+
+**Layout:**
+```tsx
+<ProblemSection>
+  <Heading level={2}>
+    Tired of juggling multiple apps for your wedding?
+  </Heading>
+  
+  <ProblemList>
+    <ProblemItem>
+      <CrossIcon color="red" />
+      <Text>Shaadi.com for matchmaking (stops after match)</Text>
+    </ProblemItem>
+    <ProblemItem>
+      <CrossIcon color="red" />
+      <Text>WedMeGood for vendors (no guest management)</Text>
+    </ProblemItem>
+    <ProblemItem>
+      <CrossIcon color="red" />
+      <Text>WhatsApp groups for coordination (chaotic)</Text>
+    </ProblemItem>
+    <ProblemItem>
+      <CrossIcon color="red" />
+      <Text>Google Sheets for guest lists (outdated constantly)</Text>
+    </ProblemItem>
+  </ProblemList>
+  
+  <SolutionHighlight>
+    <CheckIcon color="green" size="large" />
+    <Heading level={3}>
+      Emowed does it ALL in ONE place
+    </Heading>
+    <Text>
+      From finding your match to planning your wedding to 
+      staying connected forever - all in one beautiful app.
+    </Text>
+  </SolutionHighlight>
+</ProblemSection>
+```
+
+**Psychology:** Agitate pain points before presenting solution
+
+---
+
+### 5. Features Showcase
+
+**Three-Column Cards:**
+```tsx
+<FeaturesSection>
+  <Heading level={2}>Everything you need in one platform</Heading>
+  
+  <FeatureGrid>
+    <FeatureCard>
+      <Icon>💑</Icon>
+      <Title>Find Your Match</Title>
+      <Description>
+        Modern swipe interface with family integration. 
+        73% match success rate vs 0.5% on free apps.
+      </Description>
+      <FeatureList>
+        <Item>✓ Aadhaar verified profiles</Item>
+        <Item>✓ Parent mode for arranged marriages</Item>
+        <Item>✓ Video call built-in</Item>
+        <Item>✓ Background checks available</Item>
+      </FeatureList>
+      <Button variant="text" href="/features/matchmaking">
+        Learn More →
+      </Button>
+    </FeatureCard>
+    
+    <FeatureCard highlighted>
+      <Icon>💍</Icon>
+      <Title>Plan Your Wedding</Title>
+      <Description>
+        Complete wedding planning suite with family voting, 
+        verified vendors, and real-time coordination.
+      </Description>
+      <FeatureList>
+        <Item>✓ Hierarchical guest invitations</Item>
+        <Item>✓ RSVP with dietary preferences</Item>
+        <Item>✓ Vendor voting by family</Item>
+        <Item>✓ Real-time photo gallery</Item>
+        <Item>✓ Games & leaderboards</Item>
+      </FeatureList>
+      <Button variant="primary" href="/features/wedding">
+        Most Popular →
+      </Button>
+    </FeatureCard>
+    
+    <FeatureCard>
+      <Icon>❤️</Icon>
+      <Title>Stay Connected Forever</Title>
+      <Description>
+        Post-marriage features to keep your relationship 
+        strong through the years.
+      </Description>
+      <FeatureList>
+        <Item>✓ Couple diary & shared goals</Item>
+        <Item>✓ Date night planner</Item>
+        <Item>✓ Community forum</Item>
+        <Item>✓ Professional counseling</Item>
+      </FeatureList>
+      <Button variant="text" href="/features/post-marriage">
+        Learn More →
+      </Button>
+    </FeatureCard>
+  </FeatureGrid>
+</FeaturesSection>
+```
+
+**Styling:**
+```css
+.feature-card {
+  background: white;
+  padding: var(--space-8);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-2xl);
+}
+
+.feature-card.highlighted {
+  border: 3px solid var(--color-primary-500);
+  box-shadow: var(--shadow-primary);
+}
+```
+
+---
+
+### 6. How It Works Section
+
+**Interactive Timeline:**
+```tsx
+<HowItWorksSection>
+  <Heading level={2}>Your journey in 5 simple steps</Heading>
+  
+  <Timeline>
+    <Step number={1} active>
+      <StepIcon>📝</StepIcon>
+      <StepTitle>Sign Up</StepTitle>
+      <StepDescription>
+        Create your profile in 2 minutes. No credit card required.
+      </StepDescription>
+    </Step>
+    
+    <Step number={2}>
+      <StepIcon>💑</StepIcon>
+      <StepTitle>Find Your Match</StepTitle>
+      <StepDescription>
+        Swipe through verified profiles. Chat when you match.
+      </StepDescription>
+    </Step>
+    
+    <Step number={3}>
+      <StepIcon>💍</StepIcon>
+      <StepTitle>Get Engaged</StepTitle>
+      <StepDescription>
+        Send engagement invitation. Partner accepts. You're official!
+      </StepDescription>
+    </Step>
+    
+    <Step number={4}>
+      <StepIcon>🎊</StepIcon>
+      <StepTitle>Plan Wedding</StepTitle>
+      <StepDescription>
+        Invite family, select vendors, manage RSVPs - all in one place.
+      </StepDescription>
+    </Step>
+    
+    <Step number={5}>
+      <StepIcon>❤️</StepIcon>
+      <StepTitle>Forever Together</StepTitle>
+      <StepDescription>
+        Use couple diary, plan date nights, stay connected.
+      </StepDescription>
+    </Step>
+  </Timeline>
+  
+  <CTAButton>Start Your Journey Free</CTAButton>
+</HowItWorksSection>
+```
+
+**Interactivity:**
+- Automatically progress through steps (5s each)
+- User can click to jump to step
+- Animation shows progression
+
+---
+
+### 7. Testimonials Carousel
+
+**Layout:**
+```tsx
+<TestimonialsSection>
+  <Heading level={2}>Loved by thousands of couples</Heading>
+  
+  <Carousel autoplay interval={5000}>
+    <Testimonial>
+      <Quote>
+        "We met on Emowed, planned our entire wedding with 200 guests, 
+        and still use it daily for our couple diary. Best decision ever!"
+      </Quote>
+      <Author>
+        <Avatar src="/testimonials/rahul-priya.jpg" />
+        <Name>Rahul & Priya</Name>
+        <Location>Mumbai</Location>
+        <Rating stars={5} />
+      </Author>
+      <WeddingPhoto src="/testimonials/rahul-priya-wedding.jpg" />
+    </Testimonial>
+    
+    {/* More testimonials */}
+  </Carousel>
+  
+  <VideoTestimonials>
+    <VideoCard thumbnail="/videos/arjun-meera.jpg">
+      <PlayButton />
+      <Duration>2:15</Duration>
+    </VideoCard>
+    {/* More videos */}
+  </VideoTestimonials>
+</TestimonialsSection>
+```
+
+**Trust Signals:**
+- Real photos (not stock)
+- Full names + locations
+- Specific details (200 guests, etc.)
+- Video testimonials (highest trust)
+
+---
+
+### 8. Pricing Preview
+
+**Simplified Pricing:**
+```tsx
+<PricingSection>
+  <Heading level={2}>Simple, transparent pricing</Heading>
+  <Subheading>Start free, upgrade anytime</Subheading>
+  
+  <PricingCards>
+    <PricingCard>
+      <Tier>Free</Tier>
+      <Price>₹0</Price>
+      <Period>Forever</Period>
+      <Features>
+        <Feature>✓ Create wedding</Feature>
+        <Feature>✓ 100 guests</Feature>
+        <Feature>✓ Basic RSVP</Feature>
+        <Feature>✓ 7-day storage</Feature>
+        <Feature>✗ No vendor management</Feature>
+        <Feature>✗ No bulk download</Feature>
+      </Features>
+      <Button variant="secondary">Start Free</Button>
+    </PricingCard>
+    
+    <PricingCard highlighted badge="Most Popular">
+      <Tier>Premium</Tier>
+      <Price>₹9,999</Price>
+      <Period>per year</Period>
+      <Savings>Save ₹2,997 vs quarterly</Savings>
+      <Features>
+        <Feature>✓ Everything in Free</Feature>
+        <Feature>✓ Unlimited guests</Feature>
+        <Feature>✓ Forever storage</Feature>
+        <Feature>✓ Vendor management</Feature>
+        <Feature>✓ Family voting</Feature>
+        <Feature>✓ Bulk download</Feature>
+        <Feature>✓ Community access</Feature>
+        <Feature>✓ Post-marriage features</Feature>
+      </Features>
+      <Button variant="primary">Start Free Trial</Button>
+      <Trial>14-day free trial, cancel anytime</Trial>
+    </PricingCard>
+    
+    <PricingCard>
+      <Tier>Lifetime</Tier>
+      <Price>₹24,999</Price>
+      <Period>one-time</Period>
+      <Savings>3-year payback</Savings>
+      <Features>
+        <Feature>✓ Everything in Premium</Feature>
+        <Feature>✓ Forever access</Feature>
+        <Feature>✓ All future features</Feature>
+        <Feature>✓ Priority support</Feature>
+        <Feature>✓ VIP badge</Feature>
+      </Features>
+      <Button variant="secondary">Buy Lifetime</Button>
+    </PricingCard>
+  </PricingCards>
+  
+  <Link href="/pricing">See detailed comparison →</Link>
+</PricingSection>
+```
+
+**Psychology:**
+- Show 3 options (decoy effect)
+- Highlight middle option (target)
+- Show savings vs quarterly
+- "Most Popular" badge (social proof)
+
+---
+
+### 9. Final CTA Section
+
+**Big, Bold CTA:**
+```tsx
+<FinalCTASection>
+  <BackgroundPattern src="/patterns/confetti.svg" />
+  <Content>
+    <Heading level={2}>Ready to start your forever?</Heading>
+    <Subheading>
+      Join 10,000+ couples who planned their perfect wedding on Emowed
+    </Subheading>
+    <CTAButton size="xl">
+      Start Free - It's Free Forever
+    </CTAButton>
+    <TrustSignals>
+      <Signal>✓ No credit card required</Signal>
+      <Signal>✓ Setup in 2 minutes</Signal>
+      <Signal>✓ Cancel anytime</Signal>
+    </TrustSignals>
+  </Content>
+</FinalCTASection>
+```
+
+**Styling:**
+- Full-width
+- Gradient background
+- Animated confetti
+- Large CTA button (can't miss it)
+
+---
+
+### 10. Footer
+
+**Comprehensive Footer:**
+```tsx
+<Footer>
+  <FooterContent>
+    <Column>
+      <Logo src="/emowed-logo.svg" />
+      <Tagline>From First Swipe to Forever</Tagline>
+      <SocialLinks>
+        <IconLink href="https://instagram.com/emowed"><Instagram /></IconLink>
+        <IconLink href="https://facebook.com/emowed"><Facebook /></IconLink>
+        <IconLink href="https://twitter.com/emowed"><Twitter /></IconLink>
+      </SocialLinks>
+    </Column>
+    
+    <Column>
+      <Title>Product</Title>
+      <Link href="/features/matchmaking">Matchmaking</Link>
+      <Link href="/features/wedding">Wedding Planning</Link>
+      <Link href="/features/post-marriage">Post-Marriage</Link>
+      <Link href="/pricing">Pricing</Link>
+    </Column>
+    
+    <Column>
+      <Title>Company</Title>
+      <Link href="/about">About Us</Link>
+      <Link href="/blog">Blog</Link>
+      <Link href="/careers">Careers</Link>
+      <Link href="/contact">Contact</Link>
+    </Column>
+    
+    <Column>
+      <Title>Resources</Title>
+      <Link href="/help">Help Center</Link>
+      <Link href="/guides">Wedding Guides</Link>
+      <Link href="/vendors">Find Vendors</Link>
+      <Link href="/community">Community</Link>
+    </Column>
+    
+    <Column>
+      <Title>Legal</Title>
+      <Link href="/privacy">Privacy Policy</Link>
+      <Link href="/terms">Terms of Service</Link>
+      <Link href="/cookies">Cookie Policy</Link>
+    </Column>
+  </FooterContent>
+  
+  <FooterBottom>
+    <Copyright>© 2025 Emowed. All rights reserved.</Copyright>
+    <LanguageSelector>
+      <Select defaultValue="en">
+        <Option value="en">English</Option>
+        <Option value="hi">हिन्दी</Option>
+      </Select>
+    </LanguageSelector>
+  </FooterBottom>
+</Footer>
+```
+
+---
+
+## PERFORMANCE OPTIMIZATIONS
+
+### 1. Above-the-Fold Optimization
+```
+Priority Loading:
+1. Header + Hero (0-1s)
+2. Social Proof Bar (1-2s)
+3. Features Section (2-3s)
+4. Rest of page (lazy loaded)
+```
+
+### 2. Image Optimization
+```
+- Hero animation: Lottie JSON (< 100KB)
+- Feature icons: SVG (scalable, tiny)
+- Testimonial photos: WebP, lazy loaded
+- Background patterns: CSS gradients (no images)
+```
+
+### 3. Code Splitting
+```typescript
+// Lazy load heavy components
+const VideoPlayer = lazy(() => import('@/components/VideoPlayer'));
+const Carousel = lazy(() => import('@/components/Carousel'));
+```
+
+---
+
+## SEO OPTIMIZATIONS
+
+### Meta Tags
+```html
+<title>Emowed - Complete Wedding Planning & Matchmaking App | India's #1</title>
+<meta name="description" content="Find your match, plan your dream wedding, and stay connected forever. India's only full-lifecycle relationship platform. Trusted by 10,000+ couples. Start free!" />
+<meta name="keywords" content="wedding planning app, matchmaking india, shaadi, wedding vendors, RSVP management, couple diary" />
+
+<!-- Open Graph -->
+<meta property="og:title" content="Emowed - From First Swipe to Forever" />
+<meta property="og:description" content="India's only full-lifecycle relationship platform" />
+<meta property="og:image" content="https://emowed.com/og-image.jpg" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Emowed - Complete Wedding Platform" />
+```
+
+### Schema Markup
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Emowed",
+  "description": "Complete wedding planning and matchmaking platform",
+  "applicationCategory": "LifestyleApplication",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "INR"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.8",
+    "ratingCount": "5000"
+  }
+}
+```
+
+---
+
+## A/B TESTING OPPORTUNITIES
+
+### Test Variations:
+1. **Headline:**
+   - A: "From First Swipe to Forever"
+   - B: "Find Love. Plan Wedding. Live Happily."
+   
+2. **CTA Button:**
+   - A: "Start Free"
+   - B: "Join 10,000+ Couples"
+   
+3. **Hero Image:**
+   - A: Animated illustration
+   - B: Real couple photo
+   
+4. **Pricing Display:**
+   - A: Show 3 tiers
+   - B: Show only Free vs Premium
+
+---
+
+## CONVERSION TRACKING
+
+### Events to Track:
+```typescript
+// Analytics events
+analytics.track('homepage_viewed');
+analytics.track('cta_clicked', { location: 'hero' });
+analytics.track('feature_card_clicked', { feature: 'matchmaking' });
+analytics.track('pricing_viewed');
+analytics.track('signup_initiated');
+analytics.track('video_played');
+analytics.track('testimonial_viewed');
+```
+
+---
+
+## SUCCESS CRITERIA
+
+### Key Metrics:
+- Page load time: < 2 seconds
+- Bounce rate: < 40%
+- Time on page: > 45 seconds
+- Scroll depth: 60%+ reach bottom
+- CTA click rate: > 10%
+- Sign-up conversion: > 5%
+
+### Target: 1,000 sign-ups/month from homepage traffic
+
+---
+
+This homepage is designed to convert, educate, and build trust immediately! 🚀
+

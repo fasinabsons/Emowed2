@@ -1,0 +1,637 @@
+# Emowed App - Complete 6-Phase Development Plan
+
+Based on your comprehensive answers, here's the optimized development roadmap:
+
+---
+
+## 🎯 **PHASE 1: Core Foundation (Weeks 1-3)**
+**Goal:** Single user → Engaged couple → Basic wedding creation
+
+### Features:
+1. **User Registration & Authentication**
+   - Email signup (mandatory) + phone verification (optional)
+   - Profile creation with relationship status selector
+   - Skip option available (defaults to "Single")
+   - Status options: Single, Committed, Engaged, Married, Divorced, Widowed
+   - Age verification (18+ for weddings/matchmaking)
+
+2. **Partner Invitation System**
+   - Generate 6-character code
+   - Send via email/WhatsApp/SMS
+   - 3 rejection limit (then receiver must initiate)
+   - 30-minute cooldown between rejections
+   - Confirmation popup to prevent accidental rejections
+   - Status change: Single → Engaged (upon acceptance)
+
+3. **Basic Wedding Creation**
+   - Wedding name, date, venue input
+   - Mode selection: Combined (shared costs) vs Separate (double vendors)
+   - Warning popup for Separate mode cost implications
+   - Wedding dashboard (joint access for couple)
+
+4. **Relationship Status Transitions**
+   - Committed → Can plan future wedding (set future date)
+   - Engaged → Full wedding creation
+   - Wedding called off → Both revert to Single, all shared data deleted
+   - Divorced → Data deletion option (download within 3 days or pay for storage)
+
+### Database Schema (Supabase):
+```
+- users (id, email, phone, name, status, age_verified, created_at)
+- partner_invitations (code, sender_id, receiver_email, status, attempts, created_at)
+- couples (id, user1_id, user2_id, status, engaged_date)
+- weddings (id, couple_id, name, date, venue, mode, budget_limit, guest_limit)
+```
+
+### Success Metrics:
+- ✅ 50 user signups
+- ✅ 10 successful partner acceptances
+- ✅ 5 weddings created
+
+---
+
+## 🎯 **PHASE 2: Guest Management & Family Tree (Weeks 4-6)**
+**Goal:** Hierarchical invitations, RSVP, headcount tracking
+
+### Features:
+1. **Event Timeline Generator**
+   - Auto-calculate dates based on wedding date:
+     - Engagement → Save The Date → Haldi → Mehendi → Sangeet → Wedding → Reception
+   - Users can accept all, select specific events, or create custom
+   - Delete/edit events anytime
+
+2. **Hierarchical Guest Invitations**
+   - **Couple invites:** Parents
+   - **Parents invite:** Siblings, relatives, friends, neighbors (unlimited)
+   - **Siblings invite:** Their friends
+   - **Guest limit voting:** Bride + Groom + Parents + Siblings vote on total guest cap
+   - Adjustable limits (6000, 8000+ supported)
+
+3. **Under-18 Headcount System**
+   - No accounts for minors
+   - Parents add kids as "+2 guests" (name + age)
+   - Food calculation:
+     - Adults: 1.0x
+     - Teens (13-17): 0.75x
+     - Kids (0-12): 0.3x
+
+4. **RSVP System**
+   - Guests confirm attendance (7 days before event deadline)
+   - Real-time headcount: Bride side + Groom side + Total
+   - Dietary preferences collected
+   - Final headcount locked 7 days before
+
+5. **Family Tree Visualization**
+   - Bride's side (left) + Groom's side (right)
+   - Merge view: "One Big Family"
+   - Connections: Parents → Siblings → Cousins (3 levels max)
+
+### Database Schema:
+```
+- events (id, wedding_id, name, date, venue, type, status)
+- invitations (id, wedding_id, inviter_id, invitee_email, role, invite_limit, status)
+- guests (id, wedding_id, user_id, side, role, rsvp_status, dietary_prefs, plus_guests)
+- family_tree (id, wedding_id, user_id, parent_id, side, generation)
+```
+
+### Success Metrics:
+- ✅ Average 100 guests per wedding
+- ✅ 80% RSVP completion rate
+- ✅ Accurate headcount 7 days before wedding
+
+---
+
+## 🎯 **PHASE 3: Vendor System & Voting (Weeks 7-9)**
+**Goal:** Verified vendors, family voting, trust system
+
+### Features:
+1. **Vendor Invitation (Couple-Only)**
+   - Couple invites vendors via email
+   - Vendor categories: Caterer, Photographer, Decorator, DJ, Makeup, Custom
+   - Vendor creates profile (portfolio, pricing, services)
+   - Approval request sent to couple
+
+2. **5-Couple Verification Star**
+   - Vendors start with no profile picture
+   - After 5 completed weddings → Verified star appears
+   - Profile picture unlocked
+
+3. **Vendor Voting System**
+   - **Hosting Team:** Bride + Groom + Parents + Siblings
+   - Vote on: Vendor choice, pricing, features
+   - Ranking system (1st, 2nd, 3rd choice)
+   - Couple makes final decision
+   - Bulk rejection with reason ("Price too high")
+
+4. **Vendor Time Conflict Handling**
+   - If vendor already committed on date/time:
+     - System notifies couple
+     - Couple confirms if vendor has large team
+     - Vendor can accept multiple simultaneous events (if couple approves)
+
+5. **Vendor Revenue Model**
+   - Free vendors: 12% commission on bookings
+   - Paid vendors: 3% commission + enhanced portfolio
+   - No vendor ranking until 10+ vendors in category
+
+### Database Schema:
+```
+- vendors (id, user_id, category, verified, wedding_count, rating, subscription)
+- vendor_invitations (id, wedding_id, vendor_id, status, approved_at)
+- vendor_votes (id, wedding_id, vendor_id, voter_id, rank, comment)
+- vendor_bookings (id, wedding_id, vendor_id, amount, commission, status)
+```
+
+### Success Metrics:
+- ✅ 20 vendors onboarded
+- ✅ 5 vendors achieve verified star
+- ✅ 90% vendor approval rate
+
+---
+
+## 🎯 **PHASE 4: Digital Wedding Program & Media (Weeks 10-12)**
+**Goal:** Guest engagement, content sharing, streaming
+
+### Features:
+1. **Digital Wedding Card**
+   - Basic templates (image + names + message)
+   - PDF upload option
+   - Displayed on home screen
+
+2. **Event Schedule & Menu**
+   - Timeline view of all events
+   - Buffet menu display
+   - Live program updates
+
+3. **YouTube Live Embed**
+   - Iframe embed for wedding streaming
+   - Link shared with all guests
+
+4. **Gallery & Media Sharing**
+   - Guests upload photos/videos/blessings
+   - **Free users:** 200 images max, 500KB per image
+   - **Paid users:** Unlimited, 1MB per image (up to 10MB with extra payment)
+   - Cloudinary integration for storage
+
+5. **Storage & Download Policies**
+   - **Free users:** Gallery deleted 7 days post-wedding
+   - **Paid users:** Unlimited storage + bulk download
+   - RSVP records deleted, but final headcount saved forever
+
+6. **Data Retention (Post-Wedding)**
+   - Kept forever: Total headcount (bride/groom/total)
+   - Deleted: Individual RSVP details, photos, videos (if free)
+   - Saved: Family tree connections, YouTube links, game stats
+
+### Database Schema:
+```
+- wedding_cards (id, wedding_id, template_id, image_url, message, pdf_url)
+- media_gallery (id, wedding_id, uploader_id, type, url, size, created_at)
+- youtube_streams (id, wedding_id, embed_url, status)
+```
+
+### Success Metrics:
+- ✅ 80% guests upload at least 1 photo
+- ✅ 50% weddings use streaming
+- ✅ 30% conversion to paid (for storage)
+
+---
+
+## 🎯 **PHASE 5: Games, Leaderboards & Gifts (Weeks 13-15)**
+**Goal:** Fun engagement, competition, monetization via gifts
+
+### Features:
+1. **Interactive Wedding Games**
+   - Quiz: "How well do you know the couple?"
+   - Photo challenge (guests vote on best photos)
+   - Predict the future (anniversary reveals)
+   - Optional for couples to enable
+
+2. **Leaderboards**
+   - **Singles:** Personal growth + Career achievements
+   - **Couples:** Relationship milestones
+   - Bride side vs Groom side point competition
+   - Optional participation
+
+3. **Digital Gift Cards & Gifting**
+   - Guests purchase gifts through app
+   - Physical goods marketplace (curated)
+   - Digital gift cards (Amazon, Flipkart, etc.)
+   - Commission: 5% on all transactions
+
+4. **Content Moderation**
+   - Auto-filter bad words (text)
+   - Host team can delete inappropriate images
+   - Monitoring mode (optional for couples)
+   - **Penalty:** Inappropriate content → Instant account ban forever
+
+### Database Schema:
+```
+- games (id, wedding_id, type, questions, status)
+- leaderboards (id, wedding_id, user_id, side, points, rank)
+- gifts (id, wedding_id, sender_id, type, amount, delivery_status)
+```
+
+### Success Metrics:
+- ✅ 70% weddings enable games
+- ✅ 40% guests participate in leaderboards
+- ✅ ₹50,000 gift transaction volume per wedding
+
+---
+
+## 🎯 **PHASE 6: Matchmaking & Post-Marriage (Weeks 16-20)**
+**Goal:** Dating features, couple support, community
+
+### Features:
+1. **Matchmaking System (Paid Only)**
+   - **Verification:**
+     - Free: Email + phone
+     - Paid: Aadhaar OCR (age/identity) + Photo verification + Background check
+   
+   - **Match Preferences (Paid Users Only):**
+     - Religion, caste, income, education filters
+     - Dynamic match probability display
+     - Males: "0.5% chance" (free) → "73% chance" (paid)
+     - Adjust ±10% based on acceptance/rejection rates
+   
+   - **Parent Mode (Optional):**
+     - Parents can like/dislike matches (if enabled by user)
+     - No hiding matches once parents added
+     - User controls when to involve parents
+   
+   - **Separate Pools:**
+     - Singles (never married)
+     - Divorced (separate matchmaking)
+     - Widowed (age-appropriate matching)
+   
+   - **Global Matching:**
+     - Matches across all users (not limited to one wedding)
+     - Wedding attendees highlighted if same event
+
+2. **Post-Marriage Features (Paid Only)**
+   - **Couple Diary:** Private journal (shared by couple only)
+   - **Milestone Tracker:** Anniversaries, birthdays, first date
+   - **Goal Setting:** Common goals, date night planner, trip planning
+   - **Notifications:** 3 key dates (engagement, wedding, birthdays)
+   - **Divorced Access:** Keep diary if subscription continues, else deleted 7 days post-divorce
+
+3. **Community Forum (Paid Only)**
+   - Quora-style Q&A for couples
+   - 3 posts per day limit (spam control)
+   - Community voting + reporting
+   - Auto-filter bad words
+   - **Initial fee:** Small payment to prove real user
+   - **Penalty fee:** If reported, pay premium or view-only access forever
+
+4. **Sponsored Counseling**
+   - Counselors pay to be featured
+   - Couples browse verified therapists
+   - Commission on bookings
+
+### Database Schema:
+```
+- matchmaking_profiles (id, user_id, verified, preferences, parent_mode, pool_type)
+- matches (id, user1_id, user2_id, status, match_score, created_at)
+- couple_diary (id, couple_id, entry, date, attachments)
+- community_posts (id, author_id, content, upvotes, reported, status)
+- counselors (id, name, specialty, rating, sponsored, commission_rate)
+```
+
+### Success Metrics:
+- ✅ 500 paid matchmaking users
+- ✅ 100 successful matches → engagements
+- ✅ 200 active community members
+
+---
+
+## 💰 **Monetization Strategy**
+
+### Pricing Tiers:
+
+| Feature | Free | Basic (₹999) | Premium (₹2999) |
+|---------|------|--------------|-----------------|
+| **Wedding Creation** | 1 event only | Full timeline | Unlimited events |
+| **Guest Limit** | 100 guests | 500 guests | Unlimited |
+| **Gallery Storage** | 7 days | 30 days | Forever |
+| **Image Upload** | 200 max (500KB) | 1000 (1MB) | Unlimited (10MB) |
+| **Bulk Download** | ❌ | ✅ | ✅ |
+| **Matchmaking** | ❌ | Basic filters | Advanced + verification |
+| **Community Access** | ❌ | View only | Full access |
+| **Post-Marriage Tools** | ❌ | ❌ | ✅ (Diary, goals) |
+| **Custom Wedding Card** | Basic template | PDF upload | Custom GIF/animations |
+
+### Additional Revenue:
+- **Vendor commissions:** 12% (free) / 3% (paid)
+- **Gift transactions:** 5% commission
+- **Counselor sponsorships:** ₹5,000/month
+- **Premium storage:** ₹99/month (10GB extra)
+- **Community penalty fees:** ₹499 (if reported)
+
+---
+
+## 🛠️ **Tech Stack & Cost Optimization**
+
+### Core Stack:
+- **Frontend:** Lovable (React + Tailwind)
+- **Backend:** Supabase (Database + Auth + Storage)
+- **Media Storage:** Cloudinary (free tier: 25GB/month)
+- **Payments:** Razorpay (2% fee)
+
+### Cost Optimization Plan:
+
+**Phase 1-3 (First 100 weddings):**
+- Supabase Free Tier: $0
+  - 500MB database, 1GB file storage, 2GB bandwidth
+- Cloudinary Free: $0
+  - 25GB storage, 25GB bandwidth
+- Lovable Pro: $20/month (worth it for speed)
+- **Total:** $60 for 3 months
+
+**Phase 4-6 (100-1000 weddings):**
+- Supabase Pro: $25/month
+  - 8GB database, 100GB file storage
+- Cloudinary Pay-as-you-go: ~$50/month
+- **Total:** $75/month
+
+**Scale (1000+ weddings):**
+- Migrate to AWS/Azure
+- Multi-region Supabase instances
+- CDN for media (Cloudflare R2: 99% cheaper than S3)
+
+### Image Compression Strategy:
+- Auto-convert to WebP (70% size reduction)
+- Free users: 500KB limit (enforced)
+- Paid users: 1MB default, up to 10MB with extra payment
+- Cloudinary automatic optimization enabled
+
+---
+
+## 📋 **Phase 1 Detailed PRD (Ready for Lovable)**
+
+### User Stories:
+
+**US1: User Registration**
+```
+As a user,
+I want to sign up with my email,
+So that I can access the platform.
+
+Acceptance Criteria:
+- Email field with validation
+- Password (min 8 chars, 1 uppercase, 1 number)
+- Name, phone (optional), age verification
+- Relationship status selector (default: Single, skippable)
+- Success: Redirect to dashboard
+```
+
+**US2: Partner Invitation**
+```
+As a groom,
+I want to invite my bride,
+So that we can plan our wedding together.
+
+Acceptance Criteria:
+- Generate 6-char code button
+- Enter bride's email
+- Send via email/WhatsApp/SMS
+- Code expires in 48 hours
+- Max 3 rejection attempts (then cooldown)
+- 30-minute delay between rejections
+- Confirmation popup on rejection
+```
+
+**US3: Partner Acceptance**
+```
+As a bride,
+I want to accept the groom's invitation,
+So that we can become an engaged couple.
+
+Acceptance Criteria:
+- Enter 6-char code field
+- Validate code
+- Show groom's profile preview
+- Accept/Decline buttons
+- On Accept: Status changes Single → Engaged
+- Both users see "Congratulations!" message
+```
+
+**US4: Wedding Creation**
+```
+As an engaged couple,
+I want to create our wedding event,
+So that we can start planning.
+
+Acceptance Criteria:
+- Wedding name input
+- Date picker (future dates only)
+- Venue input
+- Mode selector: Combined / Separate
+- Warning popup if Separate selected
+- Budget limit (optional)
+- Guest limit (optional, default: 500)
+- Save & Create button
+- Redirect to wedding dashboard
+```
+
+**US5: Wedding Called Off**
+```
+As a couple,
+If we call off the wedding,
+I want all shared data deleted.
+
+Acceptance Criteria:
+- "Call Off Wedding" button (requires confirmation)
+- Both users must confirm
+- Status changes: Engaged → Single
+- All shared data deleted immediately
+- Notification sent to both users
+- Redirect to dashboard (empty state)
+```
+
+### Wireframes (for Lovable):
+
+**Page 1: Registration**
+```
+┌─────────────────────────────────────┐
+│         Welcome to Emowed           │
+├─────────────────────────────────────┤
+│                                     │
+│  📧 Email: [____________]           │
+│  🔒 Password: [____________]        │
+│  👤 Full Name: [____________]       │
+│  📱 Phone (opt): [____________]     │
+│  🎂 Age: [__] (18+ required)        │
+│                                     │
+│  💑 Relationship Status:            │
+│     ○ Single (default)              │
+│     ○ Committed                     │
+│     ○ Engaged                       │
+│     ○ Married                       │
+│     ○ Divorced                      │
+│     ○ Widowed                       │
+│     [ Skip for now ]                │
+│                                     │
+│         [  Sign Up  ]               │
+│                                     │
+│  Already have an account? Login     │
+└─────────────────────────────────────┘
+```
+
+**Page 2: Dashboard (Single User)**
+```
+┌─────────────────────────────────────┐
+│  👤 Faseen Farook       [ Settings ]│
+│  Status: Single                     │
+├─────────────────────────────────────┤
+│                                     │
+│  💌 Find Your Partner               │
+│  ┌───────────────────────────────┐ │
+│  │  Enter Partner's Email:       │ │
+│  │  [____________________]       │ │
+│  │                               │ │
+│  │  [ Generate Invitation Code ] │ │
+│  │                               │ │
+│  │  Your Code: ABC123            │ │
+│  │  [ Send via WhatsApp/Email ]  │ │
+│  └───────────────────────────────┘ │
+│                                     │
+│  📅 Events I'm Invited To:          │
+│  • Rahul & Priya's Wedding (Dec 15)│
+│  • Arjun & Meera's Sangeet (Jan 10)│
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Page 3: Partner Acceptance**
+```
+┌─────────────────────────────────────┐
+│      You've Been Invited! 💌        │
+├─────────────────────────────────────┤
+│                                     │
+│  Faseen Farook wants to plan        │
+│  your wedding together!             │
+│                                     │
+│  👤 Name: Faseen Farook             │
+│  📧 Email: faseen@gmail.com         │
+│  📍 Location: Mumbai                │
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │  Enter Invitation Code:     │   │
+│  │  [______]                   │   │
+│  │                             │   │
+│  │  [ Verify Code ]            │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│     [ Accept ] [ Decline ]          │
+│                                     │
+│  ⚠️ Declining will notify Faseen    │
+│     (Attempts left: 3)              │
+└─────────────────────────────────────┘
+```
+
+**Page 4: Wedding Creation**
+```
+┌─────────────────────────────────────┐
+│  💍 Create Your Wedding             │
+├─────────────────────────────────────┤
+│                                     │
+│  Wedding Name:                      │
+│  [Faseen & Hanan's Wedding____]    │
+│                                     │
+│  Date: [📅 Select Date] (required)  │
+│                                     │
+│  Venue: [Grand Palace Hotel____]   │
+│                                     │
+│  Mode:                              │
+│  ○ Combined (Recommended 💰)        │
+│     • Shared venue & vendors        │
+│     • Half the cost!                │
+│                                     │
+│  ○ Separate                         │
+│     ⚠️ Double vendors, double cost  │
+│                                     │
+│  Guest Limit: [500] (optional)     │
+│  Budget: [₹________] (optional)    │
+│                                     │
+│      [ Create Wedding ]             │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+### Database Schema (Supabase SQL):
+
+```sql
+-- Users Table
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email TEXT UNIQUE NOT NULL,
+  phone TEXT,
+  full_name TEXT NOT NULL,
+  age INTEGER CHECK (age >= 18),
+  relationship_status TEXT DEFAULT 'single',
+  age_verified BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Partner Invitations Table
+CREATE TABLE partner_invitations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code TEXT UNIQUE NOT NULL,
+  sender_id UUID REFERENCES users(id),
+  receiver_email TEXT NOT NULL,
+  status TEXT DEFAULT 'pending', -- pending, accepted, rejected
+  rejection_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '48 hours')
+);
+
+-- Couples Table
+CREATE TABLE couples (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user1_id UUID REFERENCES users(id),
+  user2_id UUID REFERENCES users(id),
+  status TEXT DEFAULT 'engaged', -- engaged, married, separated, divorced
+  engaged_date DATE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Weddings Table
+CREATE TABLE weddings (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  couple_id UUID REFERENCES couples(id),
+  name TEXT NOT NULL,
+  date DATE NOT NULL,
+  venue TEXT,
+  mode TEXT DEFAULT 'combined', -- combined, separate
+  budget_limit DECIMAL,
+  guest_limit INTEGER DEFAULT 500,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+---
+
+## ✅ **Lovable Pro Subscription: YES**
+
+**Recommendation:** Subscribe to Lovable Pro ($20/month) for Phase 1-3
+
+**Why:**
+- Unlimited AI generations (critical for iterations)
+- Faster development (save 50+ hours)
+- Better Supabase integration templates
+- $60 investment for 3 months = Worth it!
+
+**After Phase 3:** Re-evaluate and potentially switch to Claude Code for backend logic
+
+---
+
+## 🚀 **Launch Timeline**
+
+- **Week 3:** Phase 1 complete → Internal testing with 10 friends
+- **Week 6:** Phase 2 complete → Beta launch (1 real wedding)
+- **Week 9:** Phase 3 complete → Public launch (10 weddings target)
+- **Week 12:** Phase 4 complete → Marketing push
+- **Week 15:** Phase 5 complete → Monetization active
+- **Week 20:** Phase 6 complete → Full platform live
+
+**First Income Target:** Week 9 (₹10,000 from paid subscriptions)

@@ -1,0 +1,2290 @@
+# PHASE 6: Matchmaking & Post-Marriage Support
+
+## OVERVIEW
+
+**Goal:** Dating system, post-marriage features, community forum, counseling integration
+
+**Timeline:** Weeks 16-20
+
+**Prerequisites:** Phase 5 complete (games and leaderboards functional)
+
+**Paid Feature:** All matchmaking and post-marriage features require premium subscription
+
+---
+
+## DATABASE SCHEMA
+
+### matchmaking_profiles table
+```sql
+CREATE TABLE matchmaking_profiles (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  profile_status TEXT DEFAULT 'incomplete' CHECK (profile_status IN ('incomplete', 'active', 'paused', 'matched', 'inactive')),
+  verification_level TEXT DEFAULT 'email' CHECK (verification_level IN ('email', 'phone', 'aadhaar', 'photo', 'background_check')),
+  pool_type TEXT CHECK (pool_type IN ('singles', 'divorced', 'widowed')),
+  
+  -- Basic Info
+  full_name TEXT NOT NULL,
+  date_of_birth DATE NOT NULL,
+  age INTEGER GENERATED ALWAYS AS (EXTRACT(YEAR FROM age(date_of_birth))) STORED,
+  gender TEXT CHECK (gender IN ('male', 'female', 'other')),
+  height_cm INTEGER,
+  
+  -- Location
+  current_city TEXT NOT NULL,
+  hometown TEXT,
+  willing_to_relocate BOOLEAN DEFAULT FALSE,
+  preferred_cities TEXT[],
+  
+  -- Education & Career
+  highest_education TEXT,
+  profession TEXT,
+  job_title TEXT,
+  company_name TEXT,
+  annual_income_range TEXT,
+  
+  -- Family
+  family_type TEXT CHECK (family_type IN ('nuclear', 'joint')),
+  family_values TEXT CHECK (family_values IN ('traditional', 'moderate', 'liberal')),
+  father_occupation TEXT,
+  mother_occupation TEXT,
+  siblings_count INTEGER DEFAULT 0,
+  
+  -- Religion & Culture
+  religion TEXT,
+  caste TEXT,
+  sub_caste TEXT,
+  gothra TEXT,
+  mother_tongue TEXT,
+  other_languages TEXT[],
+  
+  -- Lifestyle
+  diet TEXT CHECK (diet IN ('vegetarian', 'non_vegetarian', 'eggetarian', 'vegan')),
+  smoking TEXT CHECK (smoking IN ('no', 'occasionally', 'regularly')),
+  drinking TEXT CHECK (drinking IN ('no', 'socially', 'regularly')),
+  
+  -- Bio & Interests
+  bio TEXT,
+  interests TEXT[],
+  hobbies TEXT[],
+  
+  -- Photos
+  profile_photo_url TEXT,
+  additional_photos TEXT[],
+  photo_verified BOOLEAN DEFAULT FALSE,
+  
+  -- Verification Documents
+  aadhaar_number_encrypted TEXT,
+  aadhaar_verified BOOLEAN DEFAULT FALSE,
+  aadhaar_verified_at TIMESTAMP,
+  linkedin_url TEXT,
+  linkedin_verified BOOLEAN DEFAULT FALSE,
+  instagram_url TEXT,
+  facebook_url TEXT,
+  twitter_url TEXT,
+  
+  -- Privacy Settings
+  show_last_name BOOLEAN DEFAULT FALSE,
+  show_contact BOOLEAN DEFAULT FALSE,
+  show_salary BOOLEAN DEFAULT FALSE,
+  
+  -- Parent Mode
+  parent_mode_enabled BOOLEAN DEFAULT FALSE,
+  parent_user_id UUID REFERENCES users(id),
+  parent_can_view_matches BOOLEAN DEFAULT FALSE,
+  parent_can_like BOOLEAN DEFAULT FALSE,
+  
+  -- Match Stats
+  profile_views INTEGER DEFAULT 0,
+  likes_sent INTEGER DEFAULT 0,
+  likes_received INTEGER DEFAULT 0,
+  matches_count INTEGER DEFAULT 0,
+  
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+CREATE INDEX idx_matchmaking_profiles_user ON matchmaking_profiles(user_id);
+CREATE INDEX idx_matchmaking_profiles_status ON matchmaking_profiles(profile_status);
+CREATE INDEX idx_matchmaking_profiles_pool ON matchmaking_profiles(pool_type);
+CREATE INDEX idx_matchmaking_profiles_city ON matchmaking_profiles(current_city);
+CREATE INDEX idx_matchmaking_profiles_religion ON matchmaking_profiles(religion);
+```
+
+### match_preferences table
+```sql
+CREATE TABLE match_preferences (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  profile_id UUID REFERENCES matchmaking_profiles(id) ON DELETE CASCADE,
+  
+  -- Basic Preferences
+  age_min INTEGER DEFAULT 21,
+  age_max INTEGER DEFAULT 35,
+  height_min_cm INTEGER,
+  height_max_cm INTEGER,
+  
+  -- Location
+  preferred_cities TEXT[],
+  open_to_long_distance BOOLEAN DEFAULT FALSE,
+  
+  -- Education & Career
+  min_education TEXT,
+  preferred_professions TEXT[],
+  min_income_range TEXT,
+  
+  -- Religion & Culture
+  same_religion_only BOOLEAN DEFAULT FALSE,
+  same_caste_only BOOLEAN DEFAULT FALSE,
+  same_mother_tongue_only BOOLEAN DEFAULT FALSE,
+  acceptable_religions TEXT[],
+  acceptable_castes TEXT[],
+  
+  -- Lifestyle
+  acceptable_diet TEXT[],
+  acceptable_smoking TEXT[],
+  acceptable_drinking TEXT[],
+  
+  -- Family
+  acceptable_family_types TEXT[],
+  acceptable_family_values TEXT[],
+  
+  -- Deal Breakers
+  deal_breakers TEXT[],
+  
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(profile_id)
+);
+
+CREATE INDEX idx_match_preferences_profile ON match_preferences(profile_id);
+```
+
+### match_swipes table
+```sql
+CREATE TABLE match_swipes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  swiper_profile_id UUID REFERENCES matchmaking_profiles(id) ON DELETE CASCADE,
+  swiped_profile_id UUID REFERENCES matchmaking_profiles(id) ON DELETE CASCADE,
+  swipe_type TEXT CHECK (swipe_type IN ('like', 'superlike', 'pass')),
+  is_parent_swipe BOOLEAN DEFAULT FALSE,
+  parent_user_id UUID REFERENCES users(id),
+  note TEXT,
+  swiped_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(swiper_profile_id, swiped_profile_id)
+);
+
+CREATE INDEX idx_match_swipes_swiper ON match_swipes(swiper_profile_id);
+CREATE INDEX idx_match_swipes_swiped ON match_swipes(swiped_profile_id);
+CREATE INDEX idx_match_swipes_type ON match_swipes(swipe_type);
+```
+
+### matches table
+```sql
+CREATE TABLE matches (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  profile1_id UUID REFERENCES matchmaking_profiles(id) ON DELETE CASCADE,
+  profile2_id UUID REFERENCES matchmaking_profiles(id) ON DELETE CASCADE,
+  match_score DECIMAL(5, 2),
+  match_type TEXT DEFAULT 'mutual_like' CHECK (match_type IN ('mutual_like', 'superlike', 'premium_intro')),
+  match_status TEXT DEFAULT 'active' CHECK (match_status IN ('active', 'chatting', 'meeting_scheduled', 'inactive', 'blocked')),
+  first_message_sent BOOLEAN DEFAULT FALSE,
+  last_interaction TIMESTAMP,
+  
+  -- Parent Involvement
+  profile1_parents_invited BOOLEAN DEFAULT FALSE,
+  profile2_parents_invited BOOLEAN DEFAULT FALSE,
+  parents_meeting_scheduled BOOLEAN DEFAULT FALSE,
+  
+  matched_at TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(profile1_id, profile2_id)
+);
+
+CREATE INDEX idx_matches_profile1 ON matches(profile1_id);
+CREATE INDEX idx_matches_profile2 ON matches(profile2_id);
+CREATE INDEX idx_matches_status ON matches(match_status);
+```
+
+### match_conversations table
+```sql
+CREATE TABLE match_conversations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  match_id UUID REFERENCES matches(id) ON DELETE CASCADE,
+  sender_profile_id UUID REFERENCES matchmaking_profiles(id),
+  message_text TEXT,
+  message_type TEXT DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'voice', 'video_call_request', 'meeting_request', 'parent_intro_request')),
+  attachment_url TEXT,
+  read_at TIMESTAMP,
+  sent_at TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_match_conversations_match ON match_conversations(match_id);
+CREATE INDEX idx_match_conversations_sender ON match_conversations(sender_profile_id);
+```
+
+### parent_invitations table
+```sql
+CREATE TABLE parent_invitations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  parent_email TEXT NOT NULL,
+  parent_name TEXT NOT NULL,
+  parent_type TEXT CHECK (parent_type IN ('father', 'mother', 'guardian')),
+  invitation_code TEXT UNIQUE NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'expired')),
+  sent_at TIMESTAMP DEFAULT NOW(),
+  responded_at TIMESTAMP,
+  expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days'),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_parent_invitations_user ON parent_invitations(user_id);
+CREATE INDEX idx_parent_invitations_code ON parent_invitations(invitation_code);
+```
+
+### couple_diary_entries table
+```sql
+CREATE TABLE couple_diary_entries (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE,
+  entry_date DATE NOT NULL,
+  entry_title TEXT,
+  entry_text TEXT NOT NULL,
+  mood TEXT CHECK (mood IN ('happy', 'excited', 'grateful', 'stressed', 'sad', 'angry', 'neutral')),
+  tags TEXT[],
+  photos TEXT[],
+  is_private BOOLEAN DEFAULT TRUE,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_couple_diary_couple ON couple_diary_entries(couple_id);
+CREATE INDEX idx_couple_diary_date ON couple_diary_entries(entry_date);
+```
+
+### couple_shared_goals table
+```sql
+CREATE TABLE couple_shared_goals (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE,
+  goal_category TEXT CHECK (goal_category IN ('financial', 'health', 'travel', 'career', 'family', 'personal_growth', 'home', 'custom')),
+  goal_title TEXT NOT NULL,
+  goal_description TEXT,
+  target_date DATE,
+  progress_percentage INTEGER DEFAULT 0 CHECK (progress_percentage >= 0 AND progress_percentage <= 100),
+  status TEXT DEFAULT 'in_progress' CHECK (status IN ('not_started', 'in_progress', 'completed', 'abandoned')),
+  milestones JSONB,
+  notes TEXT,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  completed_at TIMESTAMP
+);
+
+CREATE INDEX idx_couple_goals_couple ON couple_shared_goals(couple_id);
+CREATE INDEX idx_couple_goals_category ON couple_shared_goals(goal_category);
+CREATE INDEX idx_couple_goals_status ON couple_shared_goals(status);
+```
+
+### date_night_plans table
+```sql
+CREATE TABLE date_night_plans (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE,
+  plan_title TEXT NOT NULL,
+  plan_description TEXT,
+  date_night_date DATE NOT NULL,
+  time TIME,
+  location TEXT,
+  budget DECIMAL(10, 2),
+  activity_type TEXT CHECK (activity_type IN ('dinner', 'movie', 'outdoor', 'home', 'adventure', 'cultural', 'surprise', 'custom')),
+  status TEXT DEFAULT 'planned' CHECK (status IN ('planned', 'confirmed', 'completed', 'cancelled')),
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  review_text TEXT,
+  photos TEXT[],
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_date_nights_couple ON date_night_plans(couple_id);
+CREATE INDEX idx_date_nights_date ON date_night_plans(date_night_date);
+CREATE INDEX idx_date_nights_status ON date_night_plans(status);
+```
+
+### trip_plans table
+```sql
+CREATE TABLE trip_plans (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE,
+  trip_title TEXT NOT NULL,
+  destination TEXT NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  budget DECIMAL(12, 2),
+  trip_type TEXT CHECK (trip_type IN ('honeymoon', 'anniversary', 'vacation', 'weekend_getaway', 'international', 'domestic')),
+  itinerary JSONB,
+  booking_details JSONB,
+  packing_list TEXT[],
+  status TEXT DEFAULT 'planning' CHECK (status IN ('planning', 'booked', 'ongoing', 'completed', 'cancelled')),
+  photos TEXT[],
+  memories TEXT,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_trip_plans_couple ON trip_plans(couple_id);
+CREATE INDEX idx_trip_plans_dates ON trip_plans(start_date, end_date);
+```
+
+### gift_tracking table
+```sql
+CREATE TABLE gift_tracking (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE,
+  occasion TEXT CHECK (occasion IN ('birthday', 'anniversary', 'valentines', 'festival', 'achievement', 'surprise', 'custom')),
+  gift_for TEXT CHECK (gift_for IN ('partner', 'family', 'friends', 'us')),
+  recipient_name TEXT,
+  gift_description TEXT,
+  gift_date DATE,
+  amount_spent DECIMAL(10, 2),
+  purchased BOOLEAN DEFAULT FALSE,
+  given BOOLEAN DEFAULT FALSE,
+  reaction_notes TEXT,
+  photos TEXT[],
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_gift_tracking_couple ON gift_tracking(couple_id);
+CREATE INDEX idx_gift_tracking_occasion ON gift_tracking(occasion);
+```
+
+### community_forum_categories table
+```sql
+CREATE TABLE community_forum_categories (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_name TEXT NOT NULL,
+  category_slug TEXT UNIQUE NOT NULL,
+  description TEXT,
+  icon TEXT,
+  display_order INTEGER,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_forum_categories_slug ON community_forum_categories(category_slug);
+```
+
+### community_forum_posts table
+```sql
+CREATE TABLE community_forum_posts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_id UUID REFERENCES community_forum_categories(id),
+  author_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  author_name TEXT NOT NULL,
+  post_title TEXT NOT NULL,
+  post_content TEXT NOT NULL,
+  tags TEXT[],
+  is_anonymous BOOLEAN DEFAULT FALSE,
+  upvotes_count INTEGER DEFAULT 0,
+  downvotes_count INTEGER DEFAULT 0,
+  comments_count INTEGER DEFAULT 0,
+  views_count INTEGER DEFAULT 0,
+  is_pinned BOOLEAN DEFAULT FALSE,
+  is_locked BOOLEAN DEFAULT FALSE,
+  reported_count INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'under_review', 'hidden', 'deleted')),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_forum_posts_category ON community_forum_posts(category_id);
+CREATE INDEX idx_forum_posts_author ON community_forum_posts(author_id);
+CREATE INDEX idx_forum_posts_status ON community_forum_posts(status);
+CREATE INDEX idx_forum_posts_created ON community_forum_posts(created_at DESC);
+```
+
+### community_forum_comments table
+```sql
+CREATE TABLE community_forum_comments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  post_id UUID REFERENCES community_forum_posts(id) ON DELETE CASCADE,
+  parent_comment_id UUID REFERENCES community_forum_comments(id),
+  commenter_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  commenter_name TEXT NOT NULL,
+  comment_text TEXT NOT NULL,
+  is_anonymous BOOLEAN DEFAULT FALSE,
+  upvotes_count INTEGER DEFAULT 0,
+  is_best_answer BOOLEAN DEFAULT FALSE,
+  reported_count INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'hidden', 'deleted')),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_forum_comments_post ON community_forum_comments(post_id);
+CREATE INDEX idx_forum_comments_parent ON community_forum_comments(parent_comment_id);
+```
+
+### community_forum_votes table
+```sql
+CREATE TABLE community_forum_votes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  votable_type TEXT CHECK (votable_type IN ('post', 'comment')),
+  votable_id UUID NOT NULL,
+  voter_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  vote_type TEXT CHECK (vote_type IN ('upvote', 'downvote')),
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(votable_type, votable_id, voter_id)
+);
+
+CREATE INDEX idx_forum_votes_votable ON community_forum_votes(votable_type, votable_id);
+CREATE INDEX idx_forum_votes_voter ON community_forum_votes(voter_id);
+```
+
+### spam_prevention table
+```sql
+CREATE TABLE spam_prevention (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  action_type TEXT CHECK (action_type IN ('post', 'comment', 'message')),
+  daily_count INTEGER DEFAULT 0,
+  last_action_at TIMESTAMP,
+  daily_limit INTEGER DEFAULT 3,
+  penalty_until TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id, action_type)
+);
+
+CREATE INDEX idx_spam_prevention_user ON spam_prevention(user_id);
+```
+
+### counselor_profiles table
+```sql
+CREATE TABLE counselor_profiles (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  counselor_name TEXT NOT NULL,
+  qualifications TEXT[],
+  specializations TEXT[],
+  experience_years INTEGER,
+  bio TEXT,
+  profile_photo_url TEXT,
+  consultation_fee DECIMAL(10, 2),
+  session_duration_minutes INTEGER DEFAULT 60,
+  languages TEXT[],
+  rating DECIMAL(3, 2) DEFAULT 0,
+  total_sessions INTEGER DEFAULT 0,
+  total_reviews INTEGER DEFAULT 0,
+  is_sponsored BOOLEAN DEFAULT FALSE,
+  sponsored_until TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_counselor_profiles_active ON counselor_profiles(is_active);
+CREATE INDEX idx_counselor_profiles_sponsored ON counselor_profiles(is_sponsored);
+```
+
+### counseling_sessions table
+```sql
+CREATE TABLE counseling_sessions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE,
+  counselor_id UUID REFERENCES counselor_profiles(id),
+  session_date TIMESTAMP NOT NULL,
+  session_type TEXT CHECK (session_type IN ('video', 'audio', 'chat', 'in_person')),
+  session_topic TEXT,
+  session_notes TEXT,
+  fee_paid DECIMAL(10, 2),
+  commission_amount DECIMAL(10, 2),
+  status TEXT DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled', 'no_show')),
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  review_text TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_counseling_sessions_couple ON counseling_sessions(couple_id);
+CREATE INDEX idx_counseling_sessions_counselor ON counseling_sessions(counselor_id);
+```
+
+### match_probability_cache table
+```sql
+CREATE TABLE match_probability_cache (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  is_paid_user BOOLEAN DEFAULT FALSE,
+  base_acceptance_rate DECIMAL(5, 2),
+  base_rejection_rate DECIMAL(5, 2),
+  displayed_acceptance_rate DECIMAL(5, 2),
+  displayed_rejection_rate DECIMAL(5, 2),
+  last_calculated TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+```
+
+---
+
+## FUNCTIONS & TRIGGERS
+
+### Calculate match probability
+```sql
+CREATE OR REPLACE FUNCTION calculate_match_probability(p_user_id UUID, p_is_paid BOOLEAN)
+RETURNS TABLE(acceptance_rate DECIMAL(5,2), rejection_rate DECIMAL(5,2)) AS $$
+DECLARE
+  v_likes_received INTEGER;
+  v_likes_sent INTEGER;
+  v_total_interactions INTEGER;
+  v_base_acceptance DECIMAL(5,2);
+  v_base_rejection DECIMAL(5,2);
+  v_displayed_acceptance DECIMAL(5,2);
+  v_displayed_rejection DECIMAL(5,2);
+BEGIN
+  SELECT mp.likes_received, mp.likes_sent
+  INTO v_likes_received, v_likes_sent
+  FROM matchmaking_profiles mp
+  WHERE mp.user_id = p_user_id;
+
+  v_total_interactions := GREATEST(v_likes_received + v_likes_sent, 1);
+  v_base_acceptance := (v_likes_received::DECIMAL / v_total_interactions * 100);
+  v_base_rejection := 100 - v_base_acceptance;
+
+  IF p_is_paid THEN
+    v_displayed_acceptance := LEAST(v_base_acceptance + 10, 95);
+    v_displayed_rejection := GREATEST(v_base_rejection - 10, 5);
+  ELSE
+    v_displayed_acceptance := GREATEST(v_base_acceptance - 10, 0.5);
+    v_displayed_rejection := LEAST(v_base_rejection + 10, 99.5);
+  END IF;
+
+  RETURN QUERY SELECT v_displayed_acceptance, v_displayed_rejection;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Create match on mutual like
+```sql
+CREATE OR REPLACE FUNCTION check_mutual_like()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_mutual_like BOOLEAN;
+  v_match_score DECIMAL(5,2);
+BEGIN
+  IF NEW.swipe_type = 'like' OR NEW.swipe_type = 'superlike' THEN
+    SELECT EXISTS (
+      SELECT 1 FROM match_swipes
+      WHERE swiper_profile_id = NEW.swiped_profile_id
+      AND swiped_profile_id = NEW.swiper_profile_id
+      AND swipe_type IN ('like', 'superlike')
+    ) INTO v_mutual_like;
+
+    IF v_mutual_like THEN
+      v_match_score := ROUND((RANDOM() * 30 + 70)::numeric, 2);
+      
+      INSERT INTO matches (profile1_id, profile2_id, match_score, match_type)
+      VALUES (
+        LEAST(NEW.swiper_profile_id, NEW.swiped_profile_id),
+        GREATEST(NEW.swiper_profile_id, NEW.swiped_profile_id),
+        v_match_score,
+        CASE WHEN NEW.swipe_type = 'superlike' THEN 'superlike' ELSE 'mutual_like' END
+      )
+      ON CONFLICT DO NOTHING;
+      
+      UPDATE matchmaking_profiles
+      SET matches_count = matches_count + 1
+      WHERE id IN (NEW.swiper_profile_id, NEW.swiped_profile_id);
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_match_swipe
+AFTER INSERT ON match_swipes
+FOR EACH ROW
+EXECUTE FUNCTION check_mutual_like();
+```
+
+### Update spam limits
+```sql
+CREATE OR REPLACE FUNCTION check_spam_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_current_count INTEGER;
+  v_daily_limit INTEGER;
+  v_last_action DATE;
+BEGIN
+  SELECT daily_count, daily_limit, DATE(last_action_at)
+  INTO v_current_count, v_daily_limit, v_last_action
+  FROM spam_prevention
+  WHERE user_id = NEW.author_id AND action_type = 'post';
+
+  IF v_last_action < CURRENT_DATE THEN
+    v_current_count := 0;
+  END IF;
+
+  IF v_current_count >= v_daily_limit THEN
+    RAISE EXCEPTION 'Daily post limit exceeded. Please try again tomorrow.';
+  END IF;
+
+  INSERT INTO spam_prevention (user_id, action_type, daily_count, daily_limit, last_action_at)
+  VALUES (NEW.author_id, 'post', 1, 3, NOW())
+  ON CONFLICT (user_id, action_type) DO UPDATE
+  SET daily_count = CASE
+    WHEN DATE(spam_prevention.last_action_at) < CURRENT_DATE THEN 1
+    ELSE spam_prevention.daily_count + 1
+  END,
+  last_action_at = NOW();
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_forum_post
+BEFORE INSERT ON community_forum_posts
+FOR EACH ROW
+EXECUTE FUNCTION check_spam_limit();
+```
+
+### Update forum post stats
+```sql
+CREATE OR REPLACE FUNCTION update_forum_post_stats()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE community_forum_posts
+    SET comments_count = comments_count + 1
+    WHERE id = NEW.post_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE community_forum_posts
+    SET comments_count = comments_count - 1
+    WHERE id = OLD.post_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_forum_comment
+AFTER INSERT OR DELETE ON community_forum_comments
+FOR EACH ROW
+EXECUTE FUNCTION update_forum_post_stats();
+```
+
+---
+
+## USER FLOWS
+
+### Flow 1: Create Matchmaking Profile (Paid Feature)
+
+**Trigger:** Single user wants to start dating
+
+**Steps:**
+1. User navigates to Matchmaking
+2. System checks subscription status
+3. If free user: Prompt to upgrade
+4. If paid user: Create profile wizard
+5. Step 1: Basic Info
+   - Full name, DOB, gender, height
+   - Current city, hometown
+6. Step 2: Education & Career
+   - Qualification, profession, job title
+   - Company, income range
+7. Step 3: Family Background
+   - Family type, values
+   - Parents' occupation, siblings
+8. Step 4: Religion & Culture
+   - Religion, caste, sub-caste
+   - Mother tongue, other languages
+9. Step 5: Lifestyle
+   - Diet, smoking, drinking
+   - Hobbies, interests
+10. Step 6: Bio & Photos
+   - Write bio (500 chars)
+   - Upload profile photo
+   - Upload 2-4 additional photos
+11. Step 7: Verification
+   - Email verified (already done)
+   - Phone verification (OTP)
+   - Aadhaar verification (OCR)
+   - Photo verification (selfie match)
+   - LinkedIn connection (optional)
+12. Step 8: Set Preferences
+   - Age range, height range
+   - Location preferences
+   - Education, profession, income
+   - Religion, caste filters
+   - Lifestyle filters
+13. Review profile
+14. Submit for approval
+15. Profile goes live
+
+**Subscription Check:**
+```
+┌─────────────────────────────────────┐
+│  🔒 Matchmaking is a Premium Feature│
+├─────────────────────────────────────┤
+│                                     │
+│  Unlock to find your perfect match! │
+│                                     │
+│  Premium Features:                  │
+│  ✓ Create matchmaking profile      │
+│  ✓ Advanced filters (religion,     │
+│    caste, income, etc.)             │
+│  ✓ See who liked you                │
+│  ✓ Unlimited likes                  │
+│  ✓ LinkedIn/Instagram verification  │
+│  ✓ Parent mode (optional)           │
+│  ✓ Match probability: 73%           │
+│    vs Free: 0.5%                    │
+│                                     │
+│  Price: ₹2,999 / 3 months           │
+│                                     │
+│     [Upgrade to Premium]            │
+│     [Learn More]                    │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Profile Creation Step 1:**
+```
+Create Your Matchmaking Profile
+
+Step 1 of 8: Basic Information
+
+Full Name: [Ahmed Farook_______________]
+
+Date of Birth: [📅 15] [Jan ▼] [1995 ▼]
+Age: 30 years
+
+Gender:
+● Male
+○ Female
+○ Other
+
+Height:
+[5] feet [10] inches (178 cm)
+
+Current City: [Mumbai ▼]
+
+Hometown: [Lucknow_____________________]
+
+Willing to Relocate?
+○ Yes, anywhere in India
+● Prefer same city
+○ Open to specific cities (select below)
+
+Preferred Cities (if relocating):
+[+ Add City]
+
+[Next: Education & Career →]
+```
+
+**Verification Step:**
+```
+Verify Your Profile
+
+Higher verification = Better matches
+
+✓ Email Verified
+✓ Phone Verified (OTP sent)
+
+⚪ Aadhaar Verification (Recommended)
+   Upload Aadhaar card for age & identity
+   [📤 Upload Front] [📤 Upload Back]
+   🔒 Data encrypted, never shared
+
+⚪ Photo Verification (Recommended)
+   Take a selfie to match profile photo
+   [📷 Take Selfie]
+
+⚪ LinkedIn Profile (Optional)
+   Connect to verify profession
+   [🔗 Connect LinkedIn]
+
+⚪ Instagram (Optional)
+   Connect to show lifestyle
+   [🔗 Connect Instagram]
+
+⚪ Background Check (₹999 extra)
+   Professional verification service
+   [Get Background Check]
+
+[Skip for Now] [Complete Verifications]
+```
+
+---
+
+### Flow 2: Set Match Preferences (Paid)
+
+**Trigger:** Profile created, setting filters
+
+**Steps:**
+1. Navigate to Preferences
+2. Set age range (min-max slider)
+3. Set height range (optional)
+4. Select preferred cities
+5. Set education minimum
+6. Set income range minimum
+7. Religion filters:
+   - Same religion only (toggle)
+   - Acceptable religions (multi-select)
+8. Caste filters:
+   - Same caste only (toggle)
+   - Acceptable castes (multi-select)
+9. Lifestyle filters:
+   - Diet (Veg/Non-veg/Any)
+   - Smoking (No/Occasionally/Any)
+   - Drinking (No/Socially/Any)
+10. Family filters:
+    - Family type (Nuclear/Joint/Any)
+    - Family values (Traditional/Moderate/Liberal)
+11. Deal breakers (optional)
+12. Save preferences
+13. System calculates match pool size
+
+**Preferences Interface:**
+```
+Match Preferences
+
+Your preferences narrow down 8,247 profiles to:
+[1,234 potential matches]
+
+Basic Preferences:
+
+Age Range:
+[25] ━━●━━━━━━ [35] years
+
+Height Range:
+[5'2"] ━━━━●━━━ [5'10"] (Optional)
+
+Location:
+[✓] Same city (Mumbai)
+[✓] Pune
+[✓] Delhi
+[ ] Bangalore
+[ ] Open to long distance
+
+Education & Career:
+
+Minimum Education:
+[Graduate ▼]
+
+Preferred Professions:
+[Engineer] [Doctor] [Teacher] [Business]
+[+ Add More]
+
+Minimum Income:
+[₹6-8 Lakhs/year ▼]
+
+Religion & Culture:
+
+[✓] Same religion only (Muslim)
+    OR
+[ ] Acceptable religions:
+    [ ] Hindu [ ] Christian [ ] Sikh
+
+[✓] Same caste preferred
+[ ] Caste no bar
+
+Mother Tongue:
+[ ] Same mother tongue only (Urdu)
+[✓] Any language
+
+Lifestyle:
+
+Diet: [●] Vegetarian [●] Non-Veg [ ] Any
+Smoking: [●] No [ ] Occasionally [ ] Any
+Drinking: [●] No [●] Socially [ ] Any
+
+Family:
+
+Family Type: [ ] Nuclear [ ] Joint [●] Any
+Family Values: [●] Traditional [●] Moderate [ ] Liberal
+
+Deal Breakers (Optional):
+[Must not smoke_____________________]
+[+ Add]
+
+[Save Preferences]
+
+Matching Pool: 1,234 profiles
+Match Probability: 73% (based on your profile)
+```
+
+---
+
+### Flow 3: Browse and Swipe Matches (Paid)
+
+**Trigger:** Profile active, preferences set
+
+**Steps:**
+1. Navigate to Discover
+2. System shows matches based on preferences
+3. Card shows:
+   - Profile photo
+   - Name (first name only if privacy on)
+   - Age, height, city
+   - Education, profession
+   - Bio snippet
+   - Verification badges
+4. User actions:
+   - Swipe right (Like)
+   - Swipe left (Pass)
+   - Tap for full profile
+5. Full profile shows:
+   - All photos
+   - Complete bio
+   - Family details
+   - Religion & culture
+   - Lifestyle info
+   - LinkedIn/Instagram (if connected)
+   - Match score (%)
+6. Like or Pass
+7. If mutual like: Match created!
+8. Notification sent to both
+9. Chat unlocked
+
+**Match Probability Display:**
+```
+Your Match Success Rate
+
+Free Users: 0.5%
+Based on 2,847 profiles, 14 likes received
+
+Premium Users: 73%
+Based on 2,847 profiles, 2,078 likes received
+
+[Already Premium ✓]
+
+Factors affecting your rate:
+• Profile completion: 95%
+• Verification level: High
+• Photo quality: Excellent
+• Bio quality: Good
+• Active engagement: Very Active
+```
+
+**Discover Interface:**
+```
+┌─────────────────────────────────────┐
+│                                     │
+│      [Profile Photo]                │
+│                                     │
+│      Priya, 27                      │
+│      5'4" • Mumbai                  │
+│                                     │
+│      Engineer at Tech Corp          │
+│      MBA, IIM Bangalore             │
+│                                     │
+│      "Loves travel, books, and      │
+│       trying new cuisines..."       │
+│                                     │
+│      ✓ Verified  ✓ LinkedIn         │
+│      Match Score: 87%               │
+│                                     │
+│  [👎 Pass]  [ℹ️ Details]  [❤️ Like] │
+│                                     │
+│  1,234 profiles to explore          │
+│  73% average match probability      │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Full Profile:**
+```
+Priya Sharma, 27
+
+Photos: [◉ 1 of 5 →]
+
+About Me:
+Software engineer who loves exploring new places
+and trying different cuisines. Weekend hiker and
+bookworm. Looking for someone to share life's
+adventures with.
+
+✓ Email Verified
+✓ Phone Verified
+✓ Aadhaar Verified
+✓ Photo Verified
+🔗 LinkedIn Connected
+
+Education & Career:
+• MBA - IIM Bangalore (2020)
+• B.Tech - IIT Delhi (2018)
+• Senior Engineer at Tech Corp
+• Income: ₹15-20 Lakhs/year
+
+Family:
+• Nuclear family
+• Father: Retired Bank Manager
+• Mother: Teacher
+• 1 brother (younger)
+• Moderate family values
+
+Religion & Culture:
+• Hindu
+• Brahmin
+• Mother Tongue: Hindi
+• Also speaks: English, Marathi
+
+Lifestyle:
+• Vegetarian
+• Non-smoker
+• Social drinker
+• Hobbies: Travel, Reading, Hiking
+
+Interests:
+#Travel #Books #Photography #Cooking
+#Fitness #Technology #Music
+
+Location:
+• Lives in Mumbai, Maharashtra
+• Open to relocation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Match Score: 87%
+
+You both match on:
+✓ Age range
+✓ Location
+✓ Education level
+✓ Lifestyle (diet)
+✓ Family values
+
+Differences:
+△ Religion (if filter enabled)
+
+[👎 Pass] [❤️ Like] [⭐ Super Like]
+```
+
+---
+
+### Flow 4: It's a Match!
+
+**Trigger:** Mutual like occurs
+
+**Steps:**
+1. Both users receive notification
+2. Match screen shown
+3. Displays:
+   - Both profile photos
+   - "It's a Match!" animation
+   - Match score
+   - Icebreaker suggestions
+4. Chat unlocked
+5. Option to invite parents (if not already)
+6. Start conversation
+
+**Match Notification:**
+```
+┌─────────────────────────────────────┐
+│                                     │
+│           💕 It's a Match! 💕       │
+│                                     │
+│    [Your Photo]  ❤️  [Priya's Photo]│
+│                                     │
+│      You and Priya liked each other!│
+│                                     │
+│      Match Score: 87%               │
+│                                     │
+│  Start the conversation:            │
+│                                     │
+│  💬 "Hi Priya! I noticed we both    │
+│      love hiking. What's your       │
+│      favorite trail?"               │
+│                                     │
+│  💬 "Hello! Fellow IIT alum here :) │
+│      What got you into tech?"       │
+│                                     │
+│  💬 Custom message                  │
+│                                     │
+│     [Send Message]                  │
+│     [Involve Parents Later]         │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Flow 5: Parent Mode (Optional)
+
+**Trigger:** User enables parent involvement
+
+**Steps:**
+1. User navigates to Settings
+2. Enables Parent Mode
+3. Chooses parent type (Father/Mother/Both)
+4. Enters parent email & name
+5. Sets permissions:
+   - Can view my matches (Yes/No)
+   - Can like/pass on my behalf (Yes/No)
+   - Can send messages (Yes/No)
+6. Sends invitation to parent
+7. Parent receives email with code
+8. Parent creates account
+9. Parent linked to user profile
+10. Parent can now:
+    - View matches if permitted
+    - See likes/dislikes
+    - Like profiles on behalf (if permitted)
+    - Chat with matched profiles' parents
+11. User can revoke access anytime
+
+**Enable Parent Mode:**
+```
+Parent Mode
+
+Involve your parents in your matchmaking journey
+
+Benefits:
+• Parents can review matches
+• Traditional arranged marriage support
+• Parents can communicate with other parents
+• You maintain final control
+
+Invite Your Parents:
+
+Father:
+Email: [father@example.com____________]
+Name: [Farook Ahmed__________________]
+
+Permissions:
+[✓] Can view my matches
+[✓] Can see who I liked/passed
+[✓] Can like profiles on my behalf
+[ ] Can send messages (I'll approve first)
+
+Mother:
+Email: [mother@example.com___________]
+Name: [Ayesha Ahmed_________________]
+
+Permissions:
+[✓] Can view my matches
+[✓] Can see who I liked/passed
+[ ] Can like profiles on my behalf
+[ ] Can send messages
+
+Privacy Note:
+Your parents will only see profiles you've
+already viewed or matched with (if you enable
+full permissions).
+
+[Send Invitations]
+```
+
+**Parent Dashboard:**
+```
+Welcome, Farook Ahmed
+Parent of: Ahmed Farook
+
+Your son's matchmaking journey:
+
+Profile Status: Active
+Profile Completion: 95%
+Total Matches: 12
+Active Conversations: 3
+
+Recent Matches:
+
+┌─────────────────────────────────────┐
+│  Priya Sharma, 27                   │
+│  Engineer, Mumbai                   │
+│  Match Score: 87%                   │
+│                                     │
+│  Family: Nuclear, Moderate values   │
+│  Father: Retired Bank Manager       │
+│  Mother: Teacher                    │
+│                                     │
+│  Ahmed's Status: Chatting           │
+│  Your Opinion: [👍 Approve] [👎 Pass]│
+│                                     │
+│  [View Full Profile]                │
+│  [Message Her Parents]              │
+└─────────────────────────────────────┘
+
+Suggested Profiles (You can like on Ahmed's behalf):
+
+[View 47 suggested profiles matching preferences]
+
+Your Activity:
+• Profiles reviewed: 23
+• Profiles liked: 5
+• Messages to parents: 2
+```
+
+---
+
+### Flow 6: Couple Diary (Post-Marriage, Paid)
+
+**Trigger:** Married couple wants to document journey
+
+**Steps:**
+1. Navigate to Couple Diary
+2. Click New Entry
+3. Select date (default: today)
+4. Add entry title (optional)
+5. Write entry text
+6. Select mood (happy/excited/grateful/etc.)
+7. Add tags (optional)
+8. Upload photos (optional)
+9. Set privacy (private/shared)
+10. Save entry
+11. Both partners can view/edit
+12. Calendar view shows all entries
+13. Can export as PDF book
+
+**Diary Home:**
+```
+Our Diary 📖
+
+Faseen & Hanan
+Married since: Dec 15, 2025
+Total Entries: 47
+
+[+ New Entry]
+
+Recent Entries:
+
+┌─────────────────────────────────────┐
+│  Nov 4, 2025 • 😊 Happy             │
+│  First Diwali as Married Couple     │
+├─────────────────────────────────────┤
+│  Celebrated our first Diwali        │
+│  together! Made diyas, decorated    │
+│  the house, and hosted family for   │
+│  dinner. Hanan's cooking impressed  │
+│  everyone. Feeling grateful.        │
+│                                     │
+│  [2 Photos] #Festival #Family       │
+│                                     │
+│  Written by: Faseen                 │
+│  [View] [Edit]                      │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  Nov 1, 2025 • 🎉 Excited           │
+│  Got Our First Home!                │
+├─────────────────────────────────────┤
+│  Finally got the keys to our dream  │
+│  apartment! 2BHK in Andheri with    │
+│  a beautiful view. Can't wait to    │
+│  set it up together.                │
+│                                     │
+│  [5 Photos] #Home #Milestone        │
+│                                     │
+│  Written by: Hanan                  │
+│  [View] [Edit]                      │
+└─────────────────────────────────────┘
+
+[View Calendar] [Export as PDF Book]
+```
+
+**New Entry:**
+```
+New Diary Entry
+
+Date: [Nov 4, 2025 ▼]
+
+Title (Optional):
+[First Diwali Together_______________]
+
+How are you feeling?
+○ 😊 Happy
+○ 🎉 Excited
+○ 🙏 Grateful
+○ 😰 Stressed
+○ 😢 Sad
+○ 😠 Angry
+○ 😐 Neutral
+
+Entry:
+[Celebrated our first Diwali together! Made
+ diyas, decorated the house, and hosted family
+ for dinner. Hanan's cooking impressed everyone.
+ The house looks beautiful with all the lights.
+ Feeling so grateful for this new chapter...___]
+
+Photos:
+[📤 Upload Photos] (Max 10)
+
+Tags:
+#Festival #Family #Cooking
+[+ Add Tag]
+
+Privacy:
+● Private (Only us)
+○ Share with close family
+
+[Save Entry] [Save as Draft]
+```
+
+---
+
+### Flow 7: Shared Goals (Post-Marriage, Paid)
+
+**Trigger:** Couple sets common goals
+
+**Steps:**
+1. Navigate to Shared Goals
+2. Click Add Goal
+3. Select category:
+   - Financial (save for home, investments)
+   - Health (fitness, diet)
+   - Travel (visit X countries)
+   - Career (both get promotions)
+   - Family (have kids, buy home)
+   - Personal growth
+   - Custom
+4. Set goal title & description
+5. Set target date
+6. Add milestones (optional)
+7. Assign responsibilities
+8. Save goal
+9. Track progress together
+10. Update progress regularly
+11. Celebrate completion
+12. Earns points for couples leaderboard
+
+**Goals Dashboard:**
+```
+Our Shared Goals 🎯
+
+Active Goals: 5 | Completed: 3
+
+In Progress:
+
+┌─────────────────────────────────────┐
+│  💰 Save ₹20 Lakhs for Home         │
+│  Category: Financial                │
+│  Target: Dec 2027                   │
+│  Progress: ████████░░ 78% (₹15.6L)  │
+│                                     │
+│  Milestones:                        │
+│  ✓ Save ₹5L (Achieved Jul 2026)    │
+│  ✓ Save ₹10L (Achieved Feb 2027)   │
+│  ⚪ Save ₹15L (Current)             │
+│  ⚪ Save ₹20L (Target: Dec 2027)   │
+│                                     │
+│  Monthly Target: ₹35,000            │
+│  This Month: ₹40,000 ✓              │
+│                                     │
+│  [Update Progress] [View Details]   │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  ✈️ Visit 5 Countries Together      │
+│  Category: Travel                   │
+│  Progress: ██████░░░░ 60% (3/5)     │
+│                                     │
+│  ✓ Dubai (Jan 2026)                 │
+│  ✓ Thailand (Jul 2026)              │
+│  ✓ Singapore (Feb 2027)             │
+│  ⚪ Maldives (Planned: Dec 2027)    │
+│  ⚪ Europe (Target: 2028)           │
+│                                     │
+│  [Update Progress] [View Details]   │
+└─────────────────────────────────────┘
+
+Completed:
+
+✓ Run a 10K together (Achieved: Mar 2026)
+✓ Learn cooking together (Achieved: Jun 2026)
+✓ Read 12 books in a year (Achieved: Dec 2026)
+
+[+ Add New Goal]
+```
+
+**Add Goal:**
+```
+Add Shared Goal
+
+Category: [Travel ▼]
+
+Goal Title:
+[Visit 10 Countries Together__________]
+
+Description:
+[Explore the world together, experience different
+ cultures, create memories in at least 10 countries
+ before we turn 40.______________________]
+
+Target Date: [Dec 31, 2035 ▼]
+
+Milestones:
+
+1. [Visit 3 countries___] by [Dec 2027]
+2. [Visit 5 countries___] by [Dec 2029]
+3. [Visit 7 countries___] by [Dec 2032]
+4. [Visit 10 countries__] by [Dec 2035]
+
+[+ Add Milestone]
+
+Estimated Budget: [₹ 10,00,000]
+
+Notes:
+[Start with nearby countries, then expand to
+ Europe, America, etc. Save ₹50k/year_____]
+
+[Create Goal] [Save as Draft]
+```
+
+---
+
+### Flow 8: Date Night Planner (Post-Marriage, Paid)
+
+**Trigger:** Couple plans regular date nights
+
+**Steps:**
+1. Navigate to Date Nights
+2. Click Plan Date Night
+3. Select date from calendar
+4. Choose activity type:
+   - Dinner date
+   - Movie night
+   - Outdoor adventure
+   - Home date (cooking, games)
+   - Cultural (museum, concert)
+   - Surprise (hide from partner)
+5. Add details (location, budget, time)
+6. Set reminders
+7. Invite partner (or keep surprise)
+8. After date: Add review & photos
+9. Rate the date (1-5 stars)
+10. Memories saved forever
+11. Recurring date night reminders
+
+**Date Nights Calendar:**
+```
+Date Nights 💑
+
+This Month: 3 planned | 2 completed
+
+Calendar View: [November 2025]
+
+SUN  MON  TUE  WED  THU  FRI  SAT
+                      1   2   3   4
+ 5    6    7    8    9  10  11
+                    ✓📍     💑
+12   13   14   15   16  17  18
+                              💑
+19   20   21   22   23  24  25
+26   27   28   29   30
+
+✓ = Completed
+💑 = Planned
+📍 = Outdoor activity
+
+[+ Plan Date Night]
+
+Upcoming:
+
+┌─────────────────────────────────────┐
+│  Nov 17, 2025 (This Saturday)       │
+│  🍝 Dinner at Italian Restaurant    │
+│  8:00 PM                            │
+├─────────────────────────────────────┤
+│  Location: Olive Garden, Bandra     │
+│  Budget: ₹3,000                     │
+│  Booked: Yes                        │
+│  Reminder: Set (1 day before)       │
+│                                     │
+│  [View Details] [Edit] [Cancel]     │
+└─────────────────────────────────────┘
+
+Recent:
+
+┌─────────────────────────────────────┐
+│  Nov 10, 2025 ⭐⭐⭐⭐⭐              │
+│  🎬 Movie Night at Home             │
+├─────────────────────────────────────┤
+│  Watched "Zindagi Na Milegi Dobara" │
+│  again. Made popcorn, dimmed lights,│
+│  just us. Perfect evening!          │
+│                                     │
+│  Budget: ₹500 (snacks)              │
+│  Rating: 5/5 stars                  │
+│                                     │
+│  [View Photos] [View Details]       │
+└─────────────────────────────────────┘
+```
+
+**Plan Date Night:**
+```
+Plan a Date Night
+
+Date: [Nov 17, 2025 ▼]
+Time: [8:00 PM ▼]
+
+Activity Type:
+○ 🍽️ Dinner Date
+○ 🎬 Movie Night
+○ 🏞️ Outdoor Adventure
+○ 🏠 Home Date
+○ 🎨 Cultural (Museum, Concert)
+○ 🎁 Surprise (Hide from partner)
+○ ✏️ Custom
+
+Title:
+[Romantic Dinner at Italian Place_____]
+
+Location:
+[Olive Garden, Bandra________________]
+[📍 Set Location on Map]
+
+Budget: [₹ 3,000]
+
+Description:
+[Booked table for 2 at 8 PM. Try their
+ special pasta and tiramisu. Dress nice!___]
+
+Reminders:
+[✓] 1 day before
+[✓] 3 hours before
+[ ] Partner reminder (if not surprise)
+
+Special Notes:
+[Anniversary of our first date!________]
+
+[Create Date Night] [Save as Draft]
+```
+
+---
+
+### Flow 9: Community Forum (Paid)
+
+**Trigger:** Couple wants advice/support
+
+**Steps:**
+1. Navigate to Community
+2. Browse categories:
+   - Relationships
+   - Wedding Planning
+   - In-Laws
+   - Finances
+   - Parenting
+   - Intimacy
+   - Career Balance
+3. View popular posts
+4. Click Ask Question
+5. Check spam limit (3 posts/day)
+6. Write post title & content
+7. Select category
+8. Add tags
+9. Option: Post anonymously
+10. Submit post
+11. Other users respond
+12. Upvote helpful answers
+13. Mark best answer
+14. Interact with community
+
+**Forum Home:**
+```
+Community Forum 💬
+
+Premium Feature - Quality Discussions
+
+Categories:
+
+💕 Relationships (2,847 posts)
+💍 Wedding Planning (1,234 posts)
+👨‍👩‍👧 In-Laws & Family (892 posts)
+💰 Money & Finances (654 posts)
+👶 Parenting (432 posts)
+🔒 Intimacy (278 posts)
+💼 Career & Work Balance (189 posts)
+
+Trending Today:
+
+┌─────────────────────────────────────┐
+│  How do you handle different sleep  │
+│  schedules?                         │
+│  By: Anonymous • Relationships      │
+│  45 replies • 2.3k views            │
+│  [View Discussion]                  │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  Tips for saving for your first home│
+│  By: Priya S. • Money & Finances    │
+│  32 replies • 1.8k views • ⭐ Featured│
+│  [View Discussion]                  │
+└─────────────────────────────────────┘
+
+Your Posts: 2 • Replies: 15 • Upvotes: 47
+
+[Ask a Question] [My Posts] [Saved]
+```
+
+**Create Post (Spam Check):**
+```
+Ask the Community
+
+Daily Limit: 2 / 3 posts used today
+Resets in: 8 hours
+
+Category: [Relationships ▼]
+
+Post Title:
+[How to resolve disagreements about money?_]
+
+Post Content:
+[My partner and I often disagree about how to
+ spend money. I'm more of a saver, while they
+ like to enjoy life now. We've been married for
+ 6 months and it's causing some tension. Any
+ advice on how to find middle ground?________]
+
+Tags:
+#Money #Communication #Conflict
+[+ Add Tag]
+
+Options:
+[✓] Post anonymously
+[ ] Allow only verified couples to reply
+[✓] Receive email notifications for replies
+
+By posting, you agree to our Community Guidelines.
+
+[Post Question] [Save Draft]
+```
+
+**Post View:**
+```
+How to resolve disagreements about money?
+
+Posted by: Anonymous • 2 hours ago
+Category: Relationships • 45 replies • 2.3k views
+
+My partner and I often disagree about how to
+spend money. I'm more of a saver, while they
+like to enjoy life now. We've been married for
+6 months and it's causing some tension. Any
+advice on how to find middle ground?
+
+#Money #Communication #Conflict
+
+⬆️ 127 upvotes   💬 45 replies   🔖 Save
+
+─────────────────────────────────────
+
+Top Reply (⭐ Best Answer):
+
+By: Experienced Couple (5 years married)
+Posted: 1 hour ago
+
+Great question! Here's what worked for us:
+
+1. Set a joint budget with three categories:
+   - Fixed expenses (rent, bills)
+   - Savings goal (30% of income)
+   - Fun money (split equally for each)
+
+2. Have a monthly "money date" to review
+   together without blame.
+
+3. Compromise: Save for future BUT enjoy
+   small luxuries regularly.
+
+We went from constant fights to actually
+enjoying financial planning together.
+
+⬆️ 89 upvotes   ↓ 2 downvotes   💬 Reply
+
+─────────────────────────────────────
+
+Other Replies: (Sorted by upvotes)
+
+[View 44 more replies]
+
+─────────────────────────────────────
+
+Your Reply:
+
+[Write your reply here...____________]
+
+[Post Reply]
+```
+
+---
+
+### Flow 10: Counseling Integration (Paid)
+
+**Trigger:** Couple needs professional help
+
+**Steps:**
+1. Navigate to Counseling
+2. Browse counselor profiles
+3. Filter by:
+   - Specialization (marriage, intimacy, finance)
+   - Languages
+   - Rating
+   - Fee range
+4. View counselor profile:
+   - Qualifications
+   - Experience
+   - Bio
+   - Reviews
+   - Availability
+5. Select session type:
+   - Video call
+   - Audio call
+   - Chat
+   - In-person
+6. Choose date & time
+7. Pay session fee
+8. Receive confirmation
+9. Join session at scheduled time
+10. After session: Rate & review
+11. Emowed takes commission
+
+**Counselors Directory:**
+```
+Professional Counseling 🧑‍⚕️
+
+Find expert help for your relationship
+
+Filters:
+Specialization: [All ▼]
+Language: [English, Hindi ▼]
+Fee: [₹0 - ₹5,000 ▼]
+Rating: [4+ ⭐▼]
+
+Featured Counselors:
+
+┌─────────────────────────────────────┐
+│  🌟 SPONSORED                       │
+│  Dr. Meera Patel                    │
+│  Marriage & Family Therapist        │
+├─────────────────────────────────────┤
+│  ⭐ 4.9/5 (247 reviews)             │
+│  📚 15 years experience             │
+│  🎓 PhD Psychology, TISS Mumbai     │
+│                                     │
+│  Specializations:                   │
+│  • Conflict resolution              │
+│  • Communication                    │
+│  • Intimacy issues                  │
+│  • In-law relationships             │
+│                                     │
+│  Languages: English, Hindi, Gujarati│
+│  Fee: ₹2,500 / 60 min session      │
+│                                     │
+│  Next Available: Tomorrow, 10:00 AM │
+│                                     │
+│  [View Profile] [Book Session]      │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  Dr. Rajesh Kumar                   │
+│  Relationship Counselor             │
+│  ⭐ 4.7/5 (189 reviews)             │
+│  ₹1,800 / session                   │
+│  [View Profile] [Book Session]      │
+└─────────────────────────────────────┘
+
+[View All Counselors]
+```
+
+**Book Session:**
+```
+Book Session with Dr. Meera Patel
+
+Session Type:
+● Video Call (Recommended)
+○ Audio Call
+○ Chat Session
+○ In-Person (Mumbai only)
+
+Date & Time:
+[Nov 18, 2025 ▼] [10:00 AM ▼]
+
+Duration: 60 minutes
+
+Session Topic (Optional):
+[Communication issues with in-laws_____]
+
+Fee Breakdown:
+Session Fee: ₹2,500
+Platform Fee: ₹125 (5%)
+Total: ₹2,625
+
+Payment Method:
+● UPI
+○ Credit/Debit Card
+○ Net Banking
+
+By booking, you agree to the cancellation policy:
+• Free cancellation 24 hours before
+• 50% refund within 12 hours
+• No refund if cancelled < 2 hours
+
+[Confirm & Pay]
+```
+
+---
+
+## PAGE SPECIFICATIONS
+
+### Page 1: Matchmaking Profile (`/matchmaking/profile/:id`)
+
+**Layout:**
+```
+Header
+├── Back button
+├── Profile completion %
+└── [Edit Profile]
+
+Hero Section
+├── Profile photo (verified badge)
+├── Name, Age
+├── Location, Height
+├── Verification badges row
+└── Match score (if viewing match)
+
+Photo Gallery
+├── Carousel (5 photos max)
+├── Lightbox on click
+└── Verified badge on each
+
+About Section
+├── Bio (500 chars)
+├── Looking for (relationship goals)
+└── Interests tags
+
+Details Sections
+├── Education & Career
+├── Family Background
+├── Religion & Culture
+├── Lifestyle
+└── Preferences
+
+Social Links
+├── LinkedIn (if connected)
+├── Instagram (if connected)
+└── Privacy indicator
+
+Action Buttons (if browsing)
+├── [Pass]
+├── [Like]
+└── [Super Like]
+```
+
+### Page 2: Matches & Chat (`/matchmaking/matches`)
+
+**Layout:**
+```
+Header
+├── Matches count
+├── Filter (All/Active/New)
+└── Search
+
+Match Cards List
+├── Profile photo
+├── Name, Age
+├── Last message preview
+├── Time
+├── Unread badge
+└── Match score
+
+Chat View (on click)
+├── Partner header
+│   ├── Photo, name
+│   ├── Online status
+│   └── [Video Call] [Phone]
+├── Message area (scrollable)
+├── Message input
+├── Emoji picker
+└── [Send] button
+
+Parent Mode Toggle
+├── Invite parents button
+└── Parent activity indicator
+```
+
+### Page 3: Couple Diary (`/couple/diary`)
+
+**Layout:**
+```
+Header
+├── Diary name
+├── Entry count
+└── [+ New Entry]
+
+Calendar View
+├── Month selector
+├── Calendar grid
+├── Entry indicators
+└── Mood icons
+
+Entry List (Timeline)
+├── Date
+├── Mood indicator
+├── Title
+├── Excerpt
+├── Photo thumbnails
+├── Tags
+├── [View] [Edit]
+└── Author indicator
+
+Entry Detail View
+├── Full date
+├── Mood
+├── Title (if any)
+├── Full text
+├── Photos (gallery)
+├── Tags
+├── Privacy indicator
+└── [Edit] [Delete]
+```
+
+### Page 4: Shared Goals (`/couple/goals`)
+
+**Layout:**
+```
+Header
+├── Goals summary
+├── [+ Add Goal]
+└── Filter (Active/Completed)
+
+Goal Cards
+├── Category icon
+├── Goal title
+├── Progress bar
+├── Target date
+├── Days remaining
+├── [Update Progress]
+└── [View Details]
+
+Goal Detail View
+├── Full description
+├── Milestones list
+│   ├── Milestone name
+│   ├── Target date
+│   ├── Status (done/pending)
+│   └── Notes
+├── Progress chart
+├── Update history
+└── [Edit Goal]
+```
+
+### Page 5: Community Forum (`/community`)
+
+**Layout:**
+```
+Header
+├── [Ask Question] button
+├── Search bar
+└── Daily post limit indicator
+
+Sidebar
+├── Categories list
+├── Trending tags
+├── Your stats
+└── Leaderboard
+
+Main Feed
+├── Sort (Hot/New/Top)
+├── Filter (Category/Tags)
+├── Post cards
+│   ├── Title
+│   ├── Preview
+│   ├── Author (or Anonymous)
+│   ├── Category badge
+│   ├── Upvotes/Comments
+│   ├── Time
+│   └── Tags
+└── Pagination
+
+Post Detail Page
+├── Full post
+├── Voting buttons
+├── Comments section
+├── Reply input
+└── Related posts
+```
+
+---
+
+## API ENDPOINTS
+
+### POST `/api/matchmaking-profiles/create`
+**Request:**
+```json
+{
+  "user_id": "uuid",
+  "full_name": "Ahmed Farook",
+  "date_of_birth": "1995-01-15",
+  "gender": "male",
+  "height_cm": 178,
+  "current_city": "Mumbai",
+  "highest_education": "Masters",
+  "profession": "Software Engineer",
+  "annual_income_range": "15-20 Lakhs",
+  "religion": "Muslim",
+  "diet": "non_vegetarian",
+  "bio": "Looking for a life partner...",
+  "interests": ["travel", "photography", "reading"]
+}
+```
+
+### POST `/api/match-preferences/set`
+
+### POST `/api/match-swipes/create`
+**Request:**
+```json
+{
+  "swiper_profile_id": "uuid",
+  "swiped_profile_id": "uuid",
+  "swipe_type": "like"
+}
+```
+
+### GET `/api/matchmaking/discover`
+**Query params:**
+```
+?profile_id=uuid
+&limit=20
+&exclude_swiped=true
+```
+
+### GET `/api/matches/:profile_id`
+
+### POST `/api/match-conversations/send`
+**Request:**
+```json
+{
+  "match_id": "uuid",
+  "sender_profile_id": "uuid",
+  "message_text": "Hi! I noticed we both love hiking.",
+  "message_type": "text"
+}
+```
+
+### POST `/api/parent-invitations/send`
+
+### POST `/api/couple-diary/entry`
+**Request:**
+```json
+{
+  "couple_id": "uuid",
+  "entry_date": "2025-11-04",
+  "entry_title": "First Diwali Together",
+  "entry_text": "Celebrated our first...",
+  "mood": "happy",
+  "tags": ["festival", "family"],
+  "is_private": true
+}
+```
+
+### POST `/api/couple-goals/create`
+
+### POST `/api/date-night-plans/create`
+
+### POST `/api/trip-plans/create`
+
+### POST `/api/community-forum/post`
+**Request:**
+```json
+{
+  "category_id": "uuid",
+  "author_id": "uuid",
+  "post_title": "How to resolve money conflicts?",
+  "post_content": "My partner and I...",
+  "tags": ["money", "communication"],
+  "is_anonymous": true
+}
+```
+
+### POST `/api/community-forum/comment`
+
+### POST `/api/community-forum/vote`
+**Request:**
+```json
+{
+  "votable_type": "post",
+  "votable_id": "uuid",
+  "voter_id": "uuid",
+  "vote_type": "upvote"
+}
+```
+
+### GET `/api/counselors`
+
+### POST `/api/counseling-sessions/book`
+
+---
+
+## BUSINESS RULES
+
+### Matchmaking (Paid Only)
+- Requires premium subscription (₹2,999/3 months)
+- Free users see teaser (blurred profiles)
+- Profile completion required before browsing
+- Verification levels affect match visibility:
+  - Email only: Low priority
+  - Phone + Aadhaar: Medium priority
+  - Photo + LinkedIn: High priority
+  - Background check: Highest priority
+
+### Match Probability
+- **Free users:** Base rate - 10% = 0.5-5%
+- **Paid users:** Base rate + 10% = 60-95%
+- Calculated based on:
+  - Likes received vs sent
+  - Profile completion
+  - Verification level
+  - Activity level
+
+### Parent Mode
+- Optional feature
+- Parents can be invited anytime
+- User controls all permissions
+- Parents can't message without permission
+- User can revoke access instantly
+
+### Couple Diary (Paid Only)
+- Unlimited entries
+- Both partners can create/edit
+- Privacy settings per entry
+- Export to PDF (₹99 one-time fee)
+- Photos stored forever (paid users)
+
+### Community Forum (Paid Only)
+- 3 posts per day limit
+- Unlimited comments/replies
+- Upvote/downvote system
+- Anonymous posting allowed
+- Reported content reviewed within 24 hours
+- Spam/abuse = account suspension
+
+### Counseling
+- Commission: 5% per session
+- Counselors pay ₹5,000/month sponsorship (featured)
+- Cancellation policy enforced
+- Reviews mandatory after session
+
+---
+
+## NOTIFICATION TRIGGERS
+
+### New Match
+**To:** Both users
+**Subject:** 💕 You have a new match!
+
+### Message Received
+**To:** Recipient
+**Push:** "[Name] sent you a message"
+
+### Parent Invitation Sent
+**To:** Parent
+**Subject:** Your child invited you to their matchmaking journey
+
+### Profile View
+**To:** Profile owner (paid users only)
+**Push:** "[Name] viewed your profile"
+
+### Diary Entry Added
+**To:** Partner
+**Push:** "[Name] added a new diary entry"
+
+### Goal Milestone Reached
+**To:** Both partners
+**Push:** "🎉 Milestone achieved: [Goal]"
+
+### Date Night Reminder
+**To:** Both partners
+**Push:** "Date night tomorrow at 8 PM!"
+
+### Forum Reply
+**To:** Post author
+**Subject:** "[Name] replied to your post"
+
+### Counseling Session Reminder
+**To:** Couple
+**Push:** "Session with Dr. [Name] in 1 hour"
+
+---
+
+## VALIDATION RULES
+
+### Matchmaking Profile
+- Age: 21-60 years
+- Bio: 50-500 characters
+- Height: 140-220 cm
+- Photos: Min 1, Max 5
+- Profile photo mandatory
+
+### Match Preferences
+- Age range: Min 3 years span
+- Height optional
+- At least one location selected
+
+### Diary Entry
+- Entry text: 20-5000 characters
+- Date: Can't be future
+- Max 10 photos per entry
+
+### Shared Goal
+- Title: 5-100 characters
+- Target date: Must be future
+- Progress: 0-100%
+
+### Forum Post
+- Title: 10-200 characters
+- Content: 50-5000 characters
+- Max 10 tags
+
+---
+
+## PERFORMANCE REQUIREMENTS
+
+- Profile load: < 2 seconds
+- Match discovery: < 3 seconds (with filters)
+- Chat message send: < 500ms
+- Diary entry save: < 1 second
+- Forum post load: < 2 seconds
+
+---
+
+## SECURITY REQUIREMENTS
+
+- Aadhaar data encrypted at rest
+- Profile photos watermarked (paid users)
+- Chat messages encrypted end-to-end
+- Parent access token-based
+- Community reports flagged automatically
+- Counselor background check required
+
+---
+
+## SUCCESS METRICS
+
+- Matchmaking profile completion: 80%+
+- Match to conversation: 40%+
+- Matches to meet in-person: 15%+
+- Parent mode adoption: 30%+
+- Diary entries per couple/month: 4+
+- Goals created per couple: 3+
+- Date nights per couple/month: 2+
+- Forum engagement: 60%+ paid users
+- Counseling bookings: 20%+ couples annually
+- Premium subscription renewal: 70%+
+
+---
+
+## INTEGRATION SUMMARY
+
+All Phase 6 features require **paid subscription** ensuring:
+- Revenue generation from serious users
+- Quality community (paid users = less spam)
+- Sustainable platform growth
+- Premium support for couples
+- Long-term relationship support (pre & post marriage)

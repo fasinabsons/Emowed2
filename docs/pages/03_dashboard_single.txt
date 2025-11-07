@@ -1,0 +1,732 @@
+# PAGE SPECIFICATION: SINGLE USER DASHBOARD
+
+## PAGE DETAILS
+- **URL:** `/dashboard`
+- **Access:** Authenticated (Single users only)
+- **Purpose:** Central hub for single users to find partner and manage profile
+- **Parent Layout:** DashboardLayout
+
+---
+
+## LAYOUT STRUCTURE
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  HEADER (Component)                                        │
+│  Logo | Dashboard | Matchmaking | Settings | Profile      │
+└────────────────────────────────────────────────────────────┘
+│                                                              │
+│  ┌──────────────────┐  ┌────────────────────────────────┐  │
+│  │   SIDEBAR        │  │   MAIN CONTENT                 │  │
+│  │   (25%)          │  │   (75%)                        │  │
+│  ├──────────────────┤  ├────────────────────────────────┤  │
+│  │                  │  │                                │  │
+│  │  Profile Card    │  │  Welcome Section               │  │
+│  │  ┌────────────┐  │  │  ┌──────────────────────────┐ │  │
+│  │  │ 👤 Avatar  │  │  │  │ Hi Faseen! 👋            │ │  │
+│  │  │ Faseen     │  │  │  │ Status: 🟢 Single       │ │  │
+│  │  │ 28 years   │  │  │  │ Member since: Nov 2025  │ │  │
+│  │  │ Mumbai     │  │  │  └──────────────────────────┘ │  │
+│  │  │            │  │  │                                │  │
+│  │  │ [Edit]     │  │  │  Partner Invitation Card       │  │
+│  │  └────────────┘  │  │  ┌──────────────────────────┐ │  │
+│  │                  │  │  │ 💌 Find Your Partner      │ │  │
+│  │  Profile Comp.   │  │  │                           │ │  │
+│  │  ████░░░░░ 60%  │  │  │ Enter partner's email:    │ │  │
+│  │  [Complete]      │  │  │ [_________________]       │ │  │
+│  │                  │  │  │                           │ │  │
+│  │  Quick Actions   │  │  │ [Generate Code] 💍        │ │  │
+│  │  • Edit Profile  │  │  │                           │ │  │
+│  │  • Upgrade Pro   │  │  │ OR                        │ │  │
+│  │  • Invite Friend │  │  │ Already have code?        │ │  │
+│  │                  │  │  │ [Enter Code] 🔑          │ │  │
+│  │  Subscription    │  │  └──────────────────────────┘ │  │
+│  │  Status: Free    │  │                                │  │
+│  │  [Upgrade] ⭐   │  │  Matchmaking Preview (Locked)  │  │
+│  │                  │  │  ┌──────────────────────────┐ │  │
+│  │                  │  │  │ 💑 Find Your Match       │ │  │
+│  │                  │  │  │                           │ │  │
+│  │                  │  │  │ [Blurred profiles]       │ │  │
+│  │                  │  │  │                           │ │  │
+│  │                  │  │  │ 🔒 Upgrade to Premium    │ │  │
+│  │                  │  │  │ to unlock matchmaking    │ │  │
+│  │                  │  │  │                           │ │  │
+│  │                  │  │  │ [See Plans] 💎           │ │  │
+│  │                  │  │  └──────────────────────────┘ │  │
+│  │                  │  │                                │  │
+│  │                  │  │  Wedding Invitations           │  │
+│  │                  │  │  ┌──────────────────────────┐ │  │
+│  │                  │  │  │ 📅 Upcoming Weddings     │ │  │
+│  │                  │  │  │                           │ │  │
+│  │                  │  │  │ • Rahul & Priya          │ │  │
+│  │                  │  │  │   Dec 15, 2025           │ │  │
+│  │                  │  │  │   Mumbai                 │ │  │
+│  │                  │  │  │   [RSVP] [View]          │ │  │
+│  │                  │  │  │                           │ │  │
+│  │                  │  │  │ [No invitations yet]     │ │  │
+│  │                  │  │  └──────────────────────────┘ │  │
+│  │                  │  │                                │  │
+│  │                  │  │  Activity Feed                 │  │
+│  │                  │  │  ┌──────────────────────────┐ │  │
+│  │                  │  │  │ 🔔 Recent Updates        │ │  │
+│  │                  │  │  │                           │ │  │
+│  │                  │  │  │ • 847 couples joined     │ │  │
+│  │                  │  │  │   Emowed this week!      │ │  │
+│  │                  │  │  │                           │ │  │
+│  │                  │  │  │ • New feature: Video     │ │  │
+│  │                  │  │  │   call matching          │ │  │
+│  │                  │  │  └──────────────────────────┘ │  │
+│  └──────────────────┘  └────────────────────────────────┘  │
+│                                                              │
+└────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## COMPONENT SPECIFICATIONS
+
+### 1. Profile Card (Sidebar)
+
+```tsx
+<ProfileCard>
+  <Avatar
+    src={user.avatar}
+    fallback={user.full_name.charAt(0)}
+    size="xl"
+    editable
+    onClick={openAvatarUpload}
+  />
+  
+  <UserInfo>
+    <Name>{user.full_name}</Name>
+    <Details>
+      <Detail>
+        <CakeIcon /> {user.age} years
+      </Detail>
+      <Detail>
+        <MapPinIcon /> {user.city || 'Add location'}
+      </Detail>
+      <Detail>
+        <StatusBadge status="single">Single</StatusBadge>
+      </Detail>
+    </Details>
+  </UserInfo>
+  
+  <EditButton variant="outline" href="/profile/edit">
+    <EditIcon /> Edit Profile
+  </EditButton>
+  
+  <Divider />
+  
+  <ProfileCompletion>
+    <Label>Profile Completion</Label>
+    <ProgressBar value={profileCompletionPercentage} />
+    <Percentage>{profileCompletionPercentage}%</Percentage>
+    <MissingItems>
+      {!user.avatar && <Item>• Add profile photo</Item>}
+      {!user.bio && <Item>• Write bio</Item>}
+      {!user.city && <Item>• Add location</Item>}
+    </MissingItems>
+    <CompleteButton>Complete Profile</CompleteButton>
+  </ProfileCompletion>
+</ProfileCard>
+```
+
+**Profile Completion Logic:**
+```typescript
+const calculateProfileCompletion = (user) => {
+  const fields = [
+    user.avatar,
+    user.full_name,
+    user.email,
+    user.age,
+    user.phone,
+    user.city,
+    user.bio,
+    user.occupation,
+    user.education,
+    user.interests
+  ];
+  
+  const completed = fields.filter(Boolean).length;
+  return Math.round((completed / fields.length) * 100);
+};
+```
+
+---
+
+### 2. Welcome Section
+
+```tsx
+<WelcomeSection>
+  <Greeting>Hi {user.full_name.split(' ')[0]}! 👋</Greeting>
+  
+  <StatusRow>
+    <StatusItem>
+      <StatusDot color="green" />
+      <Text>Status: Single</Text>
+    </StatusItem>
+    <StatusItem>
+      <CalendarIcon />
+      <Text>Member since {formatDate(user.created_at)}</Text>
+    </StatusItem>
+  </StatusRow>
+  
+  <QuickStats>
+    <Stat>
+      <Value>0</Value>
+      <Label>Pending Invitations</Label>
+    </Stat>
+    <Stat>
+      <Value>2</Value>
+      <Label>Wedding Invites</Label>
+    </Stat>
+    <Stat>
+      <Value>Free</Value>
+      <Label>Plan</Label>
+    </Stat>
+  </QuickStats>
+</WelcomeSection>
+```
+
+---
+
+### 3. Partner Invitation Card
+
+```tsx
+<PartnerInvitationCard>
+  <CardHeader>
+    <Icon>💌</Icon>
+    <Title>Ready to find your partner?</Title>
+  </CardHeader>
+  
+  <CardBody>
+    <Tabs defaultValue="send">
+      <TabList>
+        <Tab value="send">Send Invitation</Tab>
+        <Tab value="receive">Have a Code?</Tab>
+      </TabList>
+      
+      <TabPanel value="send">
+        <Form onSubmit={generateInvitationCode}>
+          <InputField>
+            <Label>Partner's Email Address</Label>
+            <Input
+              type="email"
+              placeholder="partner@example.com"
+              value={partnerEmail}
+              onChange={setPartnerEmail}
+              error={emailError}
+            />
+            {emailError && <ErrorText>{emailError}</ErrorText>}
+          </InputField>
+          
+          <Button 
+            type="submit" 
+            disabled={!partnerEmail || loading}
+            fullWidth
+          >
+            {loading ? (
+              <><Spinner /> Generating...</>
+            ) : (
+              <>💍 Generate Invitation Code</>
+            )}
+          </Button>
+        </Form>
+        
+        {generatedCode && (
+          <GeneratedCodeModal>
+            <ModalHeader>
+              ✅ Invitation Created!
+            </ModalHeader>
+            <ModalBody>
+              <CodeDisplay>
+                <Code>{generatedCode.code}</Code>
+                <CopyButton onClick={copyCode}>
+                  <CopyIcon /> Copy
+                </CopyButton>
+              </CodeDisplay>
+              
+              <Expiry>
+                ⏰ Expires in {formatTimeRemaining(generatedCode.expires_at)}
+              </Expiry>
+              
+              <ShareOptions>
+                <ShareTitle>Share with {partnerEmail}:</ShareTitle>
+                <ShareButtons>
+                  <ShareButton 
+                    variant="whatsapp"
+                    onClick={shareViaWhatsApp}
+                  >
+                    <WhatsAppIcon /> WhatsApp
+                  </ShareButton>
+                  <ShareButton 
+                    variant="email"
+                    onClick={shareViaEmail}
+                  >
+                    <MailIcon /> Email
+                  </ShareButton>
+                  <ShareButton 
+                    variant="link"
+                    onClick={copyLink}
+                  >
+                    <LinkIcon /> Copy Link
+                  </ShareButton>
+                </ShareButtons>
+              </ShareOptions>
+            </ModalBody>
+          </GeneratedCodeModal>
+        )}
+      </TabPanel>
+      
+      <TabPanel value="receive">
+        <Form onSubmit={acceptInvitation}>
+          <InputField>
+            <Label>Enter 6-Character Code</Label>
+            <CodeInput
+              length={6}
+              value={inviteCode}
+              onChange={setInviteCode}
+              autoFocus
+            />
+          </InputField>
+          
+          <Button 
+            type="submit" 
+            disabled={inviteCode.length !== 6 || loading}
+            fullWidth
+          >
+            {loading ? (
+              <><Spinner /> Validating...</>
+            ) : (
+              <>🔑 Accept Invitation</>
+            )}
+          </Button>
+        </Form>
+      </TabPanel>
+    </Tabs>
+  </CardBody>
+</PartnerInvitationCard>
+```
+
+**Code Generation Logic:**
+```typescript
+const generateInvitationCode = async () => {
+  setLoading(true);
+  
+  try {
+    // Validate email
+    if (!validateEmail(partnerEmail)) {
+      setEmailError('Please enter a valid email');
+      return;
+    }
+    
+    // Check if user can invite (not in cooldown, < 3 rejections)
+    const { data: user } = await supabase
+      .from('users')
+      .select('can_invite, relationship_status')
+      .eq('id', currentUser.id)
+      .single();
+    
+    if (!user.can_invite) {
+      toast.error('You have reached invitation limit. Partner must invite you.');
+      return;
+    }
+    
+    if (user.relationship_status !== 'single') {
+      toast.error('You must be single to send invitations');
+      return;
+    }
+    
+    // Check if receiver is already in relationship
+    const { data: receiver } = await supabase
+      .from('users')
+      .select('relationship_status')
+      .eq('email', partnerEmail)
+      .single();
+    
+    if (receiver && receiver.relationship_status !== 'single') {
+      toast.error('This person is already in a relationship');
+      return;
+    }
+    
+    // Generate code via Supabase function
+    const { data, error } = await supabase.rpc('generate_invite_code', {
+      p_sender_id: currentUser.id,
+      p_receiver_email: partnerEmail
+    });
+    
+    if (error) throw error;
+    
+    setGeneratedCode(data);
+    toast.success('Invitation created! Share the code with your partner.');
+    
+  } catch (error) {
+    toast.error(error.message || 'Failed to generate invitation');
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+---
+
+### 4. Matchmaking Preview (Locked)
+
+```tsx
+<MatchmakingPreview>
+  <PreviewHeader>
+    <Icon>💑</Icon>
+    <Title>Find Your Perfect Match</Title>
+    <PremiumBadge>Premium</PremiumBadge>
+  </PreviewHeader>
+  
+  <PreviewBody>
+    <BlurredProfiles>
+      {[1, 2, 3, 4].map(i => (
+        <BlurredCard key={i}>
+          <BlurredAvatar />
+          <BlurredInfo />
+        </BlurredCard>
+      ))}
+    </BlurredProfiles>
+    
+    <Overlay>
+      <LockIcon size="large" />
+      <OverlayText>
+        <Strong>Unlock Matchmaking</Strong>
+        <Description>
+          Access 2,847 verified profiles with 73% match success rate
+        </Description>
+      </OverlayText>
+      
+      <Features>
+        <Feature>✓ Aadhaar verified profiles</Feature>
+        <Feature>✓ Advanced matching algorithm</Feature>
+        <Feature>✓ Video call built-in</Feature>
+        <Feature>✓ Parent mode available</Feature>
+      </Features>
+      
+      <UpgradeButton href="/pricing">
+        💎 See Premium Plans
+      </UpgradeButton>
+    </Overlay>
+  </PreviewBody>
+</MatchmakingPreview>
+```
+
+---
+
+### 5. Wedding Invitations Card
+
+```tsx
+<WeddingInvitationsCard>
+  <CardHeader>
+    <Icon>📅</Icon>
+    <Title>Upcoming Weddings</Title>
+    <Badge>{invitations.length}</Badge>
+  </CardHeader>
+  
+  <CardBody>
+    {invitations.length === 0 ? (
+      <EmptyState>
+        <EmptyIcon>🎊</EmptyIcon>
+        <EmptyText>No wedding invitations yet</EmptyText>
+        <EmptySubtext>
+          You'll see weddings you're invited to here
+        </EmptySubtext>
+      </EmptyState>
+    ) : (
+      <InvitationsList>
+        {invitations.map(invitation => (
+          <InvitationItem key={invitation.id}>
+            <InvitationInfo>
+              <CoupleNames>
+                {invitation.groom_name} & {invitation.bride_name}
+              </CoupleNames>
+              <WeddingDetails>
+                <Detail>
+                  <CalendarIcon /> {formatDate(invitation.wedding_date)}
+                </Detail>
+                <Detail>
+                  <MapPinIcon /> {invitation.city}
+                </Detail>
+                <Detail>
+                  <UsersIcon /> {invitation.guest_count} guests
+                </Detail>
+              </WeddingDetails>
+            </InvitationInfo>
+            
+            <InvitationActions>
+              {!invitation.rsvp_status ? (
+                <Button 
+                  variant="primary" 
+                  size="sm"
+                  onClick={() => openRSVPModal(invitation)}
+                >
+                  RSVP Now
+                </Button>
+              ) : (
+                <RSVPStatus status={invitation.rsvp_status}>
+                  {invitation.rsvp_status === 'attending' && '✅ Attending'}
+                  {invitation.rsvp_status === 'not_attending' && '❌ Not Attending'}
+                  {invitation.rsvp_status === 'maybe' && '❓ Maybe'}
+                </RSVPStatus>
+              )}
+              
+              <Button 
+                variant="ghost" 
+                size="sm"
+                href={`/wedding/${invitation.wedding_id}`}
+              >
+                View Details →
+              </Button>
+            </InvitationActions>
+          </InvitationItem>
+        ))}
+      </InvitationsList>
+    )}
+  </CardBody>
+</WeddingInvitationsCard>
+```
+
+---
+
+### 6. Activity Feed
+
+```tsx
+<ActivityFeed>
+  <FeedHeader>
+    <Icon>🔔</Icon>
+    <Title>Recent Updates</Title>
+  </FeedHeader>
+  
+  <FeedBody>
+    {activities.map(activity => (
+      <ActivityItem key={activity.id}>
+        <ActivityIcon type={activity.type} />
+        <ActivityContent>
+          <ActivityText>{activity.message}</ActivityText>
+          <ActivityTime>{formatTimeAgo(activity.created_at)}</ActivityTime>
+        </ActivityContent>
+      </ActivityItem>
+    ))}
+    
+    {/* Sample activities */}
+    <ActivityItem>
+      <HeartIcon color="pink" />
+      <ActivityContent>
+        <ActivityText>
+          847 couples joined Emowed this week! 🎉
+        </ActivityText>
+        <ActivityTime>2 hours ago</ActivityTime>
+      </ActivityContent>
+    </ActivityItem>
+    
+    <ActivityItem>
+      <SparklesIcon color="gold" />
+      <ActivityContent>
+        <ActivityText>
+          New feature: Video call matching is now live!
+        </ActivityText>
+        <ActivityTime>1 day ago</ActivityTime>
+      </ActivityContent>
+    </ActivityItem>
+    
+    <ActivityItem>
+      <TrophyIcon color="green" />
+      <ActivityContent>
+        <ActivityText>
+          Complete your profile to increase visibility
+        </ActivityText>
+        <ActivityTime>2 days ago</ActivityTime>
+      </ActivityContent>
+    </ActivityItem>
+  </FeedBody>
+</ActivityFeed>
+```
+
+---
+
+## STATE MANAGEMENT
+
+```typescript
+interface DashboardState {
+  user: User;
+  invitations: WeddingInvitation[];
+  activities: Activity[];
+  partnerEmail: string;
+  generatedCode: InvitationCode | null;
+  inviteCode: string;
+  loading: boolean;
+  emailError: string | null;
+}
+
+const useDashboard = () => {
+  const [state, setState] = useState<DashboardState>({
+    user: null,
+    invitations: [],
+    activities: [],
+    partnerEmail: '',
+    generatedCode: null,
+    inviteCode: '',
+    loading: false,
+    emailError: null
+  });
+  
+  // Fetch user data
+  useEffect(() => {
+    fetchUserData();
+    fetchInvitations();
+    fetchActivities();
+  }, []);
+  
+  const fetchUserData = async () => {
+    const { data: user } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+    
+    setState(prev => ({ ...prev, user }));
+  };
+  
+  const fetchInvitations = async () => {
+    const { data: invitations } = await supabase
+      .from('guest_invitations')
+      .select(`
+        *,
+        wedding:weddings(*)
+      `)
+      .eq('invitee_email', currentUser.email)
+      .eq('status', 'accepted');
+    
+    setState(prev => ({ ...prev, invitations }));
+  };
+  
+  return state;
+};
+```
+
+---
+
+## REAL-TIME SUBSCRIPTIONS
+
+```typescript
+// Subscribe to invitation status changes
+useEffect(() => {
+  const subscription = supabase
+    .channel('invitations')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'partner_invitations',
+        filter: `sender_id=eq.${currentUser.id}`
+      },
+      (payload) => {
+        if (payload.eventType === 'UPDATE') {
+          if (payload.new.status === 'accepted') {
+            toast.success('🎉 Your partner accepted! Redirecting...');
+            setTimeout(() => router.push('/dashboard'), 2000);
+          } else if (payload.new.status === 'rejected') {
+            toast.error('💔 Invitation declined');
+            setGeneratedCode(null);
+          }
+        }
+      }
+    )
+    .subscribe();
+  
+  return () => {
+    subscription.unsubscribe();
+  };
+}, []);
+```
+
+---
+
+## MOBILE RESPONSIVE
+
+```css
+/* Desktop: Sidebar + Main */
+@media (min-width: 768px) {
+  .dashboard-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: var(--space-6);
+  }
+}
+
+/* Mobile: Stack vertically */
+@media (max-width: 767px) {
+  .dashboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  
+  .sidebar {
+    position: sticky;
+    top: 60px;
+    z-index: 10;
+  }
+  
+  .profile-card {
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  .avatar {
+    width: 60px;
+    height: 60px;
+  }
+}
+```
+
+---
+
+## LOADING STATES
+
+```tsx
+<LoadingDashboard>
+  <Skeleton variant="circular" width={120} height={120} />
+  <Skeleton variant="text" width="60%" />
+  <Skeleton variant="rectangular" height={200} />
+  <Skeleton variant="rectangular" height={300} />
+</LoadingDashboard>
+```
+
+---
+
+## ERROR HANDLING
+
+```typescript
+const handleError = (error: Error) => {
+  console.error('Dashboard error:', error);
+  
+  if (error.message.includes('auth')) {
+    toast.error('Session expired. Please login again.');
+    router.push('/login');
+  } else if (error.message.includes('network')) {
+    toast.error('Connection issue. Please check your internet.');
+  } else {
+    toast.error('Something went wrong. Please refresh the page.');
+  }
+};
+```
+
+---
+
+## SUCCESS METRICS
+
+- **Profile Completion Rate:** 80%+ complete profile within 7 days
+- **Invitation Sent Rate:** 60%+ send invitation within 24 hours
+- **Time to Action:** < 5 minutes to send first invitation
+- **Upgrade Prompt Click:** 15%+ click on matchmaking preview
+
+---
+
+This single user dashboard is designed to guide users toward sending partner invitations while showcasing premium features! 🎯
+

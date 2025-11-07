@@ -1,0 +1,52 @@
+# PAGE 07: EVENT TIMELINE
+
+## 📄 PAGE DETAILS
+
+**URL:** `/wedding/{weddingId}/timeline`  
+**Access Level:** Authenticated (Couple only)  
+**Purpose:** Manage wedding events and timeline  
+**Priority:** HIGH - Required for MVP  
+
+---
+
+## 🎯 PAGE GOAL
+
+View, edit, and manage all wedding events in chronological order.
+
+---
+
+## 📐 LAYOUT
+
+```
+┌───────────────────────────────────────────────┐
+│  Wedding Events Timeline            [+ Add]   │
+├───────────────────────────────────────────────┤
+│                                               │
+│  Timeline View (Vertical):                    │
+│                                               │
+│  Oct 16, 2025                                 │
+│  ● Engagement Ceremony                        │
+│    Grand Hall | 6:00 PM                       │
+│    [Edit] [Delete] [View Guests]              │
+│                                               │
+│  Nov 15, 2025                                 │
+│  ● Save The Date                              │
+│    -                                          │
+│                                               │
+│  Dec 13, 2025                                 │
+│  ● Haldi Ceremony                             │
+│    Home | 10:00 AM                            │
+│    [Edit] [Delete] [View Guests]              │
+│                                               │
+│  [Continue for all 7 events...]               │
+│                                               │
+└───────────────────────────────────────────────┘
+```
+
+---
+
+*Full spec continues...*
+
+**Status:** Ready for implementation  
+**Est. Time:** 5 hours
+

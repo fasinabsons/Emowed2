@@ -1,0 +1,898 @@
+# EMOWED - COMPLETE FRONTEND IMPLEMENTATION GUIDE
+
+## 🎨 FRONTEND ROADMAP WITH TASKS
+
+**Purpose:** Build all frontend pages systematically
+**References:** theme.txt, architecture.txt, tasks.txt, page specs
+**Timeline:** 12 weeks (8 hours/day)
+
+---
+
+## 📋 TABLE OF CONTENTS
+
+1. [Setup & Configuration](#setup)
+2. [Core Pages (Week 1-2)](#core-pages)
+3. [Dashboard Pages (Week 2-3)](#dashboards)
+4. [Wedding Pages (Week 3-5)](#wedding)
+5. [Guest Pages (Week 5-6)](#guests)
+6. [Vendor Pages (Week 7-8)](#vendors)
+7. [Media & Games (Week 9-10)](#media)
+8. [Settings & Profile (Week 11)](#settings)
+9. [Polish & Deploy (Week 12)](#polish)
+
+---
+
+## 🚀 SETUP & CONFIGURATION
+
+### TASK F1: Project Setup (Day 1)
+
+**Goal:** Initialize React project with all dependencies
+
+**Steps:**
+
+1. **Create React App**
+```bash
+npx create-react-app emowed-frontend --template typescript
+cd emowed-frontend
+```
+
+2. **Install Core Dependencies**
+```bash
+# Supabase
+npm install @supabase/supabase-js
+
+# Routing
+npm install react-router-dom @types/react-router-dom
+
+# State Management
+npm install @tanstack/react-query zustand
+
+# Forms
+npm install react-hook-form zod @hookform/resolvers
+
+# UI Components
+npm install tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
+# Utilities
+npm install clsx date-fns
+npm install react-hot-toast
+npm install lucide-react
+
+# Development
+npm install -D @types/node
+```
+
+3. **Configure Tailwind CSS**
+```javascript
+// tailwind.config.js
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#FFF1F6',
+          100: '#FFE4ED',
+          200: '#FFC9DC',
+          300: '#FF9DBE',
+          400: '#FF6B9D', // Main pink
+          500: '#F03A7A',
+          600: '#E0195F',
+          700: '#BD0F4A',
+          800: '#9D1040',
+          900: '#83113A',
+        },
+      },
+    },
+  },
+  plugins: [],
+}
+```
+
+4. **Project Structure**
+```
+src/
+├── components/
+│   ├── common/          # Reusable components
+│   │   ├── Button.tsx
+│   │   ├── Input.tsx
+│   │   ├── Card.tsx
+│   │   ├── Modal.tsx
+│   │   └── ...
+│   ├── auth/            # Auth components
+│   ├── dashboard/       # Dashboard components
+│   ├── wedding/         # Wedding components
+│   ├── guests/          # Guest components
+│   └── vendors/         # Vendor components
+├── pages/               # Page components
+│   ├── Home.tsx
+│   ├── Signup.tsx
+│   ├── Login.tsx
+│   ├── Dashboard.tsx
+│   └── ...
+├── hooks/               # Custom hooks
+│   ├── useAuth.ts
+│   ├── useWedding.ts
+│   └── ...
+├── lib/                 # Utilities
+│   ├── supabase.ts
+│   ├── api.ts
+│   └── utils.ts
+├── types/               # TypeScript types
+│   └── index.ts
+├── contexts/            # React contexts
+│   └── AuthContext.tsx
+└── App.tsx
+```
+
+**Reference:** `tasks.txt` Lines 150-230
+
+**Time:** 4 hours
+
+---
+
+## 🏠 CORE PAGES (Week 1-2)
+
+### TASK F2: Homepage (8 hours)
+
+**Goal:** Build landing page that converts visitors to signups
+
+**Reference Files:**
+- `pages/01_homepage.txt` - Complete specification
+- `theme.txt` - Lines 600-1400 (Components)
+
+**Components to Build:**
+
+1. **Header Component** (1 hour)
+```typescript
+// src/components/common/Header.tsx
+
+interface HeaderProps {
+  variant?: 'home' | 'app';
+}
+
+export const Header: React.FC<HeaderProps> = ({ variant = 'home' }) => {
+  return (
+    <header className="bg-white shadow-sm sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        {/* Logo */}
+        <div className="flex items-center space-x-2">
+          <img src="/logo.svg" alt="Emowed" className="h-10" />
+          <span className="text-2xl font-bold text-primary-400">Emowed</span>
+        </div>
+        
+        {/* Navigation */}
+        {variant === 'home' ? (
+          <nav className="hidden md:flex space-x-8">
+            <a href="#features" className="hover:text-primary-400">Features</a>
+            <a href="#pricing" className="hover:text-primary-400">Pricing</a>
+            <a href="#about" className="hover:text-primary-400">About</a>
+          </nav>
+        ) : null}
+        
+        {/* CTA Buttons */}
+        <div className="flex space-x-4">
+          <Button variant="ghost" href="/login">Login</Button>
+          <Button variant="primary" href="/signup">Sign Up</Button>
+        </div>
+      </div>
+    </header>
+  );
+};
+```
+
+**Reference:** `pages/01_homepage.txt` Lines 100-200
+
+2. **Hero Section** (2 hours)
+```typescript
+// src/components/home/HeroSection.tsx
+
+export const HeroSection: React.FC = () => {
+  return (
+    <section className="bg-gradient-to-br from-pink-50 to-rose-100 py-20">
+      <div className="container mx-auto px-4 text-center">
+        <h1 className="text-5xl md:text-6xl font-bold mb-6">
+          From First Swipe to Forever 💕
+        </h1>
+        
+        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          India's first complete relationship platform. 
+          Date, Plan Wedding, Build Life Together.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button size="lg" variant="primary" href="/signup">
+            Start Your Journey
+          </Button>
+          <Button size="lg" variant="outline" href="#features">
+            Learn More
+          </Button>
+        </div>
+        
+        {/* Social Proof */}
+        <div className="mt-12 flex justify-center gap-8 text-sm text-gray-600">
+          <div>
+            <span className="block text-2xl font-bold text-primary-400">1000+</span>
+            <span>Happy Couples</span>
+          </div>
+          <div>
+            <span className="block text-2xl font-bold text-primary-400">10,000+</span>
+            <span>Weddings Planned</span>
+          </div>
+          <div>
+            <span className="block text-2xl font-bold text-primary-400">50,000+</span>
+            <span>Guests Connected</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+```
+
+**Reference:** `pages/01_homepage.txt` Lines 200-400
+
+3. **Features Section** (3 hours)
+```typescript
+// src/components/home/FeaturesSection.tsx
+
+const features = [
+  {
+    icon: '💑',
+    title: 'Matchmaking',
+    description: 'Find your perfect match with AI-powered recommendations',
+  },
+  {
+    icon: '💍',
+    title: 'Wedding Planning',
+    description: 'Complete wedding management from engagement to reception',
+  },
+  {
+    icon: '👨‍👩‍👧‍👦',
+    title: 'Family Integration',
+    description: 'Hierarchical invitations that mirror real Indian weddings',
+  },
+  {
+    icon: '📸',
+    title: 'Photo Gallery',
+    description: 'Unlimited storage for your precious wedding memories',
+  },
+  {
+    icon: '🎁',
+    title: 'Digital Gifting',
+    description: 'Send and track gifts seamlessly',
+  },
+  {
+    icon: '💬',
+    title: 'Post-Marriage',
+    description: 'Couple diary, goals, and community support',
+  },
+];
+
+export const FeaturesSection: React.FC = () => {
+  return (
+    <section id="features" className="py-20">
+      <div className="container mx-auto px-4">
+        <h2 className="text-4xl font-bold text-center mb-12">
+          Everything You Need, All in One Place
+        </h2>
+        
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {features.map((feature, index) => (
+            <Card key={index} className="text-center p-6 hover:shadow-lg transition">
+              <div className="text-5xl mb-4">{feature.icon}</div>
+              <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+              <p className="text-gray-600">{feature.description}</p>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+```
+
+**Reference:** `pages/01_homepage.txt` Lines 400-600
+
+4. **Pricing Section** (2 hours)
+```typescript
+// src/components/home/PricingSection.tsx
+
+const plans = [
+  {
+    name: 'Free',
+    price: '₹0',
+    features: [
+      '100 guests',
+      '3 events',
+      '30-day storage',
+      'Basic RSVP',
+      'Community access',
+    ],
+    cta: 'Get Started',
+    variant: 'outline' as const,
+  },
+  {
+    name: 'Premium',
+    price: '₹999',
+    features: [
+      'Unlimited guests',
+      'Unlimited events',
+      'Permanent storage',
+      'Vendor quotes',
+      'Custom wedding card',
+      'Priority support',
+    ],
+    cta: 'Start Premium',
+    variant: 'primary' as const,
+    badge: 'Most Popular',
+  },
+  {
+    name: 'Plus',
+    price: '₹2,499',
+    features: [
+      'Everything Premium',
+      'Video streaming',
+      'Advanced analytics',
+      'Custom branding',
+      'Dedicated manager',
+    ],
+    cta: 'Go Plus',
+    variant: 'outline' as const,
+  },
+];
+
+export const PricingSection: React.FC = () => {
+  return (
+    <section id="pricing" className="py-20 bg-gray-50">
+      <div className="container mx-auto px-4">
+        <h2 className="text-4xl font-bold text-center mb-12">
+          Simple, Transparent Pricing
+        </h2>
+        
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          {plans.map((plan, index) => (
+            <Card 
+              key={index} 
+              className={`p-8 relative ${plan.badge ? 'border-2 border-primary-400' : ''}`}
+            >
+              {plan.badge && (
+                <span className="absolute top-0 right-0 bg-primary-400 text-white px-4 py-1 text-sm rounded-bl-lg rounded-tr-lg">
+                  {plan.badge}
+                </span>
+              )}
+              
+              <h3 className="text-2xl font-bold mb-4">{plan.name}</h3>
+              <div className="text-4xl font-bold mb-6">{plan.price}</div>
+              
+              <ul className="space-y-3 mb-8">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="flex items-start">
+                    <span className="text-green-500 mr-2">✓</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              
+              <Button variant={plan.variant} fullWidth href="/signup">
+                {plan.cta}
+              </Button>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+```
+
+**Reference:** `PRD_REFINED.txt` Lines 250-350
+
+**Complete Page:**
+```typescript
+// src/pages/Home.tsx
+
+import { Header } from '@/components/common/Header';
+import { HeroSection } from '@/components/home/HeroSection';
+import { FeaturesSection } from '@/components/home/FeaturesSection';
+import { PricingSection } from '@/components/home/PricingSection';
+import { Footer } from '@/components/common/Footer';
+
+export const HomePage: React.FC = () => {
+  return (
+    <div className="min-h-screen">
+      <Header variant="home" />
+      <HeroSection />
+      <FeaturesSection />
+      <PricingSection />
+      <Footer />
+    </div>
+  );
+};
+```
+
+**Test Checklist:**
+- [ ] Homepage loads without errors
+- [ ] All sections visible
+- [ ] Navigation works
+- [ ] CTAs link to signup/login
+- [ ] Mobile responsive
+- [ ] Images load correctly
+
+**Time:** 8 hours
+
+---
+
+### TASK F3: Signup Page (6 hours)
+
+**Goal:** Build signup form with validation
+
+**Reference Files:**
+- `pages/02_signup_login.txt` - Lines 1-600
+- `theme.txt` - Lines 900-1100 (Forms)
+- `architecture.txt` - Lines 250-280 (Users table)
+
+**Implementation:**
+
+```typescript
+// src/pages/Signup.tsx
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { supabase } from '@/lib/supabase';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+
+// Validation schema
+const signupSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, 
+      'Password must include uppercase, lowercase, number, and special character'),
+  confirmPassword: z.string(),
+  fullName: z.string()
+    .min(1, 'Full name is required')
+    .refine((val) => val.split(' ').length >= 2, 'Please enter first and last name'),
+  phone: z.string().optional(),
+  age: z.number().min(18, 'Must be 18 or older'),
+  relationshipStatus: z.enum(['single', 'committed', 'engaged', 'married', 'divorced', 'widowed'])
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type SignupForm = z.infer<typeof signupSchema>;
+
+export const SignupPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<SignupForm>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      relationshipStatus: 'single',
+    },
+  });
+
+  const onSubmit = async (data: SignupForm) => {
+    setLoading(true);
+    
+    try {
+      // 1. Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (authError) throw authError;
+
+      // 2. Insert user profile
+      const { error: dbError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user!.id,
+          email: data.email,
+          full_name: data.fullName,
+          phone: data.phone || null,
+          age: data.age,
+          relationship_status: data.relationshipStatus,
+        });
+
+      if (dbError) throw dbError;
+
+      toast.success('Account created! Please check your email to verify.');
+      
+      // 3. Redirect to dashboard
+      setTimeout(() => navigate('/dashboard'), 2000);
+      
+    } catch (error: any) {
+      toast.error(error.message || 'Signup failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md p-8">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-primary-400">Emowed</h1>
+          <p className="text-gray-600 mt-2">Create your account</p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Email *</label>
+            <input
+              {...register('email')}
+              type="email"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-400"
+              placeholder="you@example.com"
+            />
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+            )}
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Password *</label>
+            <input
+              {...register('password')}
+              type="password"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-400"
+              placeholder="••••••••"
+            />
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+            )}
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Confirm Password *</label>
+            <input
+              {...register('confirmPassword')}
+              type="password"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-400"
+              placeholder="••••••••"
+            />
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
+            )}
+          </div>
+
+          {/* Full Name */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Full Name *</label>
+            <input
+              {...register('fullName')}
+              type="text"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-400"
+              placeholder="John Doe"
+            />
+            {errors.fullName && (
+              <p className="text-red-500 text-sm mt-1">{errors.fullName.message}</p>
+            )}
+          </div>
+
+          {/* Phone (Optional) */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Phone (Optional)</label>
+            <input
+              {...register('phone')}
+              type="tel"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-400"
+              placeholder="+91-9876543210"
+            />
+          </div>
+
+          {/* Age */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Age *</label>
+            <select
+              {...register('age', { valueAsNumber: true })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-400"
+            >
+              <option value="">Select Age</option>
+              {Array.from({ length: 83 }, (_, i) => i + 18).map(age => (
+                <option key={age} value={age}>{age}</option>
+              ))}
+            </select>
+            {errors.age && (
+              <p className="text-red-500 text-sm mt-1">{errors.age.message}</p>
+            )}
+          </div>
+
+          {/* Relationship Status */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Relationship Status</label>
+            <select
+              {...register('relationshipStatus')}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-400"
+            >
+              <option value="single">Single</option>
+              <option value="committed">Committed</option>
+              <option value="engaged">Engaged</option>
+              <option value="married">Married</option>
+              <option value="divorced">Divorced</option>
+              <option value="widowed">Widowed</option>
+            </select>
+          </div>
+
+          {/* Submit */}
+          <Button 
+            type="submit" 
+            variant="primary" 
+            fullWidth 
+            disabled={loading}
+          >
+            {loading ? 'Creating Account...' : 'Sign Up'}
+          </Button>
+        </form>
+
+        {/* Login Link */}
+        <p className="text-center text-sm text-gray-600 mt-6">
+          Already have an account?{' '}
+          <a href="/login" className="text-primary-400 hover:text-primary-500 font-medium">
+            Login
+          </a>
+        </p>
+      </Card>
+    </div>
+  );
+};
+```
+
+**Reference:** `tasks.txt` Lines 600-750
+
+**Test Checklist:**
+- [ ] Form renders correctly
+- [ ] Email validation works
+- [ ] Password validation works
+- [ ] Age validation (18+) works
+- [ ] Passwords match validation
+- [ ] Submit creates user in Supabase
+- [ ] Email verification sent
+- [ ] Redirects to dashboard
+- [ ] Error messages show correctly
+
+**Time:** 6 hours
+
+---
+
+### TASK F4: Login Page (3 hours)
+
+**Goal:** Build login form with authentication
+
+**Implementation:**
+
+```typescript
+// src/pages/Login.tsx
+
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { supabase } from '@/lib/supabase';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+
+const loginSchema = z.object({
+  email: z.string().email('Invalid email'),
+  password: z.string().min(1, 'Password is required'),
+  remember: z.boolean().optional(),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
+
+export const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data: LoginForm) => {
+    setLoading(true);
+
+    try {
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (error) throw error;
+
+      // Get user profile to check relationship status
+      const { data: user } = await supabase
+        .from('users')
+        .select('relationship_status')
+        .eq('id', authData.user.id)
+        .single();
+
+      toast.success('Login successful!');
+
+      // Redirect based on relationship status
+      if (user?.relationship_status === 'single') {
+        navigate('/dashboard'); // Single dashboard
+      } else if (user?.relationship_status === 'engaged') {
+        navigate('/dashboard'); // Engaged dashboard
+      } else if (user?.relationship_status === 'married') {
+        navigate('/post-marriage');
+      } else {
+        navigate('/dashboard');
+      }
+
+    } catch (error: any) {
+      toast.error(error.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-primary-400">Emowed</h1>
+          <p className="text-gray-600 mt-2">Welcome back!</p>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Email</label>
+            <input
+              {...register('email')}
+              type="email"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-400"
+              placeholder="you@example.com"
+            />
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Password</label>
+            <input
+              {...register('password')}
+              type="password"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-400"
+              placeholder="••••••••"
+            />
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <label className="flex items-center">
+              <input {...register('remember')} type="checkbox" className="mr-2" />
+              <span className="text-sm">Remember me</span>
+            </label>
+            <a href="/forgot-password" className="text-sm text-primary-400 hover:text-primary-500">
+              Forgot password?
+            </a>
+          </div>
+
+          <Button type="submit" variant="primary" fullWidth disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
+          </Button>
+        </form>
+
+        <p className="text-center text-sm text-gray-600 mt-6">
+          Don't have an account?{' '}
+          <a href="/signup" className="text-primary-400 hover:text-primary-500 font-medium">
+            Sign Up
+          </a>
+        </p>
+      </Card>
+    </div>
+  );
+};
+```
+
+**Reference:** `tasks.txt` Lines 750-850
+
+**Time:** 3 hours
+
+---
+
+## 📊 COMPLETE PAGE LIST
+
+**Total Pages Needed:** 38 pages
+
+### Authentication (2 pages) ✅
+- [x] Homepage
+- [x] Signup
+- [x] Login
+
+### Dashboard (4 pages)
+- [ ] Single Dashboard
+- [ ] Engaged Dashboard
+- [ ] Married Dashboard
+- [ ] Vendor Dashboard
+
+### Wedding (10 pages)
+- [ ] Wedding Creation Wizard
+- [ ] Wedding Details
+- [ ] Event Timeline
+- [ ] Guest Management
+- [ ] Guest RSVP
+- [ ] Family Tree
+- [ ] Vendor Marketplace
+- [ ] Vendor Quotes
+- [ ] Wedding Card Designer
+- [ ] Media Gallery
+
+### Games & Gifts (3 pages)
+- [ ] Games Dashboard
+- [ ] Leaderboards
+- [ ] Gift Marketplace
+
+### Matchmaking (5 pages)
+- [ ] Matchmaking Home
+- [ ] Profile Creator
+- [ ] Swipe Interface
+- [ ] Matches List
+- [ ] Video Call
+
+### Post-Marriage (5 pages)
+- [ ] Couple Diary
+- [ ] Shared Goals
+- [ ] Date Night Planner
+- [ ] Trip Planner
+- [ ] Community Forum
+
+### Settings (4 pages)
+- [ ] Profile Settings
+- [ ] Account Settings
+- [ ] Subscription Management
+- [ ] Notifications
+
+### Misc (5 pages)
+- [ ] Pricing
+- [ ] About
+- [ ] Help Center
+- [ ] Privacy Policy
+- [ ] Terms of Service
+
+---
+
+## ⏭️ NEXT STEPS
+
+**Continue with:**
+1. Build reusable components (Button, Input, Card, Modal)
+2. Set up routing (React Router)
+3. Implement authentication context
+4. Build Single Dashboard (TASK F5)
+5. Build Engaged Dashboard (TASK F6)
+6. Build Wedding Creation (TASK F7)
+7. Continue with remaining pages...
+
+**Reference:**
+- `tasks.txt` for detailed implementation steps
+- `theme.txt` for component styling
+- `architecture.txt` for API integration
+- Page spec files (`pages/*.txt`) for detailed requirements
+
+**Total Time:** 480 hours (12 weeks × 40 hours/week)
+
+---
+
+*Frontend Guide Created: November 4, 2025*
+*Status: Ready for development*
+*Start with TASK F1 and work sequentially*
+
+**From First Swipe to Forever! 💕**
+

@@ -1,0 +1,2072 @@
+# PHASE 1: Complete Detailed Specification
+
+## 📋 Table of Contents
+1. [System Architecture](#system-architecture)
+2. [User Flows](#user-flows)
+3. [Database Schema](#database-schema)
+4. [Page-by-Page Specifications](#page-specifications)
+5. [Business Logic & Rules](#business-logic)
+6. [API Endpoints](#api-endpoints)
+7. [Lovable Implementation Guide](#lovable-guide)
+
+---
+
+# 1. SYSTEM ARCHITECTURE
+
+## Tech Stack
+```
+Frontend: React + TypeScript + Tailwind CSS (via Lovable)
+Backend: Supabase
+  ├── PostgreSQL (Database)
+  ├── Auth (Email/Password)
+  ├── Row Level Security (RLS)
+  └── Real-time subscriptions
+State Management: React Context API
+Form Validation: Zod
+Notifications: React-hot-toast
+```
+
+## Folder Structure
+```
+src/
+├── components/
+│   ├── auth/
+│   │   ├── SignupForm.tsx
+│   │   ├── LoginForm.tsx
+│   │   └── SkipStatusModal.tsx
+│   ├── dashboard/
+│   │   ├── SingleUserDashboard.tsx
+│   │   ├── EngagedDashboard.tsx
+│   │   └── WeddingCreationForm.tsx
+│   ├── invitations/
+│   │   ├── PartnerInviteForm.tsx
+│   │   ├── InviteCodeInput.tsx
+│   │   └── RejectionConfirmModal.tsx
+│   └── shared/
+│       ├── Header.tsx
+│       ├── Button.tsx
+│       └── StatusBadge.tsx
+├── hooks/
+│   ├── useAuth.ts
+│   ├── useInvitations.ts
+│   └── useWeddings.ts
+├── lib/
+│   ├── supabase.ts
+│   └── validations.ts
+├── types/
+│   └── index.ts
+└── pages/
+    ├── Signup.tsx
+    ├── Login.tsx
+    ├── Dashboard.tsx
+    ├── AcceptInvite.tsx
+    └── CreateWedding.tsx
+```
+
+---
+
+# 2. USER FLOWS
+
+## Flow 1: MALE USER (Groom) Journey
+
+### Step-by-Step Flow:
+
+```mermaid
+graph TD
+    A[Visit emowed.com] --> B[Click 'Sign Up']
+    B --> C[Fill Registration Form]
+    C --> D{Relationship Status?}
+    D -->|Select Now| E[Choose 'Single']
+    D -->|Skip| F[Default: Single]
+    E --> G[Submit Form]
+    F --> G
+    G --> H[Email Verification]
+    H --> I[Redirect to Dashboard]
+    I --> J[See 'Find Your Partner' Card]
+    J --> K[Enter Bride's Email]
+    K --> L[Click 'Generate Code']
+    L --> M[Code Generated: ABC123]
+    M --> N[Copy Code]
+    N --> O{Send Via?}
+    O -->|WhatsApp| P[Open WhatsApp with pre-filled message]
+    O -->|Email| Q[Auto-send email with code]
+    O -->|Manual| R[Copy code manually]
+    P --> S[Wait for Bride to Accept]
+    Q --> S
+    R --> S
+    S --> T{Bride Response?}
+    T -->|Accepts| U[Status: Single → Engaged]
+    T -->|Rejects| V[Rejection Notification]
+    V --> W{Attempt Count?}
+    W -->|< 3| X[30min Cooldown]
+    W -->|= 3| Y[Bride Must Invite Groom]
+    X --> K
+    U --> Z[Congratulations Modal]
+    Z --> AA[Redirect to Engaged Dashboard]
+    AA --> AB[See 'Create Wedding' Button]
+    AB --> AC[Click 'Create Wedding']
+    AC --> AD[Fill Wedding Details Form]
+    AD --> AE[Choose Mode: Combined/Separate]
+    AE --> AF{Mode?}
+    AF -->|Separate| AG[Show Cost Warning Modal]
+    AF -->|Combined| AH[No Warning]
+    AG --> AI[User Confirms]
+    AH --> AJ[Submit Wedding]
+    AI --> AJ
+    AJ --> AK[Wedding Created!]
+    AK --> AL[Redirect to Wedding Dashboard]
+```
+
+### Detailed Screen Transitions:
+
+**1. Landing Page → Signup**
+- User lands on homepage
+- Clicks "Get Started" or "Sign Up"
+- Redirects to `/signup`
+
+**2. Signup Form**
+```
+Input Fields:
+- Email (required, validated)
+- Password (required, min 8 chars, 1 uppercase, 1 number, 1 special)
+- Confirm Password (must match)
+- Full Name (required, min 2 words)
+- Phone Number (optional, format: +91-XXXXXXXXXX)
+- Age (required, dropdown 18-100)
+- Relationship Status (dropdown, default: Single, skippable)
+
+Validation Rules:
+- Email: Must be valid format, unique in database
+- Password: Regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+- Age: Must be 18+
+- Phone: Optional, but if filled must match Indian format
+
+Submit Behavior:
+- On click: Show loading spinner
+- Create user in Supabase Auth
+- Insert record in users table
+- Send verification email
+- Redirect to /dashboard
+```
+
+**3. Dashboard (Single User)**
+```
+Header:
+- Logo (left)
+- User name + avatar (right)
+- Settings icon (right)
+
+Body:
+┌─────────────────────────────────────┐
+│  Welcome, Faseen! 👋                │
+│  Status: 🟢 Single                  │
+├─────────────────────────────────────┤
+│                                     │
+│  💌 Ready to find your partner?     │
+│  ┌───────────────────────────────┐ │
+│  │  Enter Partner's Email        │ │
+│  │  ┌─────────────────────────┐  │ │
+│  │  │ hanan@example.com       │  │ │
+│  │  └─────────────────────────┘  │ │
+│  │                               │ │
+│  │  [ Generate Invitation Code ] │ │
+│  └───────────────────────────────┘ │
+│                                     │
+│  📅 Upcoming Events                 │
+│  • No events yet                    │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**4. Generate Code Flow**
+```
+User clicks "Generate Invitation Code"
+↓
+System checks:
+- Is receiver_email already in use?
+- Does sender already have pending invitation?
+- Has sender exceeded 3 rejection limit?
+↓
+Generate 6-char code (Format: ABC123)
+- Allowed chars: A-Z, 0-9
+- Check uniqueness in database
+- Set expiry: NOW() + 48 hours
+↓
+Insert into partner_invitations table
+↓
+Show modal:
+┌─────────────────────────────────────┐
+│  ✅ Invitation Created!             │
+├─────────────────────────────────────┤
+│  Your invitation code:              │
+│  ┌─────────────────────────────┐   │
+│  │      ABC123                 │   │
+│  │  [ Copy ]                   │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  Share with Hanan:                  │
+│  [ 💬 WhatsApp ]  [ 📧 Email ]     │
+│  [ 📋 Copy Link ]                   │
+│                                     │
+│  ⏰ Expires in 48 hours              │
+└─────────────────────────────────────┘
+```
+
+**5. WhatsApp Share**
+```
+Template Message:
+"Hi! I'd like to plan our wedding together on Emowed 💍
+
+Join me using this code: ABC123
+
+Accept here: https://emowed.com/invite/ABC123
+
+- Faseen"
+
+Action:
+- Open WhatsApp with pre-filled message
+- URL scheme: whatsapp://send?text={encoded_message}
+```
+
+**6. Email Share**
+```
+Subject: Faseen Farook invited you to plan your wedding on Emowed 💍
+
+Body:
+Hi Hanan,
+
+Faseen Farook wants to plan your wedding together!
+
+Your invitation code: ABC123
+
+Click here to accept: https://emowed.com/invite/ABC123
+
+Or enter the code manually on Emowed.
+
+This invitation expires in 48 hours.
+
+Best wishes,
+The Emowed Team
+```
+
+---
+
+## Flow 2: FEMALE USER (Bride) Journey
+
+### Step-by-Step Flow:
+
+```mermaid
+graph TD
+    A[Receive WhatsApp/Email] --> B[Click Invite Link]
+    B --> C{Has Account?}
+    C -->|No| D[Redirect to Signup]
+    C -->|Yes| E[Redirect to Login]
+    D --> F[Fill Signup Form]
+    F --> G[Auto-fill Code: ABC123]
+    E --> H[Login]
+    H --> G
+    G --> I[See Groom's Profile Preview]
+    I --> J{View Details?}
+    J -->|Yes| K[Show Full Profile Modal]
+    K --> L{Decision?}
+    J -->|No| L
+    L -->|Accept| M[Confirmation Modal]
+    L -->|Decline| N[Rejection Warning Modal]
+    M --> O[User Confirms]
+    N --> P{Sure?}
+    P -->|Yes| Q[Update rejection_count++]
+    P -->|No| L
+    O --> R[Update both users status]
+    R --> S[Create couple record]
+    S --> T[Show Success Animation]
+    T --> U[Redirect to Engaged Dashboard]
+    Q --> V[Notify Groom]
+    V --> W{Attempt < 3?}
+    W -->|Yes| X[30min cooldown starts]
+    W -->|No| Y[Lock: Bride must invite]
+```
+
+### Detailed Screen Transitions:
+
+**1. Accept Invite Page (`/invite/ABC123`)**
+```
+Check URL parameter code
+↓
+Query partner_invitations table
+↓
+Validate:
+- Code exists
+- Not expired (< 48 hours)
+- Status = 'pending'
+- User not already engaged
+↓
+If valid, show accept page
+If invalid, show error page
+```
+
+**2. Accept Invite Screen**
+```
+┌─────────────────────────────────────┐
+│      💌 Wedding Invitation          │
+├─────────────────────────────────────┤
+│                                     │
+│  Faseen Farook wants to plan your   │
+│  wedding together!                  │
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │  👤 Faseen Farook           │   │
+│  │  📧 faseen@gmail.com        │   │
+│  │  📍 Mumbai, India           │   │
+│  │  🎂 28 years old            │   │
+│  │  💼 Software Engineer       │   │
+│  │                             │   │
+│  │  [ View Full Profile ]      │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │  Enter Invitation Code:     │   │
+│  │  [ A ] [ B ] [ C ] [ 1 ] ...│   │
+│  │                             │   │
+│  │  Auto-filled from link ✓    │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│     [ Accept 💍 ] [ Decline ]       │
+│                                     │
+│  ⏰ Expires in: 1 day 14 hours      │
+│  ⚠️ Declining will notify Faseen    │
+│     (They have 3 attempts)          │
+└─────────────────────────────────────┘
+```
+
+**3. Accept Confirmation Modal**
+```
+┌─────────────────────────────────────┐
+│  Confirm Acceptance? 💍             │
+├─────────────────────────────────────┤
+│                                     │
+│  By accepting, you agree to:        │
+│  • Plan your wedding with Faseen    │
+│  • Share access to wedding details  │
+│  • Collaborate on guest lists       │
+│                                     │
+│  Your status will change:           │
+│  Single → Engaged                   │
+│                                     │
+│     [ Yes, I Accept! ]  [ Cancel ]  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**4. Decline Confirmation Modal**
+```
+┌─────────────────────────────────────┐
+│  ⚠️ Are You Sure?                   │
+├─────────────────────────────────────┤
+│                                     │
+│  Declining will:                    │
+│  • Notify Faseen immediately        │
+│  • Start a 30-minute cooldown       │
+│  • Count as 1 of 3 rejection attempts│
+│                                     │
+│  After 3 rejections, only YOU can   │
+│  send invitations to Faseen.        │
+│                                     │
+│  ⏰ This action cannot be undone    │
+│                                     │
+│     [ Yes, Decline ]  [ Go Back ]   │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**5. Success Animation**
+```
+┌─────────────────────────────────────┐
+│                                     │
+│            🎉 💍 🎊                │
+│                                     │
+│     Congratulations!                │
+│                                     │
+│  You and Faseen are now Engaged!    │
+│                                     │
+│  [Animated confetti falling]        │
+│                                     │
+│  Ready to plan your dream wedding?  │
+│                                     │
+│     [ Let's Start! ]                │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**6. Rejection Flow**
+```
+User clicks "Yes, Decline"
+↓
+Execute:
+1. UPDATE partner_invitations 
+   SET status = 'rejected', 
+       rejection_count = rejection_count + 1
+2. INSERT INTO notifications (groom_id, message)
+3. IF rejection_count >= 3:
+     UPDATE users SET can_invite = false WHERE id = groom_id
+4. START 30min cooldown timer
+↓
+Show notification to Groom:
+┌─────────────────────────────────────┐
+│  💔 Invitation Declined             │
+├─────────────────────────────────────┤
+│  Hanan has declined your invitation.│
+│                                     │
+│  Attempts remaining: 2              │
+│                                     │
+│  You can send a new invitation in:  │
+│  ⏰ 29 minutes 45 seconds           │
+│                                     │
+│     [ Okay ]                        │
+└─────────────────────────────────────┘
+```
+
+---
+
+## Flow 3: Wedding Creation (Joint)
+
+### Step-by-Step Flow:
+
+```mermaid
+graph TD
+    A[Both Users Engaged] --> B[Dashboard Shows 'Create Wedding']
+    B --> C[Either User Clicks Button]
+    C --> D[Open Wedding Form]
+    D --> E[Fill Wedding Details]
+    E --> F{Mode Selection?}
+    F -->|Combined| G[Continue Normally]
+    F -->|Separate| H[Show Warning Modal]
+    H --> I{User Response?}
+    I -->|Confirm| J[Accept Separate Mode]
+    I -->|Cancel| F
+    G --> K[Submit Form]
+    J --> K
+    K --> L[Validate Data]
+    L --> M{Valid?}
+    M -->|No| N[Show Errors]
+    M -->|Yes| O[Create Wedding Record]
+    N --> E
+    O --> P[Notify Partner]
+    P --> Q[Success Modal]
+    Q --> R[Redirect to Wedding Dashboard]
+```
+
+### Detailed Screen Transitions:
+
+**1. Engaged Dashboard**
+```
+┌─────────────────────────────────────┐
+│  👫 Faseen & Hanan                  │
+│  Status: 💍 Engaged                 │
+│  Since: Nov 3, 2025                 │
+├─────────────────────────────────────┤
+│                                     │
+│  🎉 Ready to create your wedding?   │
+│  ┌───────────────────────────────┐ │
+│  │                               │ │
+│  │   👰‍♀️🤵‍♂️                        │ │
+│  │                               │ │
+│  │   [ Create Our Wedding ]      │ │
+│  │                               │ │
+│  │   Plan your dream celebration │ │
+│  │                               │ │
+│  └───────────────────────────────┘ │
+│                                     │
+│  📅 Upcoming Events                 │
+│  • Invited to: Rahul's Wedding (Dec)│
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**2. Wedding Creation Form**
+```
+┌─────────────────────────────────────┐
+│  💍 Create Your Wedding             │
+├─────────────────────────────────────┤
+│                                     │
+│  Wedding Name *                     │
+│  ┌─────────────────────────────┐   │
+│  │ Faseen & Hanan's Wedding    │   │
+│  └─────────────────────────────┘   │
+│  💡 Example: "Faseen & Hanan Weds"  │
+│                                     │
+│  Wedding Date *                     │
+│  ┌─────────────────────────────┐   │
+│  │ 📅 Select Date              │   │
+│  └─────────────────────────────┘   │
+│  ⚠️ Must be future date             │
+│                                     │
+│  Venue *                            │
+│  ┌─────────────────────────────┐   │
+│  │ Grand Palace Hotel, Mumbai  │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  City *                             │
+│  ┌─────────────────────────────┐   │
+│  │ Mumbai                      │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  Wedding Mode *                     │
+│  ┌─────────────────────────────┐   │
+│  │ ⚪ Combined (Recommended)    │   │
+│  │    • Shared venue & vendors │   │
+│  │    • Split costs equally    │   │
+│  │    • 💰 Save up to 50%!     │   │
+│  │                             │   │
+│  │ ⚪ Separate                  │   │
+│  │    • Individual vendors     │   │
+│  │    • Separate venues possible│   │
+│  │    • ⚠️ Higher costs         │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  Guest Limit (Optional)             │
+│  ┌─────────────────────────────┐   │
+│  │ 500                         │   │
+│  └─────────────────────────────┘   │
+│  💡 Can be adjusted later           │
+│                                     │
+│  Budget (Optional)                  │
+│  ┌─────────────────────────────┐   │
+│  │ ₹ 10,00,000                 │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│     [ Create Wedding ]  [ Cancel ]  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**3. Separate Mode Warning Modal**
+```
+┌─────────────────────────────────────┐
+│  ⚠️ Separate Mode Cost Warning      │
+├─────────────────────────────────────┤
+│                                     │
+│  Choosing Separate Mode means:      │
+│                                     │
+│  ❌ 2 Photographers (not 1)         │
+│  ❌ 2 Caterers (not 1)              │
+│  ❌ 2 Decorators (not 1)            │
+│  ❌ 2 Venues (possibly)             │
+│                                     │
+│  💰 Estimated Cost Impact:          │
+│  ┌─────────────────────────────┐   │
+│  │  Combined: ₹10,00,000       │   │
+│  │  Separate: ₹18,00,000       │   │
+│  │            ──────────        │   │
+│  │  Extra:     ₹8,00,000 ⬆️    │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  ✅ We recommend Combined Mode      │
+│     to save costs and simplify      │
+│     planning!                       │
+│                                     │
+│     [ Use Combined ]  [ Keep Separate ]│
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**4. Wedding Created Success**
+```
+┌─────────────────────────────────────┐
+│            🎊 🎉 🎊                │
+│                                     │
+│     Wedding Created Successfully!   │
+│                                     │
+│  Faseen & Hanan's Wedding           │
+│  📅 December 15, 2025               │
+│  📍 Grand Palace Hotel              │
+│                                     │
+│  Your wedding has been notified to: │
+│  ✓ Faseen (Groom)                   │
+│  ✓ Hanan (Bride)                    │
+│                                     │
+│  Next steps:                        │
+│  1. Invite your families            │
+│  2. Add vendors                     │
+│  3. Create event timeline           │
+│                                     │
+│     [ Go to Wedding Dashboard ]     │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+---
+
+## Flow 4: Wedding Called Off
+
+### Step-by-Step Flow:
+
+```mermaid
+graph TD
+    A[User Clicks 'Call Off Wedding'] --> B[Warning Modal Appears]
+    B --> C{User Confirms?}
+    C -->|No| D[Cancel, Stay on Page]
+    C -->|Yes| E[Show Second Confirmation]
+    E --> F{Final Confirm?}
+    F -->|No| D
+    F -->|Yes| G[Notify Partner]
+    G --> H{Partner Response?}
+    H -->|Agrees| I[Execute Breakup]
+    H -->|Disagrees| J[Show Dispute Modal]
+    I --> K[Update User Statuses]
+    K --> L[Delete Shared Data]
+    L --> M[Block Mutual Access]
+    M --> N[Success Notification]
+    N --> O[Redirect to Single Dashboard]
+```
+
+### Detailed Screen Transitions:
+
+**1. Settings Menu (Call Off Option)**
+```
+┌─────────────────────────────────────┐
+│  ⚙️ Wedding Settings                │
+├─────────────────────────────────────┤
+│                                     │
+│  Edit Wedding Details               │
+│  Manage Guest List                  │
+│  Privacy Settings                   │
+│  Notifications                      │
+│                                     │
+│  ─────────────────────────          │
+│                                     │
+│  🚨 Danger Zone                     │
+│  ┌─────────────────────────────┐   │
+│  │  [ Call Off Wedding ]       │   │
+│  │                             │   │
+│  │  ⚠️ This action requires    │   │
+│  │     partner confirmation    │   │
+│  └─────────────────────────────┘   │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**2. First Warning Modal**
+```
+┌─────────────────────────────────────┐
+│  ⚠️ Call Off Wedding?               │
+├─────────────────────────────────────┤
+│                                     │
+│  Are you sure you want to call off  │
+│  your wedding?                      │
+│                                     │
+│  This will:                         │
+│  • Notify Hanan immediately         │
+│  • Require her confirmation         │
+│  • Cannot be undone alone           │
+│                                     │
+│  If both parties agree:             │
+│  ❌ All wedding data will be deleted│
+│  ❌ Guest invitations cancelled     │
+│  ❌ Vendor bookings removed         │
+│  ❌ Status changes to 'Single'      │
+│                                     │
+│     [ Continue ]  [ Cancel ]        │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**3. Second Confirmation Modal**
+```
+┌─────────────────────────────────────┐
+│  🚨 Final Confirmation Required     │
+├─────────────────────────────────────┤
+│                                     │
+│  Type "CALL OFF" to confirm:        │
+│  ┌─────────────────────────────┐   │
+│  │                             │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  Optional: Add a message for Hanan  │
+│  ┌─────────────────────────────┐   │
+│  │                             │   │
+│  │                             │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  ⚠️ This request will be sent to    │
+│     Hanan for confirmation          │
+│                                     │
+│     [ Send Request ]  [ Cancel ]    │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**4. Partner Notification (Hanan's View)**
+```
+┌─────────────────────────────────────┐
+│  💔 Wedding Cancellation Request    │
+├─────────────────────────────────────┤
+│                                     │
+│  Faseen has requested to call off   │
+│  your wedding.                      │
+│                                     │
+│  Message from Faseen:               │
+│  ┌─────────────────────────────┐   │
+│  │ "Things didn't work out..."  │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  If you agree:                      │
+│  • Wedding data will be deleted     │
+│  • Both become Single again         │
+│  • Cannot recover shared data       │
+│                                     │
+│  If you disagree:                   │
+│  • You can request mediation        │
+│  • Or continue with wedding         │
+│                                     │
+│     [ Agree ]  [ Disagree ]         │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**5. Mutual Agreement Execution**
+```
+System executes:
+1. UPDATE users SET relationship_status = 'single'
+   WHERE id IN (groom_id, bride_id)
+
+2. UPDATE couples SET status = 'separated'
+   WHERE id = couple_id
+
+3. DELETE FROM weddings WHERE couple_id = couple_id
+
+4. DELETE FROM shared_data WHERE couple_id = couple_id
+   (Notes: Messages, plans, budgets, etc.)
+
+5. BLOCK mutual access:
+   - Can't see each other's profiles
+   - Can't invite each other again (30-day cooldown)
+
+6. NOTIFY both users:
+   "Wedding called off. Status: Single"
+
+7. REDIRECT to single dashboard
+```
+
+**6. Completion Notification**
+```
+┌─────────────────────────────────────┐
+│  ✓ Wedding Called Off               │
+├─────────────────────────────────────┤
+│                                     │
+│  Your wedding has been cancelled.   │
+│                                     │
+│  • Status updated to Single         │
+│  • Shared data deleted              │
+│  • Access to Hanan blocked          │
+│                                     │
+│  You can:                           │
+│  • Invite a new partner (after 30d) │
+│  • Attend other weddings as guest   │
+│  • Update your profile              │
+│                                     │
+│     [ Go to Dashboard ]             │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+---
+
+# 3. DATABASE SCHEMA
+
+## Complete Supabase Schema
+
+```sql
+-- ============================================
+-- USERS TABLE
+-- ============================================
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email TEXT UNIQUE NOT NULL,
+  phone TEXT,
+  full_name TEXT NOT NULL,
+  age INTEGER CHECK (age >= 18),
+  relationship_status TEXT DEFAULT 'single' CHECK (
+    relationship_status IN ('single', 'committed', 'engaged', 'married', 'divorced', 'widowed')
+  ),
+  age_verified BOOLEAN DEFAULT FALSE,
+  can_invite BOOLEAN DEFAULT TRUE, -- False after 3 rejections
+  last_invite_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Index for faster queries
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_status ON users(relationship_status);
+
+-- ============================================
+-- PARTNER INVITATIONS TABLE
+-- ============================================
+CREATE TABLE partner_invitations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code TEXT UNIQUE NOT NULL,
+  sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  receiver_email TEXT NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (
+    status IN ('pending', 'accepted', 'rejected', 'expired')
+  ),
+  rejection_count INTEGER DEFAULT 0 CHECK (rejection_count <= 3),
+  message TEXT, -- Optional message from sender
+  created_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '48 hours'),
+  responded_at TIMESTAMP
+);
+
+-- Index for code lookup
+CREATE INDEX idx_invitations_code ON partner_invitations(code);
+CREATE INDEX idx_invitations_status ON partner_invitations(status);
+
+-- Function to check expiry
+CREATE OR REPLACE FUNCTION check_invitation_expiry()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.status = 'pending' AND NOW() > NEW.expires_at THEN
+    NEW.status = 'expired';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_invitation_expiry
+BEFORE INSERT OR UPDATE ON partner_invitations
+FOR EACH ROW
+EXECUTE FUNCTION check_invitation_expiry();
+
+-- ============================================
+-- COUPLES TABLE
+-- ============================================
+CREATE TABLE couples (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user1_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  user2_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'engaged' CHECK (
+    status IN ('engaged', 'married', 'separated', 'divorced')
+  ),
+  engaged_date DATE DEFAULT CURRENT_DATE,
+  married_date DATE,
+  separated_date DATE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  CONSTRAINT unique_couple UNIQUE (user1_id, user2_id)
+);
+
+-- Index for couple lookups
+CREATE INDEX idx_couples_users ON couples(user1_id, user2_id);
+CREATE INDEX idx_couples_status ON couples(status);
+
+-- ============================================
+-- WEDDINGS TABLE
+-- ============================================
+CREATE TABLE weddings (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  date DATE NOT NULL CHECK (date > CURRENT_DATE),
+  venue TEXT NOT NULL,
+  city TEXT NOT NULL,
+  mode TEXT DEFAULT 'combined' CHECK (mode IN ('combined', 'separate')),
+  budget_limit DECIMAL(12, 2),
+  guest_limit INTEGER DEFAULT 500 CHECK (guest_limit > 0),
+  status TEXT DEFAULT 'planning' CHECK (
+    status IN ('planning', 'confirmed', 'completed', 'cancelled')
+  ),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Index for wedding queries
+CREATE INDEX idx_weddings_couple ON weddings(couple_id);
+CREATE INDEX idx_weddings_date ON weddings(date);
+CREATE INDEX idx_weddings_status ON weddings(status);
+
+-- ============================================
+-- NOTIFICATIONS TABLE
+-- ============================================
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (
+    type IN ('invitation', 'rejection', 'acceptance', 'wedding_created', 'wedding_cancelled')
+  ),
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  read BOOLEAN DEFAULT FALSE,
+  action_url TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Index for user notifications
+CREATE INDEX idx_notifications_user ON notifications(user_id, read);
+
+-- ============================================
+-- COOLDOWN PERIODS TABLE
+-- ============================================
+CREATE TABLE cooldown_periods (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('invitation', 'wedding_cancellation')),
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Index for cooldown checks
+CREATE INDEX idx_cooldown_user ON cooldown_periods(user_id, type, expires_at);
+
+-- ============================================
+-- ROW LEVEL SECURITY (RLS)
+-- ============================================
+
+-- Enable RLS on all tables
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE partner_invitations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE couples ENABLE ROW LEVEL SECURITY;
+ALTER TABLE weddings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+-- Users can read their own data
+CREATE POLICY "Users can view own profile"
+ON users FOR SELECT
+USING (auth.uid() = id);
+
+-- Users can update their own data
+CREATE POLICY "Users can update own profile"
+ON users FOR UPDATE
+USING (auth.uid() = id);
+
+-- Partner invitations policies
+CREATE POLICY "Users can create invitations"
+ON partner_invitations FOR INSERT
+WITH CHECK (auth.uid() = sender_id);
+
+CREATE POLICY "Users can view their invitations"
+ON partner_invitations FOR SELECT
+USING (
+  auth.uid() = sender_id OR 
+  receiver_email = (SELECT email FROM users WHERE id = auth.uid())
+);
+
+CREATE POLICY "Receivers can update invitation status"
+ON partner_invitations FOR UPDATE
+USING (
+  receiver_email = (SELECT email FROM users WHERE id = auth.uid())
+);
+
+-- Couples policies
+CREATE POLICY "Couples can view their data"
+ON couples FOR SELECT
+USING (auth.uid() IN (user1_id, user2_id));
+
+CREATE POLICY "Couples can update their status"
+ON couples FOR UPDATE
+USING (auth.uid() IN (user1_id, user2_id));
+
+-- Weddings policies
+CREATE POLICY "Couples can create weddings"
+ON weddings FOR INSERT
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM couples 
+    WHERE id = couple_id 
+    AND auth.uid() IN (user1_id, user2_id)
+  )
+);
+
+CREATE POLICY "Couples can view their weddings"
+ON weddings FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM couples 
+    WHERE id = couple_id 
+    AND auth.uid() IN (user1_id, user2_id)
+  )
+);
+
+-- Notifications policies
+CREATE POLICY "Users can view own notifications"
+ON notifications FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own notifications"
+ON notifications FOR UPDATE
+USING (auth.uid() = user_id);
+
+-- ============================================
+-- HELPER FUNCTIONS
+-- ============================================
+
+-- Generate unique 6-char code
+CREATE OR REPLACE FUNCTION generate_invite_code()
+RETURNS TEXT AS $$
+DECLARE
+  chars TEXT := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  result TEXT := '';
+  i INTEGER;
+BEGIN
+  FOR i IN 1..6 LOOP
+    result := result || substr(chars, floor(random() * length(chars) + 1)::INTEGER, 1);
+  END LOOP;
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Check if user is in cooldown
+CREATE OR REPLACE FUNCTION is_in_cooldown(p_user_id UUID, p_type TEXT)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM cooldown_periods
+    WHERE user_id = p_user_id
+    AND type = p_type
+    AND expires_at > NOW()
+  );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Update user status on couple creation
+CREATE OR REPLACE FUNCTION update_users_on_couple()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE users 
+  SET relationship_status = 'engaged'
+  WHERE id IN (NEW.user1_id, NEW.user2_id);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_couple_insert
+AFTER INSERT ON couples
+FOR EACH ROW
+EXECUTE FUNCTION update_users_on_couple();
+
+-- Clean up on wedding cancellation
+CREATE OR REPLACE FUNCTION cleanup_on_wedding_cancel()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
+    -- Update couple status
+    UPDATE couples SET status = 'separated'
+    WHERE id = NEW.couple_id;
+    
+    -- Update user statuses
+    UPDATE users SET relationship_status = 'single'
+    WHERE id IN (
+      SELECT user1_id FROM couples WHERE id = NEW.couple_id
+      UNION
+      SELECT user2_id FROM couples WHERE id = NEW.couple_id
+    );
+    
+    -- Create cooldown periods
+    INSERT INTO cooldown_periods (user_id, type, expires_at)
+    SELECT user1_id, 'invitation', NOW() + INTERVAL '30 days'
+    FROM couples WHERE id = NEW.couple_id
+    UNION
+    SELECT user2_id, 'invitation', NOW() + INTERVAL '30 days'
+    FROM couples WHERE id = NEW.couple_id;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER wedding_cancelled
+AFTER UPDATE ON weddings
+FOR EACH ROW
+EXECUTE FUNCTION cleanup_on_wedding_cancel();
+```
+
+---
+
+# 4. PAGE-BY-PAGE SPECIFICATIONS
+
+## Page 1: Signup (`/signup`)
+
+### Component Structure:
+```tsx
+src/pages/Signup.tsx
+├── SignupForm (component)
+│   ├── EmailInput
+│   ├── PasswordInput
+│   ├── NameInput
+│   ├── PhoneInput (optional)
+│   ├── AgeSelect
+│   ├── StatusSelect (with Skip button)
+│   └── SubmitButton
+└── LoginLink
+```
+
+### Lovable Prompt:
+```
+Create a signup page with the following requirements:
+
+1. Form fields:
+   - Email (required, validated)
+   - Password (required, min 8 chars, 1 uppercase, 1 number, 1 special char)
+   - Confirm Password (must match password)
+   - Full Name (required, min 2 words)
+   - Phone Number (optional, Indian format +91-XXXXXXXXXX)
+   - Age (required, dropdown 18-100)
+   - Relationship Status (dropdown with options: Single, Committed, Engaged, Married, Divorced, Widowed)
+     Default: Single
+     Show "Skip for now" button next to dropdown
+
+2. Validation:
+   - Show inline errors below each field
+   - Disable submit button until all required fields are valid
+   - Email must be unique (check against Supabase)
+   - Password regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+
+3. On Submit:
+   - Show loading spinner on button
+   - Create user in Supabase Auth
+   - Insert record in users table with all fields
+   - Send verification email (Supabase built-in)
+   - Show success toast: "Account created! Please verify your email."
+   - Redirect to /dashboard after 2 seconds
+
+4. Design:
+   - Center the form on page
+   - Use Tailwind CSS
+   - Add Emowed logo at top
+   - Pink/rose color scheme (#FF6B9D primary)
+   - Responsive mobile design
+   - Link to login page at bottom: "Already have an account? Login"
+
+5. Supabase Integration:
+   - Use supabase.auth.signUp() for authentication
+   - Insert additional fields into users table
+   - Handle errors (email already exists, network issues)
+```
+
+### Component Code Structure:
+```tsx
+// src/pages/Signup.tsx
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+
+export default function Signup() {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    fullName: '',
+    phone: '',
+    age: '',
+    relationshipStatus: 'single'
+  });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [skipStatus, setSkipStatus] = useState(false);
+  const navigate = useNavigate();
+
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
+  const validatePassword = (password) => {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return regex.test(password);
+  };
+
+  const validateName = (name) => {
+    return name.trim().split(' ').length >= 2;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    // Validation
+    const newErrors = {};
+    if (!validateEmail(formData.email)) {
+      newErrors.email = 'Invalid email format';
+    }
+    if (!validatePassword(formData.password)) {
+      newErrors.password = 'Password must be 8+ chars with uppercase, number, and special char';
+    }
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    if (!validateName(formData.fullName)) {
+      newErrors.fullName = 'Please enter full name (first and last)';
+    }
+    if (!formData.age || formData.age < 18) {
+      newErrors.age = 'Must be 18 or older';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (authError) throw authError;
+
+      // Insert into users table
+      const { error: dbError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: formData.email,
+          full_name: formData.fullName,
+          phone: formData.phone || null,
+          age: parseInt(formData.age),
+          relationship_status: skipStatus ? 'single' : formData.relationshipStatus
+        });
+
+      if (dbError) throw dbError;
+
+      toast.success('Account created! Please verify your email.');
+      setTimeout(() => navigate('/dashboard'), 2000);
+    } catch (error) {
+      toast.error(error.message || 'Signup failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-pink-600">Emowed</h1>
+          <p className="text-gray-600 mt-2">Celebrating bonds from engagement to forever</p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email *
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              placeholder="you@example.com"
+              required
+            />
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password *
+            </label>
+            <input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              placeholder="••••••••"
+              required
+            />
+            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Confirm Password *
+            </label>
+            <input
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              placeholder="••••••••"
+              required
+            />
+            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+          </div>
+
+          {/* Full Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Full Name *
+            </label>
+            <input
+              type="text"
+              value={formData.fullName}
+              onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              placeholder="John Doe"
+              required
+            />
+            {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+          </div>
+
+          {/* Phone (Optional) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number (Optional)
+            </label>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              placeholder="+91-9876543210"
+            />
+          </div>
+
+          {/* Age */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Age *
+            </label>
+            <select
+              value={formData.age}
+              onChange={(e) => setFormData({...formData, age: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              required
+            >
+              <option value="">Select Age</option>
+              {Array.from({length: 83}, (_, i) => i + 18).map(age => (
+                <option key={age} value={age}>{age}</option>
+              ))}
+            </select>
+            {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}
+          </div>
+
+          {/* Relationship Status */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Relationship Status
+              </label>
+              <button
+                type="button"
+                onClick={() => setSkipStatus(!skipStatus)}
+                className="text-sm text-pink-600 hover:text-pink-700"
+              >
+                {skipStatus ? 'Select Status' : 'Skip for now'}
+              </button>
+            </div>
+            {!skipStatus && (
+              <select
+                value={formData.relationshipStatus}
+                onChange={(e) => setFormData({...formData, relationshipStatus: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              >
+                <option value="single">Single</option>
+                <option value="committed">Committed</option>
+                <option value="engaged">Engaged</option>
+                <option value="married">Married</option>
+                <option value="divorced">Divorced</option>
+                <option value="widowed">Widowed</option>
+              </select>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Creating Account...' : 'Sign Up'}
+          </button>
+        </form>
+
+        {/* Login Link */}
+        <p className="text-center text-sm text-gray-600 mt-6">
+          Already have an account?{' '}
+          <a href="/login" className="text-pink-600 hover:text-pink-700 font-medium">
+            Login
+          </a>
+        </p>
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+## Page 2: Dashboard - Single User (`/dashboard`)
+
+### Lovable Prompt:
+```
+Create a dashboard page for single users with these requirements:
+
+1. Header:
+   - Emowed logo (left)
+   - User name + avatar (right)
+   - Settings icon (right)
+
+2. Status Card:
+   - Show "Welcome, [Name]!"
+   - Relationship status badge (green dot + "Single")
+   - Member since date
+
+3. Partner Invitation Card:
+   - Title: "Ready to find your partner?"
+   - Email input field with validation
+   - "Generate Invitation Code" button
+   - On click: Generate 6-char code (letters + numbers)
+   - Show generated code in large font
+   - Share buttons: WhatsApp, Email, Copy Link
+   - Expiry countdown: "Expires in 48 hours"
+
+4. Events Section:
+   - Title: "Upcoming Events"
+   - List of weddings user is invited to
+   - If empty: "No events yet"
+   - Each event shows: Couple names, date, RSVP button
+
+5. Functionality:
+   - Generate code: Call Supabase function to create invite
+   - Check if receiver email already has pending invite
+   - Validate 3-rejection limit
+   - WhatsApp share: Open with pre-filled message
+   - Email share: Send via Supabase edge function
+   - Copy link: Copy to clipboard with toast notification
+
+6. Design:
+   - Use pink/rose color scheme
+   - Card-based layout
+   - Responsive mobile design
+   - Smooth animations on card hover
+```
+
+*(Due to length constraints, I'll continue with the remaining pages in summary format)*
+
+---
+
+## Page 3: Accept Invite (`/invite/:code`)
+
+**Key Features:**
+- URL parameter validation
+- Profile preview of sender
+- 6-digit code input (auto-filled from link)
+- Accept/Decline buttons with confirmation modals
+- Rejection count warning
+- Success animation on acceptance
+
+---
+
+## Page 4: Engaged Dashboard (`/dashboard`)
+
+**Conditional Render Based on Status:**
+- Shows couple information (both names)
+- "Create Wedding" large CTA button
+- Shared events calendar
+- Partner profile summary
+
+---
+
+## Page 5: Wedding Creation Form (`/wedding/create`)
+
+**Features:**
+- Multi-step form (3 steps)
+- Step 1: Basic details (name, date, venue)
+- Step 2: Mode selection with cost comparison
+- Step 3: Budget & guest limits
+- Warning modal for "Separate" mode
+- Success animation on completion
+
+---
+
+# 5. BUSINESS LOGIC & RULES
+
+## Invitation Rules
+
+### Generation:
+```javascript
+// Pseudo-code for invitation generation
+async function generateInvitation(senderId, receiverEmail) {
+  // 1. Check cooldown
+  const inCooldown = await checkCooldown(senderId);
+  if (inCooldown) {
+    throw new Error('Please wait 30 minutes before sending another invite');
+  }
+
+  // 2. Check 3-rejection limit
+  const sender = await getUser(senderId);
+  if (!sender.can_invite) {
+    throw new Error('You have reached the invitation limit. The other person must invite you.');
+  }
+
+  // 3. Check if receiver already engaged
+  const receiver = await getUserByEmail(receiverEmail);
+  if (receiver && receiver.relationship_status !== 'single') {
+    throw new Error('This person is already in a relationship');
+  }
+
+  // 4. Check existing pending invites
+  const existingInvite = await getPendingInvite(senderId, receiverEmail);
+  if (existingInvite) {
+    throw new Error('You already have a pending invitation to this person');
+  }
+
+  // 5. Generate unique code
+  const code = generateUniqueCode(); // ABC123 format
+
+  // 6. Create invitation
+  const invitation = await createInvitation({
+    code,
+    sender_id: senderId,
+    receiver_email: receiverEmail,
+    status: 'pending',
+    expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000) // 48 hours
+  });
+
+  return invitation;
+}
+```
+
+### Acceptance:
+```javascript
+async function acceptInvitation(code, receiverId) {
+  // 1. Validate code
+  const invitation = await getInvitationByCode(code);
+  if (!invitation) {
+    throw new Error('Invalid invitation code');
+  }
+
+  // 2. Check expiry
+  if (new Date() > invitation.expires_at) {
+    await updateInvitation(invitation.id, { status: 'expired' });
+    throw new Error('This invitation has expired');
+  }
+
+  // 3. Check if receiver matches
+  const receiver = await getUser(receiverId);
+  if (receiver.email !== invitation.receiver_email) {
+    throw new Error('This invitation is not for you');
+  }
+
+  // 4. Update invitation status
+  await updateInvitation(invitation.id, {
+    status: 'accepted',
+    responded_at: new Date()
+  });
+
+  // 5. Create couple
+  const couple = await createCouple({
+    user1_id: invitation.sender_id,
+    user2_id: receiverId,
+    status: 'engaged',
+    engaged_date: new Date()
+  });
+
+  // 6. Update user statuses (handled by trigger)
+  // Both users automatically set to 'engaged'
+
+  // 7. Create notifications
+  await createNotification({
+    user_id: invitation.sender_id,
+    type: 'acceptance',
+    title: 'Invitation Accepted!',
+    message: `${receiver.full_name} accepted your invitation!`
+  });
+
+  return couple;
+}
+```
+
+### Rejection:
+```javascript
+async function rejectInvitation(code, receiverId) {
+  const invitation = await getInvitationByCode(code);
+  
+  // Update rejection count
+  const newCount = invitation.rejection_count + 1;
+  await updateInvitation(invitation.id, {
+    status: 'rejected',
+    rejection_count: newCount,
+    responded_at: new Date()
+  });
+
+  // If 3 rejections, lock sender
+  if (newCount >= 3) {
+    await updateUser(invitation.sender_id, {
+      can_invite: false
+    });
+  }
+
+  // Create cooldown
+  await createCooldown({
+    user_id: invitation.sender_id,
+    type: 'invitation',
+    expires_at: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes
+  });
+
+  // Notify sender
+  await createNotification({
+    user_id: invitation.sender_id,
+    type: 'rejection',
+    title: 'Invitation Declined',
+    message: `Your invitation was declined. Attempts remaining: ${3 - newCount}`
+  });
+}
+```
+
+---
+
+## Wedding Creation Rules
+
+### Validation:
+```javascript
+async function createWedding(coupleId, weddingData) {
+  // 1. Verify couple exists and is engaged
+  const couple = await getCouple(coupleId);
+  if (!couple || couple.status !== 'engaged') {
+    throw new Error('Only engaged couples can create weddings');
+  }
+
+  // 2. Check if wedding already exists
+  const existingWedding = await getWeddingByCouple(coupleId);
+  if (existingWedding) {
+    throw new Error('You already have a wedding created');
+  }
+
+  // 3. Validate date (must be future)
+  const weddingDate = new Date(weddingData.date);
+  if (weddingDate <= new Date()) {
+    throw new Error('Wedding date must be in the future');
+  }
+
+  // 4. Validate mode
+  if (!['combined', 'separate'].includes(weddingData.mode)) {
+    throw new Error('Invalid wedding mode');
+  }
+
+  // 5. Create wedding
+  const wedding = await insertWedding({
+    couple_id: coupleId,
+    name: weddingData.name,
+    date: weddingDate,
+    venue: weddingData.venue,
+    city: weddingData.city,
+    mode: weddingData.mode,
+    budget_limit: weddingData.budget_limit || null,
+    guest_limit: weddingData.guest_limit || 500,
+    status: 'planning'
+  });
+
+  // 6. Notify both partners
+  const [user1, user2] = await Promise.all([
+    getUser(couple.user1_id),
+    getUser(couple.user2_id)
+  ]);
+
+  await Promise.all([
+    createNotification({
+      user_id: couple.user1_id,
+      type: 'wedding_created',
+      title: 'Wedding Created!',
+      message: `Your wedding "${weddingData.name}" has been created!`
+    }),
+    createNotification({
+      user_id: couple.user2_id,
+      type: 'wedding_created',
+      title: 'Wedding Created!',
+      message: `Your wedding "${weddingData.name}" has been created!`
+    })
+  ]);
+
+  return wedding;
+}
+```
+
+---
+
+## Wedding Cancellation Rules
+
+### Mutual Agreement Process:
+```javascript
+async function requestWeddingCancellation(weddingId, requesterId, message) {
+  // 1. Verify requester is part of couple
+  const wedding = await getWedding(weddingId);
+  const couple = await getCouple(wedding.couple_id);
+  
+  if (![couple.user1_id, couple.user2_id].includes(requesterId)) {
+    throw new Error('Unauthorized');
+  }
+
+  // 2. Determine partner
+  const partnerId = couple.user1_id === requesterId 
+    ? couple.user2_id 
+    : couple.user1_id;
+
+  // 3. Create cancellation request
+  const request = await createCancellationRequest({
+    wedding_id: weddingId,
+    requester_id: requesterId,
+    partner_id: partnerId,
+    message: message,
+    status: 'pending'
+  });
+
+  // 4. Notify partner
+  await createNotification({
+    user_id: partnerId,
+    type: 'wedding_cancellation',
+    title: 'Wedding Cancellation Request',
+    message: `Your partner has requested to call off the wedding.`,
+    action_url: `/wedding/${weddingId}/cancellation/${request.id}`
+  });
+
+  return request;
+}
+
+async function approveCancellation(requestId, partnerId) {
+  const request = await getCancellationRequest(requestId);
+  
+  // 1. Verify partner
+  if (request.partner_id !== partnerId) {
+    throw new Error('Unauthorized');
+  }
+
+  // 2. Update request status
+  await updateCancellationRequest(requestId, {
+    status: 'approved',
+    approved_at: new Date()
+  });
+
+  // 3. Execute cancellation
+  const wedding = await getWedding(request.wedding_id);
+  const couple = await getCouple(wedding.couple_id);
+
+  // Update wedding status
+  await updateWedding(wedding.id, {
+    status: 'cancelled'
+  });
+
+  // Update couple status (triggers cleanup via SQL trigger)
+  await updateCouple(couple.id, {
+    status: 'separated',
+    separated_date: new Date()
+  });
+
+  // Users automatically set to 'single' by trigger
+  // Cooldowns automatically created by trigger
+
+  // 4. Notify both users
+  await Promise.all([
+    createNotification({
+      user_id: couple.user1_id,
+      type: 'wedding_cancelled',
+      title: 'Wedding Cancelled',
+      message: 'Your wedding has been called off.'
+    }),
+    createNotification({
+      user_id: couple.user2_id,
+      type: 'wedding_cancelled',
+      title: 'Wedding Cancelled',
+      message: 'Your wedding has been called off.'
+    })
+  ]);
+}
+```
+
+---
+
+# 6. API ENDPOINTS (Supabase Edge Functions)
+
+## Auth Endpoints
+
+### POST `/auth/signup`
+```javascript
+// Handled by Supabase Auth
+// Additional logic in database trigger
+```
+
+### POST `/auth/login`
+```javascript
+// Handled by Supabase Auth
+```
+
+---
+
+## Invitation Endpoints
+
+### POST `/api/invitations/create`
+```javascript
+// Request body:
+{
+  receiver_email: "hanan@example.com",
+  message: "Let's plan our wedding!" // optional
+}
+
+// Response:
+{
+  code: "ABC123",
+  expires_at: "2025-11-05T10:00:00Z",
+  whatsapp_url: "whatsapp://send?text=...",
+  email_sent: true
+}
+```
+
+### POST `/api/invitations/accept`
+```javascript
+// Request body:
+{
+  code: "ABC123"
+}
+
+// Response:
+{
+  couple_id: "uuid",
+  status: "engaged",
+  partner: {
+    name: "Faseen Farook",
+    email: "faseen@gmail.com"
+  }
+}
+```
+
+### POST `/api/invitations/reject`
+```javascript
+// Request body:
+{
+  code: "ABC123"
+}
+
+// Response:
+{
+  rejection_count: 1,
+  attempts_remaining: 2,
+  cooldown_expires_at: "2025-11-03T10:30:00Z"
+}
+```
+
+---
+
+## Wedding Endpoints
+
+### POST `/api/weddings/create`
+```javascript
+// Request body:
+{
+  name: "Faseen & Hanan's Wedding",
+  date: "2025-12-15",
+  venue: "Grand Palace Hotel",
+  city: "Mumbai",
+  mode: "combined",
+  budget_limit: 1000000,
+  guest_limit: 500
+}
+
+// Response:
+{
+  wedding_id: "uuid",
+  status: "planning",
+  created_at: "2025-11-03T10:00:00Z"
+}
+```
+
+### POST `/api/weddings/cancel`
+```javascript
+// Request body:
+{
+  wedding_id: "uuid",
+  message: "Things didn't work out"
+}
+
+// Response:
+{
+  request_id: "uuid",
+  status: "pending_approval",
+  notified: true
+}
+```
+
+---
+
+# 7. LOVABLE IMPLEMENTATION GUIDE
+
+## Step-by-Step Development
+
+### Week 1: Foundation
+
+**Day 1-2: Setup & Auth**
+```
+Lovable Prompts:
+
+1. "Create project structure with React, TypeScript, Tailwind CSS"
+
+2. "Set up Supabase client connection with environment variables"
+
+3. "Create Signup page with all form fields as specified above"
+
+4. "Create Login page with email/password fields"
+
+5. "Add form validation with Zod schema"
+```
+
+**Day 3-4: Dashboard**
+```
+Lovable Prompts:
+
+1. "Create single user dashboard layout with header, status card, invitation card"
+
+2. "Implement partner invitation form with email input and code generation"
+
+3. "Add WhatsApp/Email share buttons with proper URL schemes"
+
+4. "Create copy-to-clipboard functionality with toast notifications"
+```
+
+**Day 5-7: Invitation Flow**
+```
+Lovable Prompts:
+
+1. "Create accept invitation page with URL parameter parsing"
+
+2. "Add profile preview card showing sender information"
+
+3. "Implement accept/decline buttons with confirmation modals"
+
+4. "Create success animation using Framer Motion"
+
+5. "Add rejection warning with attempt counter"
+```
+
+### Week 2: Wedding Creation
+
+**Day 1-3: Forms**
+```
+Lovable Prompts:
+
+1. "Create wedding creation form with multi-step wizard"
+
+2. "Add date picker with future date validation"
+
+3. "Implement mode selector with Combined/Separate options"
+
+4. "Create cost warning modal for Separate mode"
+```
+
+**Day 4-5: Dashboard Updates**
+```
+Lovable Prompts:
+
+1. "Update dashboard to show different views based on relationship status"
+
+2. "Create engaged couple dashboard with shared wedding information"
+
+3. "Add wedding cancellation flow with mutual approval"
+```
+
+**Day 6-7: Testing & Polish**
+```
+Tasks:
+
+1. Test all user flows end-to-end
+2. Fix bugs
+3. Improve mobile responsiveness
+4. Optimize loading states
+5. Add error boundaries
+```
+
+### Week 3: Refinement with Claude Code
+
+```
+Claude Code Tasks:
+
+1. Optimize database queries
+2. Add caching layer (React Query)
+3. Implement real-time subscriptions
+4. Add comprehensive error handling
+5. Security audit
+6. Performance optimization
+7. Add analytics tracking
+```
+
+---
+
+## Testing Checklist
+
+### Manual Tests:
+
+✅ **User Registration:**
+- [ ] Can signup with valid email
+- [ ] Password validation works
+- [ ] Age restriction enforced (18+)
+- [ ] Duplicate email prevented
+- [ ] Verification email sent
+
+✅ **Partner Invitation:**
+- [ ] Code generates correctly
+- [ ] WhatsApp share works on mobile
+- [ ] Email share sends properly
+- [ ] Copy link works
+- [ ] 48-hour expiry enforced
+
+✅ **Invitation Acceptance:**
+- [ ] Valid code accepted
+- [ ] Expired code rejected
+- [ ] Both users become "Engaged"
+- [ ] Success animation shows
+- [ ] Notifications sent
+
+✅ **Invitation Rejection:**
+- [ ] Rejection count increments
+- [ ] 30-minute cooldown starts
+- [ ] After 3 rejections, sender locked
+- [ ] Notifications sent
+
+✅ **Wedding Creation:**
+- [ ] Only engaged couples can create
+- [ ] Future date enforced
+- [ ] Mode warning shows for Separate
+- [ ] Budget/guest limits optional
+- [ ] Both partners notified
+
+✅ **Wedding Cancellation:**
+- [ ] Request sent to partner
+- [ ] Partner receives notification
+- [ ] Mutual approval required
+- [ ] Data cleanup executes
+- [ ] Both become Single
+- [ ] 30-day cooldown starts
+
+---
+
+## Performance Targets
+
+- **Page Load:** < 2 seconds
+- **Form Submission:** < 1 second
+- **Code Generation:** < 500ms
+- **Database Queries:** < 100ms
+
+---
+
+## Cost Projection (Phase 1)
+
+| Item | Cost |
+|------|------|
+| Lovable Pro (3 months) | $60 |
+| Supabase Free Tier | $0 |
+| Domain (emowed.com) | $12/year |
+| **Total Phase 1** | **$72** |
+
+---
+
+This completes the **Phase 1 detailed specification**. Ready to copy-paste into Lovable and start building! 🚀
+
+Would you like me to:
+1. Create detailed specs for Phases 2-6?
+2. Generate specific Lovable prompts for each component?
+3. Write the Supabase migration SQL file?
+4. Create a project timeline with milestones?

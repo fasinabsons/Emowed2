@@ -1,0 +1,1365 @@
+# PHASE 2: Guest Management & Family Tree
+
+## OVERVIEW
+
+**Goal:** Hierarchical invitations, RSVP system, headcount tracking, family tree visualization
+
+**Timeline:** Weeks 4-6
+
+**Prerequisites:** Phase 1 complete (users can create weddings)
+
+---
+
+## DATABASE SCHEMA
+
+### events table
+```sql
+CREATE TABLE events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  type TEXT CHECK (type IN ('engagement', 'save_the_date', 'haldi', 'mehendi', 'sangeet', 'wedding', 'reception', 'custom')),
+  date DATE NOT NULL,
+  time TIME,
+  venue TEXT NOT NULL,
+  city TEXT,
+  description TEXT,
+  status TEXT DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'ongoing', 'completed', 'cancelled')),
+  auto_generated BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_events_wedding ON events(wedding_id);
+CREATE INDEX idx_events_date ON events(date);
+CREATE INDEX idx_events_type ON events(type);
+```
+
+### guest_invitations table
+```sql
+CREATE TABLE guest_invitations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  inviter_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  invitee_email TEXT NOT NULL,
+  invitee_name TEXT,
+  role TEXT CHECK (role IN ('parent', 'sibling', 'uncle', 'aunt', 'cousin', 'friend', 'colleague', 'neighbor', 'other')),
+  side TEXT CHECK (side IN ('groom', 'bride')),
+  can_invite BOOLEAN DEFAULT FALSE,
+  invite_limit INTEGER,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'expired')),
+  sent_at TIMESTAMP DEFAULT NOW(),
+  responded_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_guest_invitations_wedding ON guest_invitations(wedding_id);
+CREATE INDEX idx_guest_invitations_inviter ON guest_invitations(inviter_id);
+CREATE INDEX idx_guest_invitations_email ON guest_invitations(invitee_email);
+```
+
+### guests table
+```sql
+CREATE TABLE guests (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id),
+  email TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  phone TEXT,
+  side TEXT CHECK (side IN ('groom', 'bride')),
+  role TEXT CHECK (role IN ('parent', 'sibling', 'uncle', 'aunt', 'cousin', 'friend', 'colleague', 'neighbor', 'child', 'teen', 'other')),
+  invited_by UUID REFERENCES users(id),
+  dietary_preferences TEXT[],
+  age_group TEXT CHECK (age_group IN ('adult', 'teen', 'child')),
+  plus_guests INTEGER DEFAULT 0,
+  plus_guest_names TEXT[],
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(wedding_id, email)
+);
+
+CREATE INDEX idx_guests_wedding ON guests(wedding_id);
+CREATE INDEX idx_guests_side ON guests(side);
+CREATE INDEX idx_guests_user ON guests(user_id);
+```
+
+### rsvps table
+```sql
+CREATE TABLE rsvps (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  event_id UUID REFERENCES events(id) ON DELETE CASCADE,
+  guest_id UUID REFERENCES guests(id) ON DELETE CASCADE,
+  status TEXT CHECK (status IN ('attending', 'not_attending', 'maybe', 'pending')),
+  adults_count INTEGER DEFAULT 1,
+  teens_count INTEGER DEFAULT 0,
+  children_count INTEGER DEFAULT 0,
+  dietary_notes TEXT,
+  special_requirements TEXT,
+  responded_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(event_id, guest_id)
+);
+
+CREATE INDEX idx_rsvps_event ON rsvps(event_id);
+CREATE INDEX idx_rsvps_guest ON rsvps(guest_id);
+CREATE INDEX idx_rsvps_status ON rsvps(status);
+```
+
+### family_tree table
+```sql
+CREATE TABLE family_tree (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  guest_id UUID REFERENCES guests(id) ON DELETE CASCADE,
+  parent_guest_id UUID REFERENCES guests(id),
+  side TEXT CHECK (side IN ('groom', 'bride')),
+  generation INTEGER CHECK (generation >= 0),
+  relationship_type TEXT CHECK (relationship_type IN ('parent', 'child', 'sibling', 'spouse', 'cousin')),
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(guest_id, parent_guest_id)
+);
+
+CREATE INDEX idx_family_tree_wedding ON family_tree(wedding_id);
+CREATE INDEX idx_family_tree_guest ON family_tree(guest_id);
+CREATE INDEX idx_family_tree_parent ON family_tree(parent_guest_id);
+```
+
+### guest_vote_limits table
+```sql
+CREATE TABLE guest_vote_limits (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  voter_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  proposed_limit INTEGER NOT NULL,
+  reason TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_guest_vote_limits_wedding ON guest_vote_limits(wedding_id);
+```
+
+### headcount_snapshots table
+```sql
+CREATE TABLE headcount_snapshots (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  event_id UUID REFERENCES events(id),
+  total_adults INTEGER DEFAULT 0,
+  total_teens INTEGER DEFAULT 0,
+  total_children INTEGER DEFAULT 0,
+  total_headcount DECIMAL(10,2) DEFAULT 0,
+  groom_side_adults INTEGER DEFAULT 0,
+  groom_side_teens INTEGER DEFAULT 0,
+  groom_side_children INTEGER DEFAULT 0,
+  bride_side_adults INTEGER DEFAULT 0,
+  bride_side_teens INTEGER DEFAULT 0,
+  bride_side_children INTEGER DEFAULT 0,
+  locked BOOLEAN DEFAULT FALSE,
+  locked_at TIMESTAMP,
+  snapshot_date TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_headcount_wedding ON headcount_snapshots(wedding_id);
+CREATE INDEX idx_headcount_event ON headcount_snapshots(event_id);
+```
+
+---
+
+## FUNCTIONS & TRIGGERS
+
+### Auto-generate event timeline
+```sql
+CREATE OR REPLACE FUNCTION generate_event_timeline(p_wedding_id UUID, p_wedding_date DATE)
+RETURNS VOID AS $$
+DECLARE
+  v_engagement_date DATE;
+  v_save_date DATE;
+  v_haldi_date DATE;
+  v_mehendi_date DATE;
+  v_sangeet_date DATE;
+  v_reception_date DATE;
+BEGIN
+  v_engagement_date := p_wedding_date - INTERVAL '60 days';
+  v_save_date := p_wedding_date - INTERVAL '30 days';
+  v_haldi_date := p_wedding_date - INTERVAL '2 days';
+  v_mehendi_date := p_wedding_date - INTERVAL '1 day';
+  v_sangeet_date := p_wedding_date - INTERVAL '1 day';
+  v_reception_date := p_wedding_date;
+
+  INSERT INTO events (wedding_id, name, type, date, auto_generated) VALUES
+    (p_wedding_id, 'Engagement Ceremony', 'engagement', v_engagement_date, TRUE),
+    (p_wedding_id, 'Save The Date', 'save_the_date', v_save_date, TRUE),
+    (p_wedding_id, 'Haldi Ceremony', 'haldi', v_haldi_date, TRUE),
+    (p_wedding_id, 'Mehendi Ceremony', 'mehendi', v_mehendi_date, TRUE),
+    (p_wedding_id, 'Sangeet Night', 'sangeet', v_sangeet_date, TRUE),
+    (p_wedding_id, 'Wedding Ceremony', 'wedding', p_wedding_date, TRUE),
+    (p_wedding_id, 'Reception', 'reception', v_reception_date, TRUE);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Calculate food headcount
+```sql
+CREATE OR REPLACE FUNCTION calculate_food_headcount(
+  p_adults INTEGER,
+  p_teens INTEGER,
+  p_children INTEGER
+)
+RETURNS DECIMAL AS $$
+BEGIN
+  RETURN (p_adults * 1.0) + (p_teens * 0.75) + (p_children * 0.3);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Update headcount on RSVP change
+```sql
+CREATE OR REPLACE FUNCTION update_headcount_on_rsvp()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_wedding_id UUID;
+BEGIN
+  SELECT wedding_id INTO v_wedding_id 
+  FROM events 
+  WHERE id = NEW.event_id;
+
+  INSERT INTO headcount_snapshots (
+    wedding_id,
+    event_id,
+    total_adults,
+    total_teens,
+    total_children,
+    total_headcount
+  )
+  SELECT 
+    v_wedding_id,
+    NEW.event_id,
+    SUM(adults_count),
+    SUM(teens_count),
+    SUM(children_count),
+    calculate_food_headcount(
+      SUM(adults_count),
+      SUM(teens_count),
+      SUM(children_count)
+    )
+  FROM rsvps
+  WHERE event_id = NEW.event_id
+  AND status = 'attending'
+  ON CONFLICT (event_id) 
+  DO UPDATE SET
+    total_adults = EXCLUDED.total_adults,
+    total_teens = EXCLUDED.total_teens,
+    total_children = EXCLUDED.total_children,
+    total_headcount = EXCLUDED.total_headcount,
+    snapshot_date = NOW();
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_rsvp_update
+AFTER INSERT OR UPDATE ON rsvps
+FOR EACH ROW
+EXECUTE FUNCTION update_headcount_on_rsvp();
+```
+
+### Lock headcount 7 days before event
+```sql
+CREATE OR REPLACE FUNCTION check_headcount_lock()
+RETURNS VOID AS $$
+BEGIN
+  UPDATE headcount_snapshots hs
+  SET locked = TRUE, locked_at = NOW()
+  FROM events e
+  WHERE hs.event_id = e.id
+  AND e.date <= CURRENT_DATE + INTERVAL '7 days'
+  AND hs.locked = FALSE;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+---
+
+## USER FLOWS
+
+### Flow 1: Wedding Timeline Generation
+
+**Trigger:** Couple creates wedding with date
+
+**Steps:**
+1. System calculates dates for all events based on wedding date
+2. Auto-generates 7 default events
+3. Displays timeline to couple
+4. Couple can accept all, select specific events, or create custom
+5. Couple can edit/delete any event
+6. Timeline saved to events table
+
+**Timeline Calculation:**
+- Engagement: Wedding date - 60 days
+- Save The Date: Wedding date - 30 days
+- Haldi: Wedding date - 2 days
+- Mehendi: Wedding date - 1 day
+- Sangeet: Wedding date - 1 day (evening)
+- Wedding: Wedding date
+- Reception: Wedding date (evening)
+
+**User Actions:**
+- "Accept All Events"
+- "Select Events" (checkboxes)
+- "Add Custom Event"
+- "Edit Event" (date, time, venue)
+- "Delete Event"
+
+---
+
+### Flow 2: Guest Limit Voting
+
+**Trigger:** Wedding created
+
+**Steps:**
+1. System prompts couple: "Set guest limit?"
+2. Default shown: 500 guests
+3. Option: "Discuss with family" opens voting
+4. Voting participants: Groom + Bride + Both Parents + Both Siblings
+5. Each participant proposes a number + reason
+6. Voting period: 48 hours or until all vote
+7. System shows average, median, range
+8. Couple makes final decision
+9. Guest limit set and displayed on dashboard
+
+**Voting Interface:**
+- Participant name
+- Proposed limit input
+- Reason textarea (optional)
+- Submit vote button
+- Live results dashboard (visible to all voters)
+
+**Results Dashboard:**
+- Total votes received / Total voters
+- Proposed limits: 400, 500, 600, 800, 1000
+- Average: 660
+- Median: 600
+- Groom's family average: 700
+- Bride's family average: 620
+- Final decision: Couple clicks "Set Limit" button
+
+---
+
+### Flow 3: Hierarchical Guest Invitations (Groom Side)
+
+**Trigger:** Wedding created, guest limit set
+
+**Hierarchy:**
+```
+GROOM
+├── Invite Father
+│   ├── Father invites Uncle (Father's Brother)
+│   │   └── Uncle invites Cousins (his children - teens/kids added as +guests)
+│   ├── Father invites Aunt (Father's Sister)
+│   │   └── Aunt invites Cousins (her children)
+│   ├── Father invites Friends
+│   ├── Father invites Cousins (Father's cousins)
+│   └── Father invites Neighbors
+│
+├── Invite Mother
+│   ├── Mother invites Uncle (Mother's Brother)
+│   │   └── Uncle invites Cousins (his children)
+│   ├── Mother invites Aunt (Mother's Sister)
+│   │   └── Aunt invites Cousins (her children)
+│   ├── Mother invites Friends
+│   ├── Mother invites Cousins
+│   └── Mother invites Neighbors
+│
+├── Invite Siblings (Brother/Sister)
+│   ├── Sibling invites Spouse
+│   ├── Sibling invites Their Kids (+guests)
+│   └── Sibling invites Friends
+│
+└── Groom Direct Invites
+    ├── Friends
+    ├── Colleagues
+    ├── Neighbors
+    └── Other Acquaintances
+```
+
+**Invitation Permissions:**
+- Groom/Bride: Unlimited invites (within guest limit)
+- Parents: Unlimited invites
+- Siblings: Unlimited invites
+- Uncles/Aunts: Can invite their immediate family only
+- Friends/Colleagues: Cannot invite others
+
+**Under-18 Handling:**
+- No separate accounts
+- Parent adds as "+X guests" with names and ages
+- Ages captured: 0-12 (child), 13-17 (teen)
+- Food calculation automatic
+
+---
+
+### Flow 4: Guest Invitation Process
+
+**Step 1: Groom invites Father**
+
+**Interface:**
+```
+Invite Family Member
+├── Relationship: [Parent ▼]
+├── Side: Groom (auto-filled)
+├── Email: father@example.com
+├── Full Name: Farook Ahmed
+├── Phone: +91-9876543210 (optional)
+├── Can invite others: [✓] Yes [ ] No
+├── Invite limit: [Unlimited ▼]
+└── [Send Invitation]
+```
+
+**Email Sent:**
+```
+Subject: Faseen invited you to his wedding!
+
+Hi Farook Ahmed,
+
+Your son Faseen has invited you to his wedding with Hanan on December 15, 2025.
+
+You've been designated as a Parent, which means you can:
+✓ Invite family members
+✓ Invite friends and neighbors
+✓ Vote on wedding decisions
+✓ View all wedding details
+
+Click here to accept: https://emowed.com/guest-invite/XYZ789
+
+Best wishes,
+The Emowed Team
+```
+
+**Step 2: Father accepts invitation**
+
+**Father's View:**
+```
+Welcome to Faseen & Hanan's Wedding!
+
+Your Role: Parent (Groom's Side)
+Permissions:
+✓ Invite unlimited guests
+✓ Vote on vendors
+✓ Access wedding dashboard
+
+Next Steps:
+1. RSVP for yourself
+2. Invite your family members
+3. View wedding timeline
+```
+
+**Step 3: Father invites his brother (Uncle)**
+
+**Father's Interface:**
+```
+Invite Family Member
+├── Relationship: [Uncle ▼] (Father's Brother)
+├── Email: uncle@example.com
+├── Full Name: Ahmed Farook
+├── Can invite others: [✓] Yes (Only immediate family)
+├── [Send Invitation]
+```
+
+**Step 4: Uncle accepts and adds his family**
+
+**Uncle's View:**
+```
+Your Role: Uncle (Groom's Side)
+Permissions:
+✓ Invite your spouse
+✓ Invite your children
+✗ Cannot invite friends
+
+Add Your Family:
+├── Spouse: [Email] [Name]
+├── Children (Under 18):
+│   ├── [Name: Zara] [Age: 15] [Dietary: Vegetarian]
+│   ├── [Name: Omar] [Age: 10] [Dietary: None]
+│   └── [+ Add Another Child]
+└── [Submit]
+```
+
+---
+
+### Flow 5: RSVP System
+
+**Trigger:** Event 7 days away
+
+**Notification Sent:**
+```
+Subject: RSVP Required: Faseen & Hanan's Wedding
+
+Hi Ahmed Farook,
+
+The wedding is 7 days away! Please confirm your attendance.
+
+Event: Wedding Ceremony
+Date: December 15, 2025
+Venue: Grand Palace Hotel
+
+[RSVP Now]
+
+This is mandatory to finalize catering headcount.
+```
+
+**RSVP Interface:**
+```
+RSVP for Wedding Ceremony
+
+Will you attend?
+○ Yes, I'll be there
+○ No, I can't make it
+○ Maybe
+
+If attending:
+├── Adults (18+): [2] (You + Spouse)
+├── Teens (13-17): [1] (Zara)
+├── Children (0-12): [1] (Omar)
+│
+├── Dietary Requirements:
+│   ├── [✓] Vegetarian
+│   ├── [ ] Vegan
+│   ├── [ ] Halal
+│   ├── [ ] Gluten-free
+│   └── [ ] No restrictions
+│
+└── Special Requirements:
+    [Wheelchair access needed________________]
+
+[Submit RSVP]
+```
+
+**Deadline Enforcement:**
+- 7 days before event: RSVP window opens
+- Daily reminders sent
+- 24 hours before: Window closes
+- Post-deadline: "Sorry, RSVP closed" message
+
+---
+
+### Flow 6: Headcount Tracking
+
+**Real-Time Dashboard (Couple's View):**
+
+```
+Event: Wedding Ceremony
+Date: December 15, 2025
+
+┌─────────────────────────────────────┐
+│  CURRENT HEADCOUNT                  │
+├─────────────────────────────────────┤
+│                                     │
+│  Groom's Side:                      │
+│  ├── Adults: 85                     │
+│  ├── Teens: 12                      │
+│  ├── Children: 8                    │
+│  └── Food Count: 98.9               │
+│                                     │
+│  Bride's Side:                      │
+│  ├── Adults: 78                     │
+│  ├── Teens: 10                      │
+│  ├── Children: 6                    │
+│  └── Food Count: 89.3               │
+│                                     │
+│  ─────────────────────────          │
+│  TOTAL HEADCOUNT: 188.2 meals       │
+│                                     │
+│  RSVP Status:                       │
+│  ├── Confirmed: 165 / 200 invited   │
+│  ├── Pending: 30                    │
+│  └── Declined: 5                    │
+│                                     │
+│  🔒 Locks in: 6 days 14 hours       │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Food Calculation Formula:**
+- Adults: 1.0x per person
+- Teens (13-17): 0.75x per person
+- Children (0-12): 0.3x per person
+
+**Example:**
+- 85 adults = 85.0 meals
+- 12 teens = 9.0 meals
+- 8 children = 2.4 meals
+- **Total: 96.4 meals**
+
+**Vendor View (After 7-day lock):**
+
+```
+Faseen & Hanan's Wedding
+Final Headcount (LOCKED)
+
+Total: 188.2 meals
+├── Groom Side: 98.9 meals
+└── Bride Side: 89.3 meals
+
+Dietary Breakdown:
+├── Vegetarian: 45 meals
+├── Vegan: 12 meals
+├── Halal: 130 meals
+├── Gluten-free: 8 meals
+└── No restrictions: 50 meals
+
+[Download Full List] [Export to Excel]
+```
+
+---
+
+### Flow 7: Family Tree Visualization
+
+**Trigger:** Guests accept invitations
+
+**Family Tree Structure (Groom's Side):**
+
+```
+                    GROOM
+                   (Faseen)
+                      │
+        ┌─────────────┴─────────────┐
+        │                           │
+    FATHER                      MOTHER
+  (Farook Ahmed)             (Ayesha Ahmed)
+        │                           │
+    ┌───┴───┐                   ┌───┴───┐
+  UNCLE   AUNT                UNCLE   AUNT
+  (Ahmed) (Fatima)            (Rashid) (Zainab)
+    │       │                   │       │
+  COUSINS COUSINS             COUSINS COUSINS
+```
+
+**Interactive Tree Display:**
+- Zoom in/out
+- Click node to see details
+- Filter by role (Parents, Siblings, Uncles, etc.)
+- Color-coded by side (Groom = Blue, Bride = Pink)
+- Hover shows: Name, Role, RSVP status
+
+**Home Screen Merge View:**
+
+```
+┌──────────────────────────────────────────┐
+│         ONE BIG FAMILY                   │
+├──────────────────────────────────────────┤
+│                                          │
+│     GROOM SIDE     👰‍♀️🤵‍♂️     BRIDE SIDE   │
+│                                          │
+│   98 members           87 members        │
+│                                          │
+│        [Family Tree Visualization]       │
+│                                          │
+│   Both families merge after wedding!     │
+│                                          │
+└──────────────────────────────────────────┘
+```
+
+---
+
+## PAGE SPECIFICATIONS
+
+### Page 1: Event Timeline (`/wedding/:id/timeline`)
+
+**Layout:**
+```
+Header
+├── Wedding Name
+├── Days Until Wedding
+└── Back to Dashboard
+
+Body
+├── Timeline Generation Card (if new wedding)
+│   ├── Auto-generated dates shown
+│   ├── [Accept All Events] [Select Events] [Create Custom]
+│   └── Editable list
+│
+└── Timeline Display (after generation)
+    ├── Vertical timeline with date markers
+    ├── Event cards (name, date, time, venue)
+    ├── [Edit] [Delete] buttons per event
+    └── [+ Add Custom Event]
+```
+
+**Event Card:**
+```
+┌─────────────────────────────────────┐
+│  📅 Mehendi Ceremony                │
+├─────────────────────────────────────┤
+│  Date: December 14, 2025            │
+│  Time: 6:00 PM                      │
+│  Venue: Grand Palace Hotel          │
+│  City: Mumbai                       │
+│                                     │
+│  Guests Invited: 150 / 200          │
+│  RSVPs: 120 confirmed               │
+│                                     │
+│  [Edit Event] [View Guest List]     │
+└─────────────────────────────────────┘
+```
+
+**Edit Event Modal:**
+```
+Edit Event
+├── Event Name: [Mehendi Ceremony_______]
+├── Date: [📅 Dec 14, 2025]
+├── Time: [🕐 6:00 PM]
+├── Venue: [Grand Palace Hotel_______]
+├── City: [Mumbai_______]
+├── Description: [________________________]
+└── [Save Changes] [Cancel]
+```
+
+---
+
+### Page 2: Guest Management (`/wedding/:id/guests`)
+
+**Layout:**
+```
+Header
+├── Total Guests: 185 / 500
+├── [Invite Guest] button
+└── Filters: Side | Role | RSVP Status
+
+Tabs
+├── All Guests
+├── Groom's Side
+├── Bride's Side
+└── Pending Invites
+
+Guest List Table
+├── Avatar | Name | Role | Side | RSVP | Actions
+└── Pagination
+```
+
+**Invite Guest Modal:**
+```
+Invite Guest
+
+Relationship: [Parent ▼]
+              [Sibling]
+              [Uncle]
+              [Aunt]
+              [Cousin]
+              [Friend]
+              [Colleague]
+              [Neighbor]
+              [Other]
+
+Side: ○ Groom  ○ Bride
+
+Email: [________________________]
+Name: [________________________]
+Phone: [________________________] (optional)
+
+Permissions:
+[✓] Can invite others
+Invite limit: [Unlimited ▼]
+
+[Send Invitation] [Cancel]
+```
+
+**Guest Details Card:**
+```
+┌─────────────────────────────────────┐
+│  👤 Ahmed Farook                    │
+│  Role: Uncle (Groom's Side)         │
+├─────────────────────────────────────┤
+│  Email: ahmed@example.com           │
+│  Phone: +91-9876543210              │
+│  Invited by: Farook Ahmed (Father)  │
+│                                     │
+│  Family:                            │
+│  ├── Spouse: Sara Ahmed             │
+│  ├── Children:                      │
+│  │   ├── Zara (15) - Teen           │
+│  │   └── Omar (10) - Child          │
+│                                     │
+│  RSVP Status: ✓ Confirmed           │
+│                                     │
+│  [View Details] [Send Reminder]     │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Page 3: RSVP Management (`/wedding/:id/rsvp`)
+
+**Layout:**
+```
+Header
+├── Event Selector Dropdown
+├── Days Until Event
+└── Lock Status (Open / Locked)
+
+Summary Cards
+├── Total Invited
+├── Confirmed
+├── Pending
+└── Declined
+
+Guest RSVP List
+├── Filters: Status | Side | Role
+├── Search bar
+└── List view with RSVP badges
+
+Actions
+├── [Send Reminders to Pending]
+├── [Download RSVP Report]
+└── [Lock Headcount Manually]
+```
+
+**RSVP List Item:**
+```
+┌─────────────────────────────────────┐
+│  Ahmed Farook (Uncle - Groom)       │
+├─────────────────────────────────────┤
+│  Status: ✓ Attending                │
+│  Adults: 2  Teens: 1  Children: 1   │
+│  Food Count: 2.55 meals             │
+│  Dietary: Vegetarian, Halal         │
+│  Responded: Nov 8, 2025 3:45 PM     │
+│                                     │
+│  [View Details] [Edit RSVP]         │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Page 4: Headcount Dashboard (`/wedding/:id/headcount`)
+
+**Layout:**
+```
+Header
+├── Event: Wedding Ceremony
+├── Date: December 15, 2025
+└── Lock Status: 🔒 Locked 2 days ago
+
+Main Stats (Large Cards)
+├── Total Headcount
+├── Groom Side
+├── Bride Side
+└── Food Calculation
+
+Detailed Breakdown
+├── Adults Count
+├── Teens Count
+├── Children Count
+└── Dietary Requirements Chart
+
+Historical Snapshots
+├── Timeline graph showing headcount changes
+└── Date markers for significant changes
+
+Export Options
+├── [Download PDF Report]
+├── [Share with Vendors]
+└── [Export to Excel]
+```
+
+**Headcount Stats Card:**
+```
+┌─────────────────────────────────────┐
+│  TOTAL HEADCOUNT                    │
+├─────────────────────────────────────┤
+│            188.2                    │
+│          food servings              │
+│                                     │
+│  Based on:                          │
+│  • 163 Adults (163.0)               │
+│  • 22 Teens (16.5)                  │
+│  • 14 Children (4.2)                │
+│                                     │
+│  🔒 Locked 2 days ago               │
+└─────────────────────────────────────┘
+```
+
+**Side Comparison:**
+```
+┌─────────────────────────────────────┐
+│  GROOM vs BRIDE SIDE                │
+├─────────────────────────────────────┤
+│                                     │
+│  Groom: 98.9 meals  █████████       │
+│  Bride: 89.3 meals  ████████        │
+│                                     │
+│  Difference: 9.6 meals              │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Page 5: Family Tree (`/wedding/:id/family-tree`)
+
+**Layout:**
+```
+Header
+├── View Toggle: Tree | List
+├── Filters: Side | Generation | Role
+└── Search: Find person
+
+Tree View
+├── Interactive D3.js/React Flow diagram
+├── Zoom controls
+├── Pan/drag canvas
+└── Click node for details
+
+Legend
+├── Blue = Groom's Side
+├── Pink = Bride's Side
+├── Green = RSVP Confirmed
+├── Gray = Pending
+└── Red = Declined
+
+Node Details Panel (on click)
+├── Full name
+├── Relationship
+├── RSVP status
+├── Contact info
+└── [Send Message]
+```
+
+**Tree Node:**
+```
+┌───────────┐
+│  FATHER   │
+│  Farook   │
+│    ✓      │
+└─────┬─────┘
+      │
+┌─────┴─────┬─────────┬─────────┐
+│  UNCLE    │  UNCLE  │  AUNT   │
+│  Ahmed    │ Rashid  │ Fatima  │
+│    ✓      │    ?    │    ✗    │
+└───────────┴─────────┴─────────┘
+```
+
+---
+
+### Page 6: Guest Limit Voting (`/wedding/:id/guest-limit-vote`)
+
+**Layout:**
+```
+Header
+├── Voting Status: 5 / 7 votes received
+├── Time Remaining: 1 day 8 hours
+└── Current Guest Count: 185
+
+Voting Form (for voters who haven't submitted)
+├── Proposed Limit: [___] guests
+├── Reason: [_________________________]
+└── [Submit Vote]
+
+Results (visible to all)
+├── Votes Received: 5 / 7
+├── Proposed Limits:
+│   ├── 400 (Bride's Mother)
+│   ├── 500 (Groom's Father)
+│   ├── 600 (Bride's Father)
+│   ├── 800 (Groom)
+│   └── 1000 (Bride)
+│
+├── Statistics:
+│   ├── Average: 660
+│   ├── Median: 600
+│   ├── Range: 400 - 1000
+│   ├── Groom's Family Avg: 700
+│   └── Bride's Family Avg: 620
+
+Final Decision (Couple only)
+├── Selected Limit: [___] guests
+└── [Set Final Limit]
+```
+
+---
+
+## API ENDPOINTS
+
+### POST `/api/events/generate-timeline`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "wedding_date": "2025-12-15"
+}
+```
+**Response:**
+```json
+{
+  "events": [
+    {
+      "id": "uuid",
+      "name": "Engagement Ceremony",
+      "type": "engagement",
+      "date": "2025-10-16",
+      "auto_generated": true
+    }
+  ],
+  "count": 7
+}
+```
+
+### POST `/api/events/create-custom`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "name": "Cocktail Party",
+  "type": "custom",
+  "date": "2025-12-14",
+  "time": "19:00",
+  "venue": "Rooftop Lounge",
+  "city": "Mumbai"
+}
+```
+
+### PUT `/api/events/:id`
+**Request:**
+```json
+{
+  "name": "Mehendi Ceremony",
+  "date": "2025-12-13",
+  "time": "18:00",
+  "venue": "Garden Hall"
+}
+```
+
+### DELETE `/api/events/:id`
+
+### POST `/api/guest-invitations/send`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "inviter_id": "uuid",
+  "invitee_email": "uncle@example.com",
+  "invitee_name": "Ahmed Farook",
+  "role": "uncle",
+  "side": "groom",
+  "can_invite": true,
+  "invite_limit": null
+}
+```
+**Response:**
+```json
+{
+  "invitation_id": "uuid",
+  "email_sent": true,
+  "invitation_url": "https://emowed.com/guest-invite/XYZ789"
+}
+```
+
+### POST `/api/guest-invitations/accept`
+**Request:**
+```json
+{
+  "invitation_code": "XYZ789"
+}
+```
+**Response:**
+```json
+{
+  "guest_id": "uuid",
+  "wedding_id": "uuid",
+  "permissions": {
+    "can_invite": true,
+    "invite_limit": null,
+    "can_vote": false
+  }
+}
+```
+
+### POST `/api/guests/add-family`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "inviter_id": "uuid",
+  "family_members": [
+    {
+      "name": "Sara Ahmed",
+      "relationship": "spouse",
+      "email": "sara@example.com",
+      "age_group": "adult"
+    },
+    {
+      "name": "Zara Ahmed",
+      "relationship": "child",
+      "age": 15,
+      "age_group": "teen",
+      "dietary_preferences": ["vegetarian"]
+    }
+  ]
+}
+```
+
+### POST `/api/rsvps/submit`
+**Request:**
+```json
+{
+  "event_id": "uuid",
+  "guest_id": "uuid",
+  "status": "attending",
+  "adults_count": 2,
+  "teens_count": 1,
+  "children_count": 1,
+  "dietary_notes": "Vegetarian, Halal",
+  "special_requirements": "Wheelchair access needed"
+}
+```
+**Response:**
+```json
+{
+  "rsvp_id": "uuid",
+  "food_count": 2.55,
+  "locked": false,
+  "can_edit_until": "2025-12-08T23:59:59Z"
+}
+```
+
+### GET `/api/headcount/:wedding_id/:event_id`
+**Response:**
+```json
+{
+  "total_headcount": 188.2,
+  "groom_side": {
+    "adults": 85,
+    "teens": 12,
+    "children": 8,
+    "food_count": 98.9
+  },
+  "bride_side": {
+    "adults": 78,
+    "teens": 10,
+    "children": 6,
+    "food_count": 89.3
+  },
+  "dietary_breakdown": {
+    "vegetarian": 45,
+    "vegan": 12,
+    "halal": 130,
+    "gluten_free": 8,
+    "no_restrictions": 50
+  },
+  "locked": true,
+  "locked_at": "2025-12-08T00:00:00Z"
+}
+```
+
+### POST `/api/guest-limit/vote`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "voter_id": "uuid",
+  "proposed_limit": 600,
+  "reason": "We have a large family but want to keep costs reasonable"
+}
+```
+
+### GET `/api/guest-limit/results/:wedding_id`
+**Response:**
+```json
+{
+  "votes_received": 5,
+  "total_voters": 7,
+  "votes": [
+    {
+      "voter_name": "Farook Ahmed",
+      "proposed_limit": 500,
+      "reason": "Budget constraints"
+    }
+  ],
+  "statistics": {
+    "average": 660,
+    "median": 600,
+    "min": 400,
+    "max": 1000,
+    "groom_family_avg": 700,
+    "bride_family_avg": 620
+  },
+  "final_limit": null,
+  "voting_closed": false
+}
+```
+
+### POST `/api/guest-limit/finalize`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "final_limit": 650
+}
+```
+
+### GET `/api/family-tree/:wedding_id`
+**Response:**
+```json
+{
+  "nodes": [
+    {
+      "id": "uuid",
+      "name": "Faseen Farook",
+      "role": "groom",
+      "side": "groom",
+      "generation": 0,
+      "rsvp_status": "confirmed"
+    }
+  ],
+  "edges": [
+    {
+      "source": "uuid1",
+      "target": "uuid2",
+      "relationship": "parent"
+    }
+  ]
+}
+```
+
+---
+
+## BUSINESS RULES
+
+### Guest Invitation Limits
+- Groom/Bride: Unlimited (within wedding guest limit)
+- Parents: Unlimited
+- Siblings: Unlimited
+- Uncles/Aunts: Immediate family only (spouse + children)
+- Friends/Colleagues: Cannot invite others
+- Under-18: No accounts, added as +guests only
+
+### RSVP Rules
+- Window opens: 7 days before event
+- Window closes: 24 hours before event
+- Reminders: Daily for pending RSVPs
+- Post-deadline changes: Must contact couple directly
+- Headcount locks: 7 days before event automatically
+
+### Food Calculation
+- Adult (18+): 1.0x meal
+- Teen (13-17): 0.75x meal
+- Child (0-12): 0.3x meal
+- Minimum 0.3x even for infants
+
+### Family Tree Rules
+- Maximum 3 generations displayed
+- Parents → Uncles/Aunts → Cousins
+- Siblings same generation as Groom/Bride
+- Friends/Colleagues not shown in tree (separate list)
+
+### Guest Limit Voting
+- Participants: Groom + Bride + Both Parents + Siblings
+- Voting period: 48 hours
+- Final decision: Couple only
+- Can override votes if needed
+
+---
+
+## NOTIFICATION TRIGGERS
+
+### Invitation Sent
+**To:** Invitee
+**Subject:** You're invited to [Couple]'s wedding!
+**Content:** Invitation details + Accept link
+
+### Invitation Accepted
+**To:** Inviter
+**Subject:** [Name] accepted your invitation
+**Content:** Confirmation + Next steps
+
+### RSVP Reminder (7 days before)
+**To:** All pending guests
+**Subject:** RSVP Required: [Event] in 7 days
+**Content:** Event details + RSVP link
+
+### RSVP Reminder (3 days before)
+**To:** Still pending guests
+**Subject:** Final Reminder: RSVP for [Event]
+**Content:** Urgent notice + RSVP link
+
+### RSVP Reminder (24 hours before)
+**To:** Last chance pending guests
+**Subject:** Last Call: RSVP closes tonight
+**Content:** Final warning + RSVP link
+
+### Headcount Locked
+**To:** Couple + Vendors
+**Subject:** Headcount finalized for [Event]
+**Content:** Final numbers + Download link
+
+### Guest Limit Vote Request
+**To:** All voters
+**Subject:** Vote on guest limit for [Wedding]
+**Content:** Current status + Voting link
+
+### Guest Limit Finalized
+**To:** All voters
+**Subject:** Guest limit set at [Number]
+**Content:** Final decision + Thank you
+
+---
+
+## VALIDATION RULES
+
+### Event Creation
+- Date must be future
+- Venue required
+- City required
+- Time format: HH:MM (24-hour)
+- Name max 100 characters
+
+### Guest Invitation
+- Email format valid
+- Email unique within wedding
+- Name min 2 characters
+- Role must be from enum
+- Side required
+
+### RSVP Submission
+- Status required
+- Counts must be >= 0
+- Adult count >= 1 if attending
+- Dietary notes max 500 characters
+- Within RSVP window
+
+### Family Tree
+- Parent-child relationship valid
+- No circular references
+- Maximum 3 generations
+- Guest exists in wedding
+
+---
+
+## PERFORMANCE REQUIREMENTS
+
+- Event timeline generation: < 1 second
+- Guest invitation email: < 2 seconds
+- Headcount calculation: < 500ms
+- Family tree render: < 3 seconds (up to 500 guests)
+- RSVP submission: < 1 second
+
+---
+
+## SECURITY REQUIREMENTS
+
+- Only wedding couple can invite parents
+- Only authorized guests can invite sub-guests
+- RSVP editing restricted to guest owner
+- Headcount viewing restricted to couple + vendors
+- Guest list private (no public viewing)
+
+---
+
+## SUCCESS METRICS
+
+- Average guests per wedding: 150+
+- RSVP completion rate: 90%+
+- Invitation acceptance rate: 85%+
+- Headcount accuracy: 95%+
+- Timeline generation usage: 80%+
+- Guest limit voting participation: 70%+

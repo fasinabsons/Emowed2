@@ -1,0 +1,1894 @@
+# PHASE 4: Digital Wedding Program & Media
+
+## OVERVIEW
+
+**Goal:** Guest engagement, content sharing, streaming, gallery management, storage policies
+
+**Timeline:** Weeks 10-12
+
+**Prerequisites:** Phase 3 complete (vendor system functional)
+
+---
+
+## DATABASE SCHEMA
+
+### wedding_cards table
+```sql
+CREATE TABLE wedding_cards (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  template_id TEXT,
+  custom_design BOOLEAN DEFAULT FALSE,
+  groom_name TEXT NOT NULL,
+  bride_name TEXT NOT NULL,
+  wedding_date DATE NOT NULL,
+  venue_name TEXT,
+  venue_address TEXT,
+  city TEXT,
+  ceremony_time TIME,
+  reception_time TIME,
+  custom_message TEXT,
+  background_image_url TEXT,
+  couple_image_url TEXT,
+  animation_type TEXT CHECK (animation_type IN ('fade', 'slide', 'hearts', 'flowers', 'custom_gif', 'none')),
+  custom_gif_url TEXT,
+  color_scheme JSONB,
+  font_style TEXT,
+  pdf_url TEXT,
+  card_status TEXT DEFAULT 'draft' CHECK (card_status IN ('draft', 'published')),
+  views_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(wedding_id)
+);
+
+CREATE INDEX idx_wedding_cards_wedding ON wedding_cards(wedding_id);
+CREATE INDEX idx_wedding_cards_status ON wedding_cards(card_status);
+```
+
+### event_programs table
+```sql
+CREATE TABLE event_programs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  event_id UUID REFERENCES events(id) ON DELETE CASCADE,
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  program_order INTEGER,
+  program_title TEXT NOT NULL,
+  program_description TEXT,
+  start_time TIME,
+  end_time TIME,
+  duration_minutes INTEGER,
+  responsible_person TEXT,
+  special_notes TEXT,
+  is_live BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_event_programs_event ON event_programs(event_id);
+CREATE INDEX idx_event_programs_order ON event_programs(program_order);
+```
+
+### menu_items table
+```sql
+CREATE TABLE menu_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  event_id UUID REFERENCES events(id),
+  meal_type TEXT CHECK (meal_type IN ('breakfast', 'lunch', 'snacks', 'dinner', 'desserts', 'beverages')),
+  category TEXT CHECK (category IN ('starters', 'main_course', 'breads', 'rice', 'desserts', 'drinks', 'live_counter')),
+  item_name TEXT NOT NULL,
+  description TEXT,
+  cuisine_type TEXT,
+  is_vegetarian BOOLEAN DEFAULT TRUE,
+  is_vegan BOOLEAN DEFAULT FALSE,
+  is_halal BOOLEAN DEFAULT FALSE,
+  is_gluten_free BOOLEAN DEFAULT FALSE,
+  spice_level TEXT CHECK (spice_level IN ('mild', 'medium', 'hot', 'extra_hot')),
+  is_live_counter BOOLEAN DEFAULT FALSE,
+  display_order INTEGER,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_menu_items_wedding ON menu_items(wedding_id);
+CREATE INDEX idx_menu_items_event ON menu_items(event_id);
+CREATE INDEX idx_menu_items_meal_type ON menu_items(meal_type);
+```
+
+### youtube_streams table
+```sql
+CREATE TABLE youtube_streams (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  event_id UUID REFERENCES events(id) ON DELETE CASCADE,
+  stream_title TEXT NOT NULL,
+  youtube_url TEXT NOT NULL,
+  embed_code TEXT NOT NULL,
+  stream_type TEXT CHECK (stream_type IN ('live', 'recorded', 'upcoming')),
+  stream_status TEXT DEFAULT 'scheduled' CHECK (stream_status IN ('scheduled', 'live', 'ended', 'private')),
+  scheduled_start TIMESTAMP,
+  actual_start TIMESTAMP,
+  actual_end TIMESTAMP,
+  viewer_count INTEGER DEFAULT 0,
+  peak_viewers INTEGER DEFAULT 0,
+  chat_enabled BOOLEAN DEFAULT TRUE,
+  recording_url TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_youtube_streams_wedding ON youtube_streams(wedding_id);
+CREATE INDEX idx_youtube_streams_event ON youtube_streams(event_id);
+CREATE INDEX idx_youtube_streams_status ON youtube_streams(stream_status);
+```
+
+### media_gallery table
+```sql
+CREATE TABLE media_gallery (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  event_id UUID REFERENCES events(id),
+  uploader_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  uploader_name TEXT NOT NULL,
+  uploader_side TEXT CHECK (uploader_side IN ('groom', 'bride', 'guest')),
+  media_type TEXT NOT NULL CHECK (media_type IN ('photo', 'video', 'message', 'blessing')),
+  file_url TEXT,
+  thumbnail_url TEXT,
+  cloudinary_public_id TEXT,
+  file_size_bytes BIGINT,
+  file_format TEXT,
+  width INTEGER,
+  height INTEGER,
+  duration_seconds INTEGER,
+  caption TEXT,
+  message_text TEXT,
+  blessing_text TEXT,
+  tags TEXT[],
+  is_approved BOOLEAN DEFAULT TRUE,
+  is_featured BOOLEAN DEFAULT FALSE,
+  likes_count INTEGER DEFAULT 0,
+  comments_count INTEGER DEFAULT 0,
+  view_count INTEGER DEFAULT 0,
+  upload_date TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_media_gallery_wedding ON media_gallery(wedding_id);
+CREATE INDEX idx_media_gallery_uploader ON media_gallery(uploader_id);
+CREATE INDEX idx_media_gallery_type ON media_gallery(media_type);
+CREATE INDEX idx_media_gallery_approved ON media_gallery(is_approved);
+CREATE INDEX idx_media_gallery_date ON media_gallery(upload_date);
+```
+
+### media_comments table
+```sql
+CREATE TABLE media_comments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  media_id UUID REFERENCES media_gallery(id) ON DELETE CASCADE,
+  commenter_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  commenter_name TEXT NOT NULL,
+  comment_text TEXT NOT NULL,
+  parent_comment_id UUID REFERENCES media_comments(id),
+  likes_count INTEGER DEFAULT 0,
+  is_approved BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_media_comments_media ON media_comments(media_id);
+CREATE INDEX idx_media_comments_parent ON media_comments(parent_comment_id);
+```
+
+### media_likes table
+```sql
+CREATE TABLE media_likes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  media_id UUID REFERENCES media_gallery(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(media_id, user_id)
+);
+
+CREATE INDEX idx_media_likes_media ON media_likes(media_id);
+CREATE INDEX idx_media_likes_user ON media_likes(user_id);
+```
+
+### storage_usage table
+```sql
+CREATE TABLE storage_usage (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  total_photos INTEGER DEFAULT 0,
+  total_videos INTEGER DEFAULT 0,
+  total_files INTEGER DEFAULT 0,
+  total_size_bytes BIGINT DEFAULT 0,
+  total_size_mb DECIMAL(10, 2) DEFAULT 0,
+  storage_limit_mb DECIMAL(10, 2),
+  is_paid_user BOOLEAN DEFAULT FALSE,
+  last_calculated TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(wedding_id)
+);
+
+CREATE INDEX idx_storage_usage_wedding ON storage_usage(wedding_id);
+CREATE INDEX idx_storage_usage_paid ON storage_usage(is_paid_user);
+```
+
+### media_deletion_schedule table
+```sql
+CREATE TABLE media_deletion_schedule (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  wedding_date DATE NOT NULL,
+  deletion_scheduled_date DATE NOT NULL,
+  deletion_executed BOOLEAN DEFAULT FALSE,
+  deletion_executed_at TIMESTAMP,
+  is_paid_wedding BOOLEAN DEFAULT FALSE,
+  items_deleted_count INTEGER DEFAULT 0,
+  space_freed_mb DECIMAL(10, 2) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_media_deletion_wedding ON media_deletion_schedule(wedding_id);
+CREATE INDEX idx_media_deletion_scheduled ON media_deletion_schedule(deletion_scheduled_date);
+CREATE INDEX idx_media_deletion_executed ON media_deletion_schedule(deletion_executed);
+```
+
+### couple_animations table
+```sql
+CREATE TABLE couple_animations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  animation_type TEXT CHECK (animation_type IN ('text_fade', 'hearts', 'flowers', 'rings', 'custom_gif')),
+  custom_gif_url TEXT,
+  animation_settings JSONB,
+  display_duration_seconds INTEGER DEFAULT 5,
+  loop_animation BOOLEAN DEFAULT TRUE,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### bulk_download_requests table
+```sql
+CREATE TABLE bulk_download_requests (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  requester_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  download_type TEXT CHECK (download_type IN ('all_media', 'photos_only', 'videos_only', 'event_specific')),
+  event_id UUID REFERENCES events(id),
+  filter_criteria JSONB,
+  total_files INTEGER,
+  total_size_mb DECIMAL(10, 2),
+  zip_file_url TEXT,
+  zip_file_password TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'ready', 'downloaded', 'expired')),
+  expires_at TIMESTAMP,
+  downloaded_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_bulk_downloads_wedding ON bulk_download_requests(wedding_id);
+CREATE INDEX idx_bulk_downloads_requester ON bulk_download_requests(requester_id);
+CREATE INDEX idx_bulk_downloads_status ON bulk_download_requests(status);
+```
+
+---
+
+## FUNCTIONS & TRIGGERS
+
+### Calculate storage usage
+```sql
+CREATE OR REPLACE FUNCTION calculate_storage_usage(p_wedding_id UUID)
+RETURNS VOID AS $$
+DECLARE
+  v_total_photos INTEGER;
+  v_total_videos INTEGER;
+  v_total_size BIGINT;
+  v_is_paid BOOLEAN;
+BEGIN
+  SELECT 
+    COUNT(*) FILTER (WHERE media_type = 'photo'),
+    COUNT(*) FILTER (WHERE media_type = 'video'),
+    COALESCE(SUM(file_size_bytes), 0)
+  INTO v_total_photos, v_total_videos, v_total_size
+  FROM media_gallery
+  WHERE wedding_id = p_wedding_id;
+
+  SELECT EXISTS (
+    SELECT 1 FROM weddings w
+    JOIN couples c ON w.couple_id = c.id
+    JOIN users u ON u.id IN (c.user1_id, c.user2_id)
+    WHERE w.id = p_wedding_id
+    AND u.subscription_type = 'paid'
+    LIMIT 1
+  ) INTO v_is_paid;
+
+  INSERT INTO storage_usage (
+    wedding_id, total_photos, total_videos, 
+    total_files, total_size_bytes, total_size_mb,
+    is_paid_user, storage_limit_mb
+  )
+  VALUES (
+    p_wedding_id, v_total_photos, v_total_videos,
+    v_total_photos + v_total_videos, v_total_size,
+    v_total_size / 1048576.0,
+    v_is_paid,
+    CASE WHEN v_is_paid THEN 999999 ELSE 500 END
+  )
+  ON CONFLICT (wedding_id) DO UPDATE SET
+    total_photos = EXCLUDED.total_photos,
+    total_videos = EXCLUDED.total_videos,
+    total_files = EXCLUDED.total_files,
+    total_size_bytes = EXCLUDED.total_size_bytes,
+    total_size_mb = EXCLUDED.total_size_mb,
+    last_calculated = NOW();
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Update storage on media upload
+```sql
+CREATE OR REPLACE FUNCTION update_storage_on_upload()
+RETURNS TRIGGER AS $$
+BEGIN
+  PERFORM calculate_storage_usage(NEW.wedding_id);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_media_upload
+AFTER INSERT ON media_gallery
+FOR EACH ROW
+EXECUTE FUNCTION update_storage_on_upload();
+```
+
+### Schedule media deletion for free users
+```sql
+CREATE OR REPLACE FUNCTION schedule_media_deletion()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_is_paid BOOLEAN;
+  v_deletion_date DATE;
+BEGIN
+  SELECT is_paid_user INTO v_is_paid
+  FROM storage_usage
+  WHERE wedding_id = NEW.wedding_id;
+
+  IF v_is_paid = FALSE THEN
+    v_deletion_date := NEW.wedding_date + INTERVAL '7 days';
+    
+    INSERT INTO media_deletion_schedule (
+      wedding_id, wedding_date, deletion_scheduled_date, is_paid_wedding
+    )
+    VALUES (
+      NEW.wedding_id, NEW.wedding_date, v_deletion_date, FALSE
+    )
+    ON CONFLICT (wedding_id) DO NOTHING;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_wedding_completion
+AFTER UPDATE ON weddings
+FOR EACH ROW
+WHEN (NEW.status = 'completed' AND OLD.status != 'completed')
+EXECUTE FUNCTION schedule_media_deletion();
+```
+
+### Execute scheduled deletions
+```sql
+CREATE OR REPLACE FUNCTION execute_media_deletions()
+RETURNS VOID AS $$
+DECLARE
+  v_record RECORD;
+  v_deleted_count INTEGER;
+  v_space_freed BIGINT;
+BEGIN
+  FOR v_record IN 
+    SELECT * FROM media_deletion_schedule
+    WHERE deletion_scheduled_date <= CURRENT_DATE
+    AND deletion_executed = FALSE
+    AND is_paid_wedding = FALSE
+  LOOP
+    SELECT COUNT(*), COALESCE(SUM(file_size_bytes), 0)
+    INTO v_deleted_count, v_space_freed
+    FROM media_gallery
+    WHERE wedding_id = v_record.wedding_id;
+
+    DELETE FROM media_gallery
+    WHERE wedding_id = v_record.wedding_id;
+
+    UPDATE media_deletion_schedule
+    SET deletion_executed = TRUE,
+        deletion_executed_at = NOW(),
+        items_deleted_count = v_deleted_count,
+        space_freed_mb = v_space_freed / 1048576.0
+    WHERE id = v_record.id;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Update media likes count
+```sql
+CREATE OR REPLACE FUNCTION update_media_likes_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE media_gallery
+    SET likes_count = likes_count + 1
+    WHERE id = NEW.media_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE media_gallery
+    SET likes_count = likes_count - 1
+    WHERE id = OLD.media_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_media_like
+AFTER INSERT OR DELETE ON media_likes
+FOR EACH ROW
+EXECUTE FUNCTION update_media_likes_count();
+```
+
+### Increment media view count
+```sql
+CREATE OR REPLACE FUNCTION increment_media_view()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE media_gallery
+  SET view_count = view_count + 1
+  WHERE id = NEW.media_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+---
+
+## USER FLOWS
+
+### Flow 1: Create Digital Wedding Card
+
+**Trigger:** Couple wants to share wedding details digitally
+
+**Steps:**
+1. Navigate to Wedding Card section
+2. Choose creation method:
+   - Use template (free/paid)
+   - Upload custom design
+   - Upload PDF
+3. If template selected:
+   - Choose from gallery (religious themes, modern, traditional)
+   - Customize colors, fonts
+4. Fill in details:
+   - Groom name, Bride name
+   - Wedding date, venue, city
+   - Ceremony time, reception time
+   - Custom message
+5. Upload couple photo (optional)
+6. Choose animation:
+   - Free users: Fade, slide, hearts, flowers
+   - Paid users: Custom GIF upload
+7. Preview card
+8. Publish card
+9. System generates shareable link
+10. Couple shares link with guests
+
+**Template Categories:**
+- Hindu Traditional (Om, Ganesh, Mandala)
+- Muslim Traditional (Islamic patterns, Bismillah)
+- Christian Traditional (Cross, Church)
+- Modern Minimal (Clean, elegant)
+- Floral (Roses, jasmine, marigold)
+- Royal (Gold, red, ornate)
+
+**Card Details Form:**
+```
+Wedding Card Builder
+
+Template: [Hindu Traditional - Ganesh ▼]
+
+Couple Names:
+Groom: [Faseen Farook________________]
+Bride: [Hanan Rasheed________________]
+
+Display as:
+○ Faseen & Hanan
+○ Faseen weds Hanan
+○ Faseen ❤️ Hanan
+● Custom: [Faseen 💍 Hanan_________]
+
+Wedding Date: [📅 Dec 15, 2025]
+
+Venue Details:
+Name: [Grand Palace Hotel_________]
+Address: [123 Marine Drive________]
+City: [Mumbai__________________]
+
+Timings:
+Ceremony: [🕐 12:00 PM]
+Reception: [🕐 7:00 PM]
+
+Custom Message:
+[Join us in celebrating our union as we begin
+ this beautiful journey together. Your presence
+ will make our day even more special._________]
+
+Couple Photo:
+[📤 Upload] [Use placeholder]
+
+Animation Type:
+○ Fade
+○ Slide
+● Hearts animation
+○ Flowers
+○ Custom GIF (Paid only)
+
+Color Scheme:
+Primary: [#FF6B9D] 🎨
+Secondary: [#FFD700] 🎨
+Background: [#FFF5F7] 🎨
+
+[Preview Card] [Save Draft] [Publish]
+```
+
+**Card Preview:**
+```
+┌─────────────────────────────────────┐
+│                                     │
+│         🕉 OM 🕉                    │
+│                                     │
+│      ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️          │
+│                                     │
+│         Faseen 💍 Hanan             │
+│                                     │
+│      ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️          │
+│                                     │
+│    [Couple Photo]                   │
+│                                     │
+│   Join us in celebrating our union  │
+│                                     │
+│   📅 December 15, 2025              │
+│   📍 Grand Palace Hotel             │
+│      Mumbai                         │
+│                                     │
+│   🕐 Ceremony: 12:00 PM             │
+│   🕐 Reception: 7:00 PM             │
+│                                     │
+│      Your presence will make        │
+│      our day special                │
+│                                     │
+│   [View Full Invitation]            │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Flow 2: Create Event Program Schedule
+
+**Trigger:** Couple wants to display event timeline
+
+**Steps:**
+1. Navigate to Event Programs
+2. Select event (Mehendi, Sangeet, Wedding, etc.)
+3. Click Add Program Item
+4. Fill program details:
+   - Title
+   - Description
+   - Start time
+   - Duration
+   - Responsible person
+   - Special notes
+5. Set display order (drag-and-drop)
+6. Mark live programs (happening now)
+7. Publish program schedule
+8. Guests see real-time updates on their app
+9. Send push notifications for major programs
+
+**Program Builder:**
+```
+Wedding Ceremony Schedule
+Date: December 15, 2025
+
+[+ Add Program Item]
+
+┌─────────────────────────────────────┐
+│  12:00 PM - 12:30 PM (30 min)       │
+│  Guest Arrival & Registration       │
+│  ─────────────────────────────      │
+│  Welcome drinks and seating         │
+│  Host: Reception Team               │
+│  [Edit] [Delete] [☰ Reorder]        │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  12:30 PM - 1:00 PM (30 min)        │
+│  Baraat Procession                  │
+│  ─────────────────────────────      │
+│  Groom's entry with family          │
+│  DJ: Sound Masters                  │
+│  🔴 LIVE NOW                        │
+│  [Edit] [Delete] [☰ Reorder]        │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  1:00 PM - 2:00 PM (60 min)         │
+│  Nikah Ceremony                     │
+│  ─────────────────────────────      │
+│  Officiated by Imam Sahab           │
+│  Please maintain silence            │
+│  [Edit] [Delete] [☰ Reorder]        │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  2:00 PM - 3:30 PM (90 min)         │
+│  Lunch Buffet                       │
+│  ─────────────────────────────      │
+│  Multi-cuisine spread               │
+│  Caterer: Royal Caterers            │
+│  [Edit] [Delete] [☰ Reorder]        │
+└─────────────────────────────────────┘
+
+[Publish Schedule] [Preview Guest View]
+```
+
+**Add Program Form:**
+```
+Add Program Item
+
+Title: [Baraat Procession__________]
+
+Description:
+[Groom's grand entry with family and friends
+ accompanied by dhol and DJ_________________]
+
+Time:
+Start: [🕐 12:30 PM]
+Duration: [30] minutes
+End: (Auto: 1:00 PM)
+
+Responsible Person:
+[DJ: Sound Masters______________]
+
+Special Notes:
+[All guests please gather at the entrance.
+ Photography allowed._____________________]
+
+Status:
+[ ] Upcoming
+[✓] Live Now
+[ ] Completed
+
+[Save] [Cancel]
+```
+
+---
+
+### Flow 3: Create Buffet Menu
+
+**Trigger:** Couple wants to display food menu
+
+**Steps:**
+1. Navigate to Menu Management
+2. Select event (if multi-event)
+3. Add meal sections:
+   - Breakfast, Lunch, Snacks, Dinner, Desserts, Beverages
+4. For each section, add items:
+   - Item name
+   - Description
+   - Cuisine type
+   - Dietary flags (Veg/Non-veg/Vegan/Halal/Gluten-free)
+   - Spice level
+   - Live counter indicator
+5. Set display order
+6. Add special dietary notes
+7. Publish menu
+8. Guests view menu on app/website
+
+**Menu Builder:**
+```
+Wedding Reception Menu
+Event: Reception - Dec 15, 2025, 7:00 PM
+
+Meal Type: [Dinner ▼]
+
+┌─────────────────────────────────────┐
+│  STARTERS                           │
+├─────────────────────────────────────┤
+│                                     │
+│  🟢 Paneer Tikka                    │
+│  Cottage cheese marinated in spices │
+│  Cuisine: North Indian              │
+│  Spice: Medium                      │
+│  [Edit] [Delete]                    │
+│                                     │
+│  🔴 Chicken Seekh Kebab             │
+│  Minced chicken on skewers          │
+│  Cuisine: Mughlai                   │
+│  Spice: Hot                         │
+│  Halal                              │
+│  [Edit] [Delete]                    │
+│                                     │
+│  [+ Add Item]                       │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  MAIN COURSE                        │
+├─────────────────────────────────────┤
+│                                     │
+│  🟢 Dal Makhani                     │
+│  🟢 Paneer Butter Masala            │
+│  🔴 Chicken Biryani (Live Counter)  │
+│  🔴 Mutton Rogan Josh               │
+│                                     │
+│  [+ Add Item]                       │
+└─────────────────────────────────────┘
+
+[Add Section] [Preview Menu] [Publish]
+```
+
+**Add Menu Item Form:**
+```
+Add Menu Item
+
+Section: [Main Course ▼]
+
+Item Name: [Chicken Biryani__________]
+
+Description:
+[Aromatic basmati rice cooked with marinated
+ chicken and traditional spices____________]
+
+Cuisine Type: [Hyderabadi ▼]
+
+Dietary Flags:
+[ ] Vegetarian
+[✓] Non-Vegetarian
+[ ] Vegan
+[✓] Halal
+[ ] Gluten-Free
+[ ] Contains Nuts
+
+Spice Level:
+○ Mild
+● Medium
+○ Hot
+○ Extra Hot
+
+Special Features:
+[✓] Live Counter
+[ ] Chef's Special
+[ ] Signature Dish
+
+Display Order: [4]
+
+[Save] [Cancel]
+```
+
+---
+
+### Flow 4: YouTube Live Streaming
+
+**Trigger:** Couple wants to stream wedding live
+
+**Steps:**
+1. Navigate to Streaming section
+2. Click Add Stream
+3. Choose event to stream
+4. Enter YouTube stream details:
+   - YouTube Live URL
+   - Stream title
+   - Scheduled start time
+   - Enable/disable chat
+5. System extracts embed code
+6. Test embed preview
+7. Publish stream link
+8. Guests access stream from event page
+9. System tracks viewer count
+10. After event, stream auto-archived
+
+**Stream Setup:**
+```
+Add YouTube Live Stream
+
+Event: [Wedding Ceremony ▼]
+Date: December 15, 2025
+
+Stream Title:
+[Faseen & Hanan's Wedding Ceremony - Live___]
+
+YouTube Live URL:
+[https://youtube.com/watch?v=ABC123______]
+
+[Test URL] ✓ Valid
+
+Stream Type:
+● Live Streaming
+○ Pre-recorded Video
+○ Upcoming Premiere
+
+Scheduled Start:
+[📅 Dec 15, 2025] [🕐 12:00 PM]
+
+Settings:
+[✓] Enable live chat
+[✓] Show viewer count
+[ ] Restrict to logged-in guests only
+[✓] Send notifications when live
+
+Privacy:
+● Public (anyone with link)
+○ Private (invited guests only)
+
+[Preview Embed] [Save] [Publish]
+```
+
+**Guest View - Stream Page:**
+```
+┌─────────────────────────────────────┐
+│  Wedding Ceremony - LIVE 🔴         │
+│  👁️ 247 viewers                     │
+├─────────────────────────────────────┤
+│                                     │
+│  [YouTube Video Embed]              │
+│                                     │
+│  Full Screen Available              │
+│                                     │
+├─────────────────────────────────────┤
+│  📅 December 15, 2025               │
+│  🕐 Started at 12:00 PM             │
+│  ⏱️ Live for 45 minutes             │
+│                                     │
+│  💬 Live Chat                       │
+│  [Chat messages if enabled]         │
+│                                     │
+└─────────────────────────────────────┘
+
+[Share Stream] [Set Reminder]
+```
+
+---
+
+### Flow 5: Gallery Upload (Guests)
+
+**Trigger:** Guest wants to share photos/blessings
+
+**Steps:**
+1. Guest logs in during/after wedding
+2. Navigates to Gallery
+3. Clicks Upload button
+4. Selects files (photos/videos)
+5. System checks:
+   - User subscription status
+   - Current storage usage
+   - File size limits
+   - Format validation
+6. If free user:
+   - 200 images max (wedding-wide)
+   - 500KB per image max
+   - Warning: "Deleted after 7 days"
+7. If paid user:
+   - Unlimited uploads
+   - 1MB default, up to 10MB with extra payment
+8. Adds caption (optional)
+9. Adds blessing message (optional)
+10. Tags event/people (optional)
+11. Uploads to Cloudinary
+12. Image compressed automatically
+13. Appears in gallery after approval (if moderation on)
+14. Couple/hosts notified
+
+**Upload Interface (Free User):**
+```
+Upload Photos
+
+Storage Status:
+Free User | 145 / 200 images used
+⚠️ Media will be deleted 7 days after wedding
+
+[Select Photos] [Take Photo]
+
+Selected Files: 5
+├── IMG_001.jpg (650 KB) ⚠️ Too large
+├── IMG_002.jpg (420 KB) ✓
+├── IMG_003.jpg (380 KB) ✓
+├── IMG_004.jpg (510 KB) ⚠️ Too large
+└── IMG_005.jpg (295 KB) ✓
+
+System will auto-compress oversized images to 500KB
+
+Caption (optional):
+[Beautiful ceremony! Congratulations!______]
+
+Blessing Message:
+[May your love grow stronger with each passing
+ day. Wishing you a lifetime of happiness____]
+
+Tag Event: [Wedding Ceremony ▼]
+
+Tag People:
+[Faseen] [Hanan] [+ Add]
+
+[Upload 3 Valid Photos] [Cancel]
+```
+
+**Upload Interface (Paid User):**
+```
+Upload Photos
+
+Storage Status:
+Premium User | Unlimited storage
+💎 Your media is saved forever
+
+[Select Photos] [Select Videos] [Take Photo]
+
+Selected Files: 5
+├── IMG_001.jpg (1.2 MB) ✓
+├── IMG_002.jpg (850 KB) ✓
+├── VID_001.mp4 (8.5 MB) ✓
+├── IMG_003.jpg (2.1 MB) ✓
+└── IMG_004.jpg (1.8 MB) ✓
+
+Total: 14.45 MB
+
+Quality:
+○ Standard (1MB max per image)
+● High Quality (5MB max per image)
+○ Original (10MB max per image) [+₹99]
+
+[Upload All] [Cancel]
+```
+
+---
+
+### Flow 6: Gallery View & Interaction
+
+**Trigger:** User browses wedding gallery
+
+**Steps:**
+1. Navigate to Gallery
+2. Filter options:
+   - All media / Photos / Videos / Messages / Blessings
+   - By event
+   - By uploader
+   - By date
+3. Grid view or list view
+4. Click media to open lightbox
+5. Can like, comment, share
+6. Download individual files (paid users)
+7. Report inappropriate content
+8. Host team can delete/hide media
+
+**Gallery Interface:**
+```
+Wedding Gallery
+
+Filters:
+[All Media ▼] [All Events ▼] [All Uploaders ▼]
+
+Sort: [Most Recent ▼] [Most Liked] [Most Viewed]
+
+View: [⊞ Grid] [≡ List]
+
+─────────────────────────────────────
+
+Grid View:
+
+┌─────┬─────┬─────┬─────┐
+│ 📷  │ 📷  │ 📷  │ 🎥  │
+│ ❤️45│ ❤️32│ ❤️28│ ❤️67│
+└─────┴─────┴─────┴─────┘
+
+┌─────┬─────┬─────┬─────┐
+│ 💬  │ 📷  │ 💬  │ 📷  │
+│ Bls │ ❤️18│ Bls │ ❤️91│
+└─────┴─────┴─────┴─────┘
+
+[Load More]
+
+─────────────────────────────────────
+
+Stats:
+Total Items: 287
+Photos: 245 | Videos: 32 | Messages: 10
+
+Most Active Uploader: Uncle Ahmed (34 photos)
+Most Liked: Couple's first dance video (247 ❤️)
+```
+
+**Lightbox View:**
+```
+┌─────────────────────────────────────┐
+│  ← [Image] →                        │
+│                                     │
+│      [Full Image Display]           │
+│                                     │
+├─────────────────────────────────────┤
+│  Uploaded by: Aunt Fatima           │
+│  Event: Mehendi Ceremony            │
+│  Date: Dec 13, 2025 6:45 PM         │
+│                                     │
+│  Caption:                           │
+│  Beautiful mehendi designs! ✨      │
+│                                     │
+│  ❤️ 45 likes  💬 8 comments         │
+│  👁️ 123 views                      │
+│                                     │
+│  [❤️ Like] [💬 Comment] [↗️ Share]  │
+│                                     │
+│  Comments:                          │
+│  • Hanan: Thank you! So pretty! 😍 │
+│  • Mother: Mashallah! ❤️           │
+│                                     │
+│  [Add Comment]                      │
+│                                     │
+│  [Download] (Paid users only)       │
+│  [Report] (if inappropriate)        │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Flow 7: Bulk Download (Paid Users Only)
+
+**Trigger:** Paid user wants all wedding media
+
+**Steps:**
+1. Navigate to Gallery
+2. Click Bulk Download button
+3. Select download options:
+   - All media
+   - Photos only
+   - Videos only
+   - Specific event
+   - Date range
+   - By uploader
+4. System calculates:
+   - Total files
+   - Total size
+   - Estimated time
+5. Request bulk download
+6. System creates ZIP file in background
+7. Generates password-protected download link
+8. Expires in 48 hours
+9. User notified via email when ready
+10. Downloads ZIP file
+11. Can request again anytime (paid users)
+
+**Bulk Download Interface:**
+```
+Bulk Download Gallery
+
+Premium Feature - Available for paid users only
+
+Download Options:
+[✓] All media
+[ ] Photos only
+[ ] Videos only
+[ ] Specific event: [All Events ▼]
+[ ] Date range: [From] [To]
+[ ] By uploader: [All Uploaders ▼]
+
+Current Selection:
+├── Photos: 245 files (342 MB)
+├── Videos: 32 files (1.8 GB)
+├── Messages: 10 items (text only)
+└── Total: 287 items (2.14 GB)
+
+Estimated download time: 15-20 minutes
+(depending on your internet speed)
+
+File Format: ZIP (password protected)
+Link expires: 48 hours after creation
+
+[Request Download] [Cancel]
+
+Recent Downloads:
+• All media (Dec 16, 2025) - 2.14 GB [Download Again]
+• Photos only (Dec 15, 2025) - Expired
+```
+
+**Download Ready Email:**
+```
+Subject: Your wedding gallery download is ready!
+
+Hi Faseen,
+
+Your bulk download of 287 files (2.14 GB) is ready!
+
+Download Link: https://emowed.com/downloads/XYZ123
+Password: WEDDING2025
+
+This link expires in 48 hours (Dec 18, 2025, 10:00 AM).
+
+Files included:
+• 245 Photos (342 MB)
+• 32 Videos (1.8 GB)
+• 10 Message cards (text)
+
+[Download Now]
+
+Need help? Contact support@emowed.com
+
+Best regards,
+The Emowed Team
+```
+
+---
+
+### Flow 8: Data Deletion (Free Users)
+
+**Trigger:** 7 days after wedding date (free users only)
+
+**Automated Process:**
+1. Cron job runs daily at midnight
+2. Checks media_deletion_schedule table
+3. Identifies weddings where:
+   - deletion_scheduled_date = today
+   - is_paid_wedding = false
+   - deletion_executed = false
+4. For each wedding:
+   - Deletes all media_gallery records
+   - Deletes Cloudinary files
+   - Keeps metadata:
+     - Family tree connections
+     - RSVP totals (not details)
+     - Vendor bookings
+     - Wedding card (as PDF snapshot)
+   - Marks deletion as executed
+5. Sends confirmation email to couple
+
+**7-Day Warning Email (Free Users):**
+```
+Subject: ⚠️ Your wedding media will be deleted in 7 days
+
+Hi Faseen & Hanan,
+
+Your wedding was on December 15, 2025.
+
+As free users, your media gallery will be automatically
+deleted on December 22, 2025 (7 days post-wedding).
+
+What will be deleted:
+• All photos (245 files)
+• All videos (32 files)
+• Guest messages and blessings
+
+What will be preserved:
+• Wedding card
+• Event timeline
+• Guest list (names only)
+• Vendor bookings
+
+Want to keep your memories forever?
+Upgrade to Premium: ₹2,999 (one-time)
+
+[Upgrade Now] [Download All Media First]
+
+Need help? Contact support@emowed.com
+```
+
+**Deletion Confirmation Email:**
+```
+Subject: Your wedding media has been deleted
+
+Hi Faseen & Hanan,
+
+As per our storage policy, your wedding gallery has been
+deleted 7 days after your wedding date.
+
+Deleted Items:
+• 245 photos (342 MB)
+• 32 videos (1.8 GB)
+• 10 messages
+
+Preserved Data:
+• Wedding card (PDF)
+• Family tree
+• Guest headcount: 188 guests
+• Vendor contacts
+
+Want to avoid this in the future?
+Premium users get unlimited storage forever.
+
+[Upgrade to Premium]
+
+Thank you for using Emowed!
+```
+
+---
+
+### Flow 9: Couple Name Animation (Home Screen)
+
+**Trigger:** Wedding card published
+
+**Automatic Display:**
+1. System extracts couple names from wedding card
+2. Displays on home screen header:
+   - "Faseen weds Hanan"
+   - OR "Faseen ❤️ Hanan"
+   - OR "Faseen 💍 Hanan"
+3. Free users get basic animations:
+   - Fade in/out
+   - Slide
+   - Heart particles
+   - Flower petals
+4. Paid users can upload custom GIF:
+   - Max 5MB file size
+   - Auto-loops
+   - Displayed prominently
+
+**Animation Options (Free):**
+```
+Couple Name Animation
+
+Current: "Faseen 💍 Hanan"
+
+Animation Style:
+○ Fade In/Out (smooth transition)
+● Hearts (floating hearts around names)
+○ Flowers (falling petals)
+○ Rings (rotating wedding rings)
+○ Slide (left to right reveal)
+○ None (static text)
+
+Preview:
+┌─────────────────────────────────────┐
+│                                     │
+│       ❤️  ❤️  ❤️  ❤️  ❤️           │
+│                                     │
+│        Faseen 💍 Hanan              │
+│                                     │
+│       ❤️  ❤️  ❤️  ❤️  ❤️           │
+│                                     │
+└─────────────────────────────────────┘
+
+[Save Animation]
+```
+
+**Custom GIF Upload (Paid):**
+```
+Upload Custom Animation GIF
+
+Current Animation: Hearts (default)
+
+Upgrade to Premium to unlock:
+✓ Custom GIF upload (your own animation)
+✓ Multiple animations per page
+✓ Longer display duration
+
+Upload GIF:
+[Choose File] (Max 5MB, auto-loops)
+
+Preview:
+[GIF Preview Here]
+
+Display Settings:
+Duration: [5] seconds
+Loop: [✓] Continuous
+
+[Upload & Save] [Use Default Animation]
+
+Premium Feature - Upgrade for ₹2,999
+```
+
+---
+
+## PAGE SPECIFICATIONS
+
+### Page 1: Wedding Card Creator (`/wedding/:id/card/create`)
+
+**Layout:**
+```
+Sidebar (Template Selection)
+├── Template Categories
+│   ├── Hindu Traditional
+│   ├── Muslim Traditional
+│   ├── Christian Traditional
+│   ├── Modern Minimal
+│   ├── Floral
+│   └── Royal
+├── Template thumbnails
+└── [Upload Custom] [Upload PDF]
+
+Main Canvas
+├── Live preview of card
+├── Real-time updates as user types
+├── Zoom controls
+└── Mobile preview toggle
+
+Right Panel (Customization)
+├── Couple Names input
+├── Display format selector
+├── Date/time inputs
+├── Venue details
+├── Message textarea
+├── Photo upload
+├── Animation selector
+├── Color picker
+├── Font selector
+└── [Save Draft] [Publish]
+```
+
+### Page 2: Event Program Manager (`/wedding/:id/program`)
+
+**Layout:**
+```
+Header
+├── Event selector dropdown
+├── [Add Program] button
+└── [Publish Schedule]
+
+Timeline View
+├── Vertical timeline
+├── Program cards (draggable)
+├── Live indicator (red dot)
+├── Time markers
+└── Duration bars
+
+Program Card
+├── Time range
+├── Title (editable inline)
+├── Description
+├── Responsible person
+├── Special notes badge
+├── [Edit] [Delete] [Mark Live]
+└── Drag handle (⋮⋮)
+
+Preview Panel
+├── Guest view simulation
+├── Mobile preview
+└── [Send Preview Link]
+```
+
+### Page 3: Menu Manager (`/wedding/:id/menu`)
+
+**Layout:**
+```
+Header
+├── Event selector
+├── [Add Section] [Add Item]
+└── [Publish Menu]
+
+Sections (Accordion)
+├── Starters
+│   ├── Item cards (grid)
+│   └── [Add Item]
+├── Main Course
+│   ├── Item cards
+│   └── [Add Item]
+├── Breads & Rice
+├── Desserts
+└── Beverages
+
+Item Card
+├── Veg/Non-veg indicator
+├── Item name
+├── Description
+├── Dietary icons (Halal, Vegan, etc.)
+├── Spice level indicator
+├── Live counter badge
+└── [Edit] [Delete]
+
+Preview Panel
+├── Guest menu view
+├── Printable version
+└── [Download PDF]
+```
+
+### Page 4: Streaming Hub (`/wedding/:id/streaming`)
+
+**Layout:**
+```
+Header
+├── Active Streams indicator
+├── [Add Stream] button
+└── Viewer stats
+
+Stream Cards
+├── Event name
+├── Stream status (Live/Scheduled/Ended)
+├── YouTube thumbnail
+├── Viewer count (live)
+├── Start/end times
+├── [Edit] [Delete] [View]
+└── [Go Live] button
+
+Add/Edit Stream Form
+├── Event selector
+├── YouTube URL input
+├── Title input
+├── Schedule datetime
+├── Settings checkboxes
+├── Privacy selector
+└── [Test Embed] [Save]
+
+Active Stream View (Full Page)
+├── YouTube embed (responsive)
+├── Live chat (if enabled)
+├── Viewer count (realtime)
+├── Share buttons
+└── Related events
+```
+
+### Page 5: Gallery (`/wedding/:id/gallery`)
+
+**Layout:**
+```
+Header
+├── [Upload] button
+├── Search bar
+├── Filter dropdowns
+├── View toggle (grid/list)
+└── [Bulk Download] (paid only)
+
+Filters Bar
+├── Media type (All/Photos/Videos/Messages)
+├── Event filter
+├── Uploader filter
+├── Date range
+└── Sort by
+
+Gallery Grid
+├── Masonry layout
+├── Lazy loading
+├── Thumbnail with metadata overlay
+│   ├── Uploader avatar
+│   ├── Likes count
+│   ├── Comments count
+│   └── Media type icon
+├── Infinite scroll
+└── [Load More]
+
+Lightbox (on click)
+├── Full image/video
+├── Navigation arrows
+├── Metadata panel
+├── Like/Comment/Share
+├── Download button (paid)
+└── [Report] button
+
+Upload Modal
+├── File selector
+├── Storage status bar
+├── Selected files list
+├── Caption input
+├── Blessing textarea
+├── Tag inputs
+└── [Upload] [Cancel]
+```
+
+### Page 6: Storage Dashboard (`/wedding/:id/storage`)
+
+**Layout:**
+```
+Header
+├── Subscription badge
+├── Storage limit
+└── [Upgrade] button (if free)
+
+Storage Stats (Cards)
+├── Total Storage Used
+├── Photos Count
+├── Videos Count
+└── Days Until Deletion (free users)
+
+Usage Breakdown (Chart)
+├── Photos (MB)
+├── Videos (MB)
+├── By event (pie chart)
+└── By uploader (bar chart)
+
+File Limits Table
+├── Free vs Paid comparison
+├── Image size limits
+├── Upload limits
+└── Storage duration
+
+Action Buttons
+├── [Download All] (paid)
+├── [Upgrade to Premium]
+└── [Delete Manually]
+```
+
+---
+
+## API ENDPOINTS
+
+### POST `/api/wedding-cards/create`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "template_id": "hindu_ganesh_001",
+  "groom_name": "Faseen Farook",
+  "bride_name": "Hanan Rasheed",
+  "wedding_date": "2025-12-15",
+  "venue_name": "Grand Palace Hotel",
+  "venue_address": "123 Marine Drive",
+  "city": "Mumbai",
+  "ceremony_time": "12:00",
+  "reception_time": "19:00",
+  "custom_message": "Join us in celebrating...",
+  "animation_type": "hearts",
+  "color_scheme": {
+    "primary": "#FF6B9D",
+    "secondary": "#FFD700",
+    "background": "#FFF5F7"
+  }
+}
+```
+
+### PUT `/api/wedding-cards/:id`
+
+### POST `/api/wedding-cards/:id/upload-image`
+**Multipart form data:**
+```
+couple_image: File
+background_image: File
+```
+
+### POST `/api/wedding-cards/:id/upload-gif`
+**Multipart form data (paid users only):**
+```
+custom_gif: File (max 5MB)
+```
+
+### GET `/api/wedding-cards/:id/public`
+**Response (public shareable):**
+```json
+{
+  "groom_name": "Faseen",
+  "bride_name": "Hanan",
+  "wedding_date": "2025-12-15",
+  "venue": "Grand Palace Hotel, Mumbai",
+  "ceremony_time": "12:00 PM",
+  "message": "Join us...",
+  "card_image_url": "...",
+  "animation_url": "..."
+}
+```
+
+### POST `/api/event-programs/create`
+**Request:**
+```json
+{
+  "event_id": "uuid",
+  "program_title": "Baraat Procession",
+  "program_description": "Groom's grand entry",
+  "start_time": "12:30",
+  "duration_minutes": 30,
+  "responsible_person": "DJ: Sound Masters",
+  "program_order": 2
+}
+```
+
+### PUT `/api/event-programs/:id/mark-live`
+
+### PUT `/api/event-programs/reorder`
+**Request:**
+```json
+{
+  "event_id": "uuid",
+  "program_ids": ["uuid1", "uuid2", "uuid3"]
+}
+```
+
+### POST `/api/menu-items/create`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "event_id": "uuid",
+  "meal_type": "dinner",
+  "category": "main_course",
+  "item_name": "Chicken Biryani",
+  "description": "Aromatic basmati rice...",
+  "cuisine_type": "Hyderabadi",
+  "is_vegetarian": false,
+  "is_halal": true,
+  "spice_level": "medium",
+  "is_live_counter": true,
+  "display_order": 4
+}
+```
+
+### POST `/api/youtube-streams/create`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "event_id": "uuid",
+  "stream_title": "Wedding Ceremony - Live",
+  "youtube_url": "https://youtube.com/watch?v=ABC123",
+  "scheduled_start": "2025-12-15T12:00:00Z",
+  "chat_enabled": true
+}
+```
+
+### PUT `/api/youtube-streams/:id/go-live`
+
+### POST `/api/media-gallery/upload`
+**Multipart form data:**
+```
+files: File[] (multiple)
+caption: string
+blessing_text: string
+event_id: uuid
+tags: string[]
+```
+
+### GET `/api/media-gallery/:wedding_id`
+**Query params:**
+```
+?media_type=photo
+&event_id=uuid
+&uploader_id=uuid
+&sort=most_recent
+&limit=20
+&offset=0
+```
+
+### POST `/api/media-gallery/:id/like`
+
+### POST `/api/media-gallery/:id/comment`
+**Request:**
+```json
+{
+  "comment_text": "Beautiful photo!"
+}
+```
+
+### POST `/api/media-gallery/:id/report`
+**Request:**
+```json
+{
+  "reason": "inappropriate_content",
+  "details": "Contains offensive material"
+}
+```
+
+### DELETE `/api/media-gallery/:id`
+**(Host team only)**
+
+### POST `/api/bulk-download/request`
+**Request (paid users only):**
+```json
+{
+  "wedding_id": "uuid",
+  "download_type": "all_media",
+  "event_id": null,
+  "filter_criteria": {
+    "start_date": "2025-12-15",
+    "end_date": "2025-12-15"
+  }
+}
+```
+
+### GET `/api/bulk-download/:id/status`
+**Response:**
+```json
+{
+  "status": "ready",
+  "zip_file_url": "...",
+  "zip_file_password": "WEDDING2025",
+  "total_files": 287,
+  "total_size_mb": 2140,
+  "expires_at": "2025-12-18T10:00:00Z"
+}
+```
+
+### GET `/api/storage-usage/:wedding_id`
+**Response:**
+```json
+{
+  "total_photos": 245,
+  "total_videos": 32,
+  "total_size_mb": 2140,
+  "storage_limit_mb": 500,
+  "is_paid_user": false,
+  "days_until_deletion": 5,
+  "deletion_scheduled_date": "2025-12-22"
+}
+```
+
+---
+
+## BUSINESS RULES
+
+### Wedding Card
+- One card per wedding
+- Template selection optional (can upload custom)
+- PDF upload max 10MB
+- Custom GIF upload: Paid users only, max 5MB
+- Shareable public link generated on publish
+- Card viewable without login
+
+### Event Program
+- Unlimited programs per event
+- Drag-and-drop reordering
+- Only one program can be "live" at a time
+- Real-time updates pushed to all guests
+- Past programs automatically marked "completed"
+
+### Menu Items
+- Unlimited items per wedding
+- Dietary flags required
+- Spice level optional but recommended
+- Live counter indicator for interactive stations
+- Menu printable as PDF
+
+### YouTube Streaming
+- Unlimited streams per wedding
+- Valid YouTube URL required
+- Embed auto-extracted
+- Viewer count tracked (if public)
+- Stream status updated manually or auto-detected
+- Chat enabled by default
+
+### Media Gallery
+- **Free Users:**
+  - 200 images max per wedding (all guests combined)
+  - 500KB max per image
+  - Auto-compression if exceeds limit
+  - Deleted 7 days post-wedding
+  - Cannot download bulk
+  - Warning displayed on every upload
+
+- **Paid Users:**
+  - Unlimited uploads
+  - 1MB default, 5MB high quality, 10MB original (extra charge)
+  - Permanent storage
+  - Bulk download anytime
+  - Can download individual files
+
+### Storage Limits
+- Free: 500MB total per wedding
+- Paid: Unlimited
+- Videos count as 10x photos in quota
+- Storage calculated on upload
+- Notifications at 80%, 90%, 100%
+
+### Content Moderation
+- Couple can enable pre-approval (all uploads hidden until approved)
+- Host team can delete any media
+- Users can report inappropriate content
+- Auto-flagging for explicit content (AI-based)
+- Reported content hidden until review
+
+### Bulk Download
+- Paid users only
+- ZIP file generated in background
+- Password protected
+- Expires 48 hours
+- Can request multiple times
+- Email notification when ready
+
+### Data Deletion
+- Free users: 7 days post-wedding
+- Paid users: Never deleted
+- Deletion schedule created on wedding completion
+- Warning emails at 7 days, 3 days, 1 day before
+- Deletion irreversible
+- Metadata preserved (family tree, headcount totals)
+
+---
+
+## NOTIFICATION TRIGGERS
+
+### Wedding Card Published
+**To:** All invited guests
+**Subject:** View [Couple]'s digital wedding invitation
+
+### Program Update (Live)
+**To:** All guests
+**Push:** "Baraat Procession starting now! 🎉"
+
+### Stream Going Live
+**To:** All guests
+**Push:** "Wedding ceremony is now LIVE! Watch now 📺"
+
+### Upload Success
+**To:** Uploader
+**Subject:** Your photos uploaded successfully
+
+### Storage Limit Warning (80%)
+**To:** Couple (free users)
+**Subject:** ⚠️ You've used 80% of your storage
+
+### Storage Limit Reached
+**To:** Couple (free users)
+**Subject:** ⚠️ Storage full - Upgrade to continue uploads
+
+### 7-Day Deletion Warning
+**To:** Couple (free users)
+**Subject:** Your media will be deleted in 7 days
+
+### Bulk Download Ready
+**To:** Requester
+**Subject:** Your wedding gallery download is ready
+
+### Media Reported
+**To:** Couple + Host team
+**Subject:** Content flagged for review
+
+---
+
+## VALIDATION RULES
+
+### Wedding Card
+- Couple names required
+- Wedding date must be valid
+- Venue name max 200 characters
+- Message max 1000 characters
+- Image formats: JPG, PNG, WEBP
+- Max image size: 5MB
+- GIF size: Max 5MB (paid only)
+
+### Event Program
+- Title: 5-100 characters
+- Start time required
+- Duration: 5-600 minutes
+- Description max 500 characters
+
+### Menu Item
+- Name: 3-100 characters
+- At least one dietary flag required
+- Description max 300 characters
+
+### YouTube Stream
+- URL must be valid YouTube format
+- Must be live stream or video
+- Title max 200 characters
+
+### Media Upload
+- Formats: JPG, PNG, WEBP, MP4, MOV
+- Free users: 500KB max per image
+- Paid users: 1MB/5MB/10MB tiers
+- Videos: 100MB max
+- Caption max 500 characters
+- Blessing max 1000 characters
+
+---
+
+## PERFORMANCE REQUIREMENTS
+
+- Wedding card load: < 1 second
+- Gallery page load: < 2 seconds (initial 20 items)
+- Image upload: < 5 seconds per image
+- Bulk download ZIP generation: < 5 minutes (up to 1000 files)
+- YouTube embed load: < 2 seconds
+- Real-time program updates: < 1 second delay
+
+---
+
+## SECURITY REQUIREMENTS
+
+- Wedding cards: Public links (no auth required)
+- Gallery: Authenticated guests only
+- Upload: Only invited guests can upload
+- Delete: Only uploader or host team
+- Bulk download: Paid users only, password protected
+- Admin controls: Couple + designated hosts only
+- Content moderation: Automated + manual review
+
+---
+
+## SUCCESS METRICS
+
+- Average uploads per guest: 5+
+- Gallery engagement rate: 70%+ guests upload
+- Stream viewership: 40%+ of invited guests
+- Card views: 90%+ guests view card
+- Bulk download requests: 60%+ paid users
+- Storage upgrade conversion: 25%+ free users
+- Media deletion opt-out: 80%+ upgrade before 7 days

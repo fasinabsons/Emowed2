@@ -1,0 +1,1540 @@
+# PHASE 3: Vendor System & Voting
+
+## OVERVIEW
+
+**Goal:** Vendor invitation, verification, voting system, booking management, trust framework
+
+**Timeline:** Weeks 7-9
+
+**Prerequisites:** Phase 2 complete (guest management functional)
+
+---
+
+## DATABASE SCHEMA
+
+### vendor_profiles table
+```sql
+CREATE TABLE vendor_profiles (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  business_name TEXT NOT NULL,
+  category TEXT NOT NULL CHECK (category IN (
+    'photographer', 'videographer', 'caterer', 'decorator', 
+    'makeup_artist', 'mehendi_artist', 'dj', 'band', 'venue',
+    'florist', 'priest', 'travel', 'custom'
+  )),
+  custom_category TEXT,
+  description TEXT,
+  services_offered TEXT[],
+  base_price DECIMAL(12, 2),
+  price_range_min DECIMAL(12, 2),
+  price_range_max DECIMAL(12, 2),
+  city TEXT NOT NULL,
+  service_areas TEXT[],
+  phone TEXT NOT NULL,
+  website TEXT,
+  portfolio_urls TEXT[],
+  profile_image_url TEXT,
+  verified BOOLEAN DEFAULT FALSE,
+  verification_star BOOLEAN DEFAULT FALSE,
+  wedding_count INTEGER DEFAULT 0,
+  rating DECIMAL(3, 2) DEFAULT 0,
+  total_reviews INTEGER DEFAULT 0,
+  subscription_type TEXT DEFAULT 'free' CHECK (subscription_type IN ('free', 'paid')),
+  subscription_expires_at TIMESTAMP,
+  featured BOOLEAN DEFAULT FALSE,
+  blocked BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_vendor_category ON vendor_profiles(category);
+CREATE INDEX idx_vendor_city ON vendor_profiles(city);
+CREATE INDEX idx_vendor_verified ON vendor_profiles(verified);
+CREATE INDEX idx_vendor_subscription ON vendor_profiles(subscription_type);
+```
+
+### vendor_invitations table
+```sql
+CREATE TABLE vendor_invitations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  vendor_id UUID REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  invited_by UUID REFERENCES users(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'expired')),
+  invitation_message TEXT,
+  sent_at TIMESTAMP DEFAULT NOW(),
+  responded_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(wedding_id, vendor_id)
+);
+
+CREATE INDEX idx_vendor_invitations_wedding ON vendor_invitations(wedding_id);
+CREATE INDEX idx_vendor_invitations_vendor ON vendor_invitations(vendor_id);
+CREATE INDEX idx_vendor_invitations_status ON vendor_invitations(status);
+```
+
+### vendor_quotes table
+```sql
+CREATE TABLE vendor_quotes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  vendor_invitation_id UUID REFERENCES vendor_invitations(id) ON DELETE CASCADE,
+  vendor_id UUID REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  package_name TEXT NOT NULL,
+  description TEXT,
+  items_included TEXT[],
+  base_price DECIMAL(12, 2) NOT NULL,
+  additional_charges JSONB,
+  total_price DECIMAL(12, 2) NOT NULL,
+  payment_terms TEXT,
+  validity_days INTEGER DEFAULT 30,
+  valid_until TIMESTAMP,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'expired', 'withdrawn')),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_vendor_quotes_invitation ON vendor_quotes(vendor_invitation_id);
+CREATE INDEX idx_vendor_quotes_wedding ON vendor_quotes(wedding_id);
+```
+
+### vendor_votes table
+```sql
+CREATE TABLE vendor_votes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  vendor_id UUID REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  voter_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,
+  vote_type TEXT CHECK (vote_type IN ('approve', 'reject', 'rank')),
+  rank INTEGER CHECK (rank >= 1 AND rank <= 10),
+  comments TEXT,
+  price_rating INTEGER CHECK (price_rating >= 1 AND price_rating <= 5),
+  quality_rating INTEGER CHECK (quality_rating >= 1 AND quality_rating <= 5),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(wedding_id, vendor_id, voter_id)
+);
+
+CREATE INDEX idx_vendor_votes_wedding ON vendor_votes(wedding_id);
+CREATE INDEX idx_vendor_votes_vendor ON vendor_votes(vendor_id);
+CREATE INDEX idx_vendor_votes_voter ON vendor_votes(voter_id);
+```
+
+### vendor_bookings table
+```sql
+CREATE TABLE vendor_bookings (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  vendor_id UUID REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  quote_id UUID REFERENCES vendor_quotes(id),
+  category TEXT NOT NULL,
+  booking_date DATE NOT NULL,
+  event_dates DATE[] NOT NULL,
+  start_time TIME,
+  end_time TIME,
+  total_amount DECIMAL(12, 2) NOT NULL,
+  advance_paid DECIMAL(12, 2) DEFAULT 0,
+  balance_due DECIMAL(12, 2),
+  commission_rate DECIMAL(5, 2),
+  commission_amount DECIMAL(12, 2),
+  payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'advance_paid', 'partial', 'completed')),
+  booking_status TEXT DEFAULT 'confirmed' CHECK (booking_status IN ('confirmed', 'completed', 'cancelled')),
+  contract_url TEXT,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_vendor_bookings_wedding ON vendor_bookings(wedding_id);
+CREATE INDEX idx_vendor_bookings_vendor ON vendor_bookings(vendor_id);
+CREATE INDEX idx_vendor_bookings_status ON vendor_bookings(booking_status);
+```
+
+### vendor_availability table
+```sql
+CREATE TABLE vendor_availability (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  vendor_id UUID REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  start_time TIME,
+  end_time TIME,
+  status TEXT DEFAULT 'available' CHECK (status IN ('available', 'booked', 'blocked')),
+  booking_id UUID REFERENCES vendor_bookings(id),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(vendor_id, date, start_time)
+);
+
+CREATE INDEX idx_vendor_availability_vendor ON vendor_availability(vendor_id);
+CREATE INDEX idx_vendor_availability_date ON vendor_availability(date);
+CREATE INDEX idx_vendor_availability_status ON vendor_availability(status);
+```
+
+### vendor_verifications table
+```sql
+CREATE TABLE vendor_verifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  vendor_id UUID REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  verified_by UUID REFERENCES users(id),
+  verification_type TEXT CHECK (verification_type IN ('wedding_completion', 'manual')),
+  verification_date TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(vendor_id, wedding_id)
+);
+
+CREATE INDEX idx_vendor_verifications_vendor ON vendor_verifications(vendor_id);
+```
+
+### vendor_reviews table
+```sql
+CREATE TABLE vendor_reviews (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  vendor_id UUID REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  reviewer_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  review_text TEXT,
+  pros TEXT[],
+  cons TEXT[],
+  would_recommend BOOLEAN,
+  response_from_vendor TEXT,
+  images TEXT[],
+  verified_booking BOOLEAN DEFAULT FALSE,
+  helpful_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_vendor_reviews_vendor ON vendor_reviews(vendor_id);
+CREATE INDEX idx_vendor_reviews_rating ON vendor_reviews(rating);
+```
+
+### vendor_rejection_reasons table
+```sql
+CREATE TABLE vendor_rejection_reasons (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  vendor_id UUID REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  rejected_count INTEGER DEFAULT 1,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_vendor_rejection_reasons_category ON vendor_rejection_reasons(category);
+```
+
+### vendor_time_conflicts table
+```sql
+CREATE TABLE vendor_time_conflicts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  vendor_id UUID REFERENCES vendor_profiles(id) ON DELETE CASCADE,
+  conflict_date DATE NOT NULL,
+  existing_booking_id UUID REFERENCES vendor_bookings(id),
+  requested_wedding_id UUID REFERENCES weddings(id),
+  conflict_resolved BOOLEAN DEFAULT FALSE,
+  resolution_notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+---
+
+## FUNCTIONS & TRIGGERS
+
+### Update vendor verification status
+```sql
+CREATE OR REPLACE FUNCTION update_vendor_verification()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_verification_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO v_verification_count
+  FROM vendor_verifications
+  WHERE vendor_id = NEW.vendor_id;
+
+  IF v_verification_count >= 5 THEN
+    UPDATE vendor_profiles
+    SET verification_star = TRUE,
+        verified = TRUE
+    WHERE id = NEW.vendor_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_vendor_verification
+AFTER INSERT ON vendor_verifications
+FOR EACH ROW
+EXECUTE FUNCTION update_vendor_verification();
+```
+
+### Update vendor rating
+```sql
+CREATE OR REPLACE FUNCTION update_vendor_rating()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_avg_rating DECIMAL(3,2);
+  v_total_reviews INTEGER;
+BEGIN
+  SELECT AVG(rating), COUNT(*) 
+  INTO v_avg_rating, v_total_reviews
+  FROM vendor_reviews
+  WHERE vendor_id = NEW.vendor_id;
+
+  UPDATE vendor_profiles
+  SET rating = v_avg_rating,
+      total_reviews = v_total_reviews
+  WHERE id = NEW.vendor_id;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_vendor_review
+AFTER INSERT OR UPDATE ON vendor_reviews
+FOR EACH ROW
+EXECUTE FUNCTION update_vendor_rating();
+```
+
+### Calculate vendor commission
+```sql
+CREATE OR REPLACE FUNCTION calculate_vendor_commission(
+  p_booking_id UUID
+)
+RETURNS DECIMAL AS $$
+DECLARE
+  v_total_amount DECIMAL(12,2);
+  v_commission_rate DECIMAL(5,2);
+  v_vendor_subscription TEXT;
+BEGIN
+  SELECT b.total_amount, vp.subscription_type
+  INTO v_total_amount, v_vendor_subscription
+  FROM vendor_bookings b
+  JOIN vendor_profiles vp ON b.vendor_id = vp.id
+  WHERE b.id = p_booking_id;
+
+  IF v_vendor_subscription = 'paid' THEN
+    v_commission_rate := 3.0;
+  ELSE
+    v_commission_rate := 12.0;
+  END IF;
+
+  RETURN (v_total_amount * v_commission_rate / 100);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Check vendor time conflict
+```sql
+CREATE OR REPLACE FUNCTION check_vendor_time_conflict(
+  p_vendor_id UUID,
+  p_date DATE,
+  p_start_time TIME,
+  p_end_time TIME
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_conflict_exists BOOLEAN;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM vendor_availability
+    WHERE vendor_id = p_vendor_id
+    AND date = p_date
+    AND status = 'booked'
+    AND (
+      (start_time <= p_start_time AND end_time > p_start_time)
+      OR (start_time < p_end_time AND end_time >= p_end_time)
+      OR (start_time >= p_start_time AND end_time <= p_end_time)
+    )
+  ) INTO v_conflict_exists;
+
+  RETURN v_conflict_exists;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Auto-reject expired vendor quotes
+```sql
+CREATE OR REPLACE FUNCTION expire_old_vendor_quotes()
+RETURNS VOID AS $$
+BEGIN
+  UPDATE vendor_quotes
+  SET status = 'expired'
+  WHERE status = 'active'
+  AND valid_until < NOW();
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Increment vendor wedding count on completion
+```sql
+CREATE OR REPLACE FUNCTION increment_vendor_wedding_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.booking_status = 'completed' AND OLD.booking_status != 'completed' THEN
+    UPDATE vendor_profiles
+    SET wedding_count = wedding_count + 1
+    WHERE id = NEW.vendor_id;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_booking_completion
+AFTER UPDATE ON vendor_bookings
+FOR EACH ROW
+EXECUTE FUNCTION increment_vendor_wedding_count();
+```
+
+---
+
+## USER FLOWS
+
+### Flow 1: Vendor Profile Creation
+
+**Trigger:** Vendor receives invitation from couple
+
+**Steps:**
+1. Vendor receives email with invitation link
+2. Clicks link → Redirected to signup/login
+3. If new user: Creates account
+4. System detects vendor invitation → Prompts vendor profile creation
+5. Vendor fills profile form
+6. Submits for couple approval
+7. Profile created with status pending
+8. Couple receives notification
+9. Couple approves/rejects vendor
+10. If approved: Vendor gains access to wedding details
+
+**Profile Form Fields:**
+- Business Name
+- Category (dropdown + custom option)
+- Description (500 chars max)
+- Services Offered (multi-select tags)
+- Base Price
+- Price Range (min-max)
+- City (primary location)
+- Service Areas (multi-select cities)
+- Phone Number
+- Website (optional)
+- Portfolio Images (max 10)
+- Profile Picture
+
+**Vendor Status Progression:**
+```
+Invited → Profile Created → Pending Approval → Approved → Active
+                                              ↓
+                                          Rejected → Blocked
+```
+
+---
+
+### Flow 2: Couple Invites Vendor
+
+**Trigger:** Couple needs vendor for specific category
+
+**Steps:**
+1. Couple navigates to Vendors section
+2. Clicks Add Vendor button
+3. Selects category (Photographer, Caterer, etc.)
+4. Two options:
+   - Search existing vendors (verified vendors shown first)
+   - Invite new vendor via email
+5. If existing vendor:
+   - Views vendor profile
+   - Sends invitation
+6. If new vendor:
+   - Enters vendor email + business name
+   - Adds optional message
+   - Sends invitation
+7. Vendor receives email invitation
+8. Tracks invitation status (Pending/Accepted/Rejected)
+
+**Search Vendors Interface:**
+```
+Category: [Photographer ▼]
+Location: [Mumbai ▼]
+Price Range: [₹50,000 - ₹200,000]
+Filters: [✓] Verified Only  [ ] Available on my date
+
+Results:
+├── Verified Vendors (with ⭐ star)
+├── Rated Vendors (sorted by rating)
+└── New Vendors (no ratings yet)
+```
+
+**Invitation Email Template:**
+```
+Subject: Wedding Opportunity: Faseen & Hanan's Wedding
+
+Hi [Vendor Name],
+
+Faseen and Hanan would like to invite you to provide services for their wedding on December 15, 2025 in Mumbai.
+
+Category: Photographer
+Estimated Budget: ₹150,000
+Guest Count: 200
+
+To submit your quote and access event details:
+[Accept Invitation]
+
+This invitation expires in 7 days.
+
+Best regards,
+The Emowed Team
+```
+
+---
+
+### Flow 3: Vendor Submits Quote
+
+**Trigger:** Vendor accepts invitation
+
+**Steps:**
+1. Vendor accesses wedding details (limited view)
+   - Wedding date, venue, city
+   - Guest count
+   - Event timeline
+2. Vendor creates quote
+3. Selects package type or creates custom
+4. Adds items included
+5. Sets pricing (base + additional charges)
+6. Adds payment terms
+7. Sets validity period (default 30 days)
+8. Submits quote
+9. Couple receives notification
+10. Quote appears in vendor comparison table
+
+**Quote Form:**
+```
+Package Name: [Premium Wedding Photography Package____]
+
+Description:
+[Full day coverage with 2 photographers, cinematic video,
+ drone shots, pre-wedding shoot, 500 edited photos...]
+
+Items Included:
+[✓] Full day coverage (12 hours)
+[✓] 2 Professional photographers
+[✓] 4K Cinematic video
+[✓] Drone footage
+[✓] Pre-wedding shoot (1 day)
+[✓] 500 Edited photos
+[✓] 100 Prints (8x12)
+[✓] Photo album (40 pages)
+[ ] Same day edit video (+₹15,000)
+
+Base Price: ₹ [150,000]
+
+Additional Charges:
+├── Extra hours (beyond 12): ₹ [8,000] per hour
+├── Additional photographer: ₹ [15,000]
+├── Destination charges: ₹ [20,000]
+└── Rush delivery: ₹ [10,000]
+
+Total Price: ₹ [150,000]
+
+Payment Terms:
+[30% advance, 40% on wedding day, 30% on delivery_____]
+
+Valid Until: [Dec 5, 2025] (30 days from today)
+
+[Submit Quote] [Save Draft]
+```
+
+---
+
+### Flow 4: Hosting Team Voting
+
+**Trigger:** Multiple vendor quotes received for a category
+
+**Hosting Team Definition:**
+- Groom
+- Bride
+- Groom's Parents (Father + Mother)
+- Bride's Parents (Father + Mother)
+- Groom's Siblings
+- Bride's Siblings
+
+**Steps:**
+1. Couple receives multiple quotes for Photographer category
+2. Couple initiates voting process
+3. System notifies hosting team members
+4. Voting window opens (48-72 hours)
+5. Each member reviews vendors:
+   - Views profile
+   - Reviews quotes
+   - Checks portfolio
+   - Reads reviews (if any)
+6. Each member votes:
+   - Rank vendors (1st, 2nd, 3rd choice)
+   - Rate price (1-5 stars)
+   - Rate quality (1-5 stars)
+   - Add comments
+7. Voting deadline expires
+8. System calculates results:
+   - Weighted ranking
+   - Average ratings
+   - Comments summary
+9. Couple reviews results
+10. Couple makes final decision
+
+**Voting Interface (Individual Member):**
+```
+Photographer Voting
+
+You have 3 vendors to review and rank:
+
+┌─────────────────────────────────────┐
+│  VENDOR 1: Studio Flash             │
+│  ⭐ Verified  |  Rating: 4.8/5      │
+├─────────────────────────────────────┤
+│  Quote: ₹150,000                    │
+│  Package: Premium Photography       │
+│  [View Full Details]                │
+│                                     │
+│  Your Ranking: [1st Choice ▼]      │
+│  Price Rating: ⭐⭐⭐⭐⭐             │
+│  Quality Rating: ⭐⭐⭐⭐⭐           │
+│  Comments: [Very professional___]   │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  VENDOR 2: Moments Photography      │
+│  Rating: 4.2/5                      │
+├─────────────────────────────────────┤
+│  Quote: ₹95,000                     │
+│  Package: Standard Photography      │
+│  [View Full Details]                │
+│                                     │
+│  Your Ranking: [2nd Choice ▼]      │
+│  Price Rating: ⭐⭐⭐⭐☆             │
+│  Quality Rating: ⭐⭐⭐⭐☆           │
+│  Comments: [Good value for money__] │
+└─────────────────────────────────────┘
+
+[Submit My Vote]
+
+Voting closes in: 1 day 14 hours
+Votes received: 5 / 8 members
+```
+
+**Results Dashboard (Couple's View):**
+```
+Photographer Voting Results
+
+Votes Received: 8 / 8 (100%)
+
+┌─────────────────────────────────────┐
+│  🥇 WINNER: Studio Flash            │
+├─────────────────────────────────────┤
+│  Overall Score: 4.7 / 5             │
+│  Ranking Points: 38 / 40            │
+│  1st Choice Votes: 6                │
+│  2nd Choice Votes: 2                │
+│                                     │
+│  Price Rating: 4.2 / 5              │
+│  Quality Rating: 4.9 / 5            │
+│                                     │
+│  Comments:                          │
+│  • "Very professional work"         │
+│  • "Worth the price"                │
+│  • "Excellent portfolio"            │
+│                                     │
+│  [Select This Vendor]               │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  🥈 2nd Place: Moments Photography  │
+│  Overall Score: 3.8 / 5             │
+│  [View Details]                     │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  🥉 3rd Place: Click Studios        │
+│  Overall Score: 3.2 / 5             │
+│  [View Details]                     │
+└─────────────────────────────────────┘
+
+[Override and Select Different Vendor]
+[Request More Quotes]
+```
+
+---
+
+### Flow 5: Bulk Vendor Rejection
+
+**Trigger:** Couple finalizes vendor for category
+
+**Steps:**
+1. Couple selects winning vendor (e.g., Studio Flash for Photography)
+2. System identifies rejected vendors (all other photographers)
+3. Couple writes single rejection message
+4. Message categories:
+   - Price too high
+   - Services don't match needs
+   - Selected another vendor
+   - Timeline conflict
+   - Other (custom message)
+5. System sends rejection emails to all rejected vendors
+6. Rejection tracked in database
+7. Vendors notified but can re-apply for future weddings
+
+**Rejection Message Interface:**
+```
+Reject 32 Photographers
+
+Selected Vendor: Studio Flash
+
+Reason for others: [Price too high compared to value ▼]
+
+Custom Message (optional):
+[Thank you for your quote. We've selected another vendor
+ that better fits our budget and requirements. We appreciate
+ your time and may consider you for future events._________]
+
+This message will be sent to:
+• Moments Photography
+• Click Studios
+• Perfect Frames
+... and 29 others
+
+[Send Rejections] [Cancel]
+```
+
+**Rejection Email Template:**
+```
+Subject: Wedding Vendor Update
+
+Hi [Vendor Name],
+
+Thank you for submitting your quote for Faseen & Hanan's wedding.
+
+After careful consideration, we've decided to proceed with another vendor.
+
+Reason: Price too high compared to value
+
+We appreciate your time and professionalism. You're welcome to apply for other opportunities on Emowed.
+
+Best wishes,
+Faseen & Hanan
+```
+
+---
+
+### Flow 6: Vendor Time Conflict Handling
+
+**Trigger:** Vendor already booked on requested date/time
+
+**Steps:**
+1. Couple invites vendor for Dec 15, 2025 (12 PM - 8 PM)
+2. System checks vendor availability
+3. Conflict detected: Vendor already booked 2 PM - 6 PM same day
+4. System shows conflict notification to couple
+5. Options presented:
+   - Select different time slot
+   - Ask vendor if they have team capacity
+   - Choose different vendor
+6. If couple chooses "Ask vendor about team":
+   - Notification sent to vendor
+   - Vendor confirms: "Yes, we have 2 teams" or "No, fully booked"
+7. If vendor confirms capacity:
+   - Couple can proceed with booking
+   - Vendor creates separate booking entry
+8. If vendor can't accommodate:
+   - Suggest alternative dates
+   - Couple selects different vendor
+
+**Conflict Notification:**
+```
+⚠️ Time Conflict Detected
+
+Vendor: Studio Flash
+Date: December 15, 2025
+Your Event: 12 PM - 8 PM
+Existing Booking: 2 PM - 6 PM
+
+Options:
+1. [Ask if vendor has multiple teams]
+2. [Change event time]
+3. [Select different vendor]
+
+Vendor's Team Size: 5 photographers
+Can handle multiple events: Yes (per their profile)
+
+[Contact Vendor] [Choose Different Vendor]
+```
+
+**Vendor Confirmation Interface:**
+```
+Booking Request with Time Overlap
+
+Wedding 1: Rahul & Priya (2 PM - 6 PM) [Confirmed]
+Wedding 2: Faseen & Hanan (12 PM - 8 PM) [Pending]
+
+Overlap: 4 hours (2 PM - 6 PM)
+
+Do you have team capacity for both events?
+
+Team Details:
+Total Photographers: [5]
+Available: [3] (after Wedding 1 assignment)
+
+○ Yes, I can handle both events
+  [Team 1 will cover Wedding 1: 2 photographers]
+  [Team 2 will cover Wedding 2: 3 photographers]
+
+○ No, I cannot accommodate
+  [Suggest alternative date/time to couple]
+
+[Confirm] [Decline]
+```
+
+---
+
+### Flow 7: 5-Couple Verification System
+
+**Trigger:** Vendor completes 5 weddings
+
+**Steps:**
+1. Vendor books first wedding → Wedding count = 1
+2. Wedding date passes, booking marked "completed"
+3. System creates verification record
+4. Counter increments: 1/5 weddings verified
+5. Process repeats for weddings 2, 3, 4
+6. Fifth wedding completes
+7. Trigger fires: Update vendor verification status
+8. Vendor profile updated:
+   - verification_star = TRUE
+   - Profile picture unlocked
+   - "Verified" badge appears
+9. Vendor notified via email and in-app
+10. Verified vendors ranked higher in search results
+
+**Verification Progress Display:**
+```
+Vendor Dashboard
+
+Verification Progress: 3 / 5 weddings completed
+
+┌─────────────────────────────────────┐
+│  ⭐⭐⭐☆☆                           │
+│                                     │
+│  Complete 2 more weddings to get    │
+│  your Verified Star!                │
+│                                     │
+│  Benefits of Verification:          │
+│  ✓ Profile picture unlocked         │
+│  ✓ Higher search ranking            │
+│  ✓ "Verified" badge on profile      │
+│  ✓ Lower commission rate eligible   │
+│                                     │
+│  Completed Weddings:                │
+│  1. Rahul & Priya - Oct 2025        │
+│  2. Arjun & Meera - Nov 2025        │
+│  3. Faseen & Hanan - Dec 2025       │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Verification Achievement Email:**
+```
+Subject: 🎉 Congratulations! You're Now a Verified Vendor
+
+Hi Studio Flash,
+
+Great news! You've completed 5 weddings on Emowed and earned your Verification Star!
+
+Your benefits:
+✓ Verified badge on your profile
+✓ Profile picture now visible
+✓ Higher ranking in search results
+✓ Eligible for reduced commission (3% instead of 12%)
+
+Upgrade to Paid Vendor to unlock:
+• Featured listings
+• Priority customer support
+• Advanced analytics
+• Portfolio enhancements
+
+[Upgrade Now] [View Your Profile]
+
+Keep up the excellent work!
+
+The Emowed Team
+```
+
+---
+
+### Flow 8: Vendor Ranking System
+
+**Trigger:** 10+ vendors in same category
+
+**Ranking Factors:**
+1. Verification status (weighted 25%)
+2. Average rating (weighted 30%)
+3. Number of completed weddings (weighted 20%)
+4. Response time (weighted 10%)
+5. Quote acceptance rate (weighted 10%)
+6. Subscription type (weighted 5%)
+
+**Ranking Calculation:**
+```
+Score = (Verified × 0.25) + (Rating/5 × 0.30) + (Weddings/100 × 0.20) 
+      + (ResponseTime × 0.10) + (AcceptanceRate × 0.10) + (Paid × 0.05)
+
+Example:
+Vendor A: Verified (1) + Rating 4.8 (0.96) + 15 weddings (0.15) 
+        + Fast response (0.10) + 60% acceptance (0.06) + Paid (0.05)
+        = 0.25 + 0.288 + 0.03 + 0.10 + 0.06 + 0.05 = 0.778 = Rank 1
+
+Vendor B: Not verified (0) + Rating 4.2 (0.84) + 3 weddings (0.03) 
+        + Slow response (0.05) + 30% acceptance (0.03) + Free (0)
+        = 0 + 0.252 + 0.006 + 0.05 + 0.03 + 0 = 0.338 = Rank 8
+```
+
+**Vendor Rankings Display:**
+```
+Photographers in Mumbai (52 vendors)
+
+Sort by: [Ranking ▼] [Price] [Rating] [Verified Only]
+
+┌─────────────────────────────────────┐
+│  #1  Studio Flash                   │
+│      ⭐ Verified  |  Rating: 4.8/5  │
+│      15 weddings  |  Fast response  │
+├─────────────────────────────────────┤
+│  Starting at: ₹120,000              │
+│  [View Profile] [Get Quote]         │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  #2  Perfect Frames                 │
+│      ⭐ Verified  |  Rating: 4.6/5  │
+│      22 weddings  |  Fast response  │
+├─────────────────────────────────────┤
+│  Starting at: ₹180,000              │
+│  [View Profile] [Get Quote]         │
+└─────────────────────────────────────┘
+
+[Show More]
+```
+
+---
+
+## PAGE SPECIFICATIONS
+
+### Page 1: Vendor Directory (`/vendors`)
+
+**Layout:**
+```
+Header
+├── Search bar
+├── Category filter
+├── Location filter
+└── [Add Vendor] button (couple only)
+
+Filters Sidebar
+├── Category (multi-select)
+├── Price Range (slider)
+├── Rating (min stars)
+├── Verified Only (toggle)
+├── Available on my date (toggle)
+└── Service Area (multi-select)
+
+Vendor Grid
+├── Cards showing:
+│   ├── Profile image (if verified)
+│   ├── Business name
+│   ├── Category
+│   ├── Rating + review count
+│   ├── Verified badge
+│   ├── Starting price
+│   ├── Location
+│   └── [View Profile] button
+└── Pagination
+```
+
+### Page 2: Vendor Profile (`/vendors/:id`)
+
+**Layout:**
+```
+Hero Section
+├── Cover image
+├── Profile picture (if verified)
+├── Business name
+├── Verified badge
+├── Rating + reviews
+├── City + service areas
+└── [Get Quote] button
+
+About Section
+├── Description
+├── Services offered (tags)
+├── Years in business
+├── Team size
+└── Languages spoken
+
+Portfolio Section
+├── Image gallery (10 max)
+├── Video samples (if any)
+└── Lightbox viewer
+
+Pricing Section
+├── Starting price
+├── Price range
+├── Sample packages
+└── [Request Custom Quote]
+
+Reviews Section
+├── Overall rating breakdown
+├── Review list
+│   ├── Reviewer name + wedding date
+│   ├── Rating
+│   ├── Review text
+│   ├── Pros/cons
+│   └── Vendor response
+└── Pagination
+
+Availability Section
+├── Calendar view
+├── Booked dates (grayed out)
+└── Available dates (green)
+
+Contact Section
+├── Phone
+├── Email
+├── Website
+└── [Send Message] button
+```
+
+### Page 3: Vendor Management (Couple View) (`/wedding/:id/vendors`)
+
+**Layout:**
+```
+Header
+├── Vendors by Category tabs
+└── [Invite Vendor] button
+
+Category Tabs
+├── Photographer (3 invited)
+├── Caterer (5 invited)
+├── Decorator (2 invited)
+├── Makeup (4 invited)
+└── + Add Category
+
+Vendor List (per category)
+├── Invited Vendors
+│   ├── Status badge (Pending/Accepted/Rejected)
+│   ├── Quote status
+│   ├── Voting status
+│   └── Actions
+└── Selected Vendor (highlighted)
+
+Quote Comparison Table
+├── Vendor names (columns)
+├── Package name
+├── Price
+├── Items included (checkmarks)
+├── Payment terms
+├── Rating
+└── [Start Voting] button
+
+Voting Results (if voting complete)
+├── Winner card
+├── Runner-ups
+├── Detailed scores
+└── [Finalize Selection] button
+```
+
+### Page 4: Vendor Voting (`/wedding/:id/vendors/:category/vote`)
+
+**Layout:**
+```
+Header
+├── Category name
+├── Voting deadline
+├── Progress: X / Y votes received
+└── Back to vendors
+
+Instructions Panel
+├── How to vote
+├── Rating criteria
+└── Your vote counts equally
+
+Vendor Cards (side-by-side)
+├── Vendor info
+├── Quote summary
+├── [View Full Details] expandable
+├── Ranking dropdown (1st/2nd/3rd)
+├── Price rating (stars)
+├── Quality rating (stars)
+├── Comments textarea
+└── Portfolio preview
+
+Submit Section
+├── [Save as Draft]
+├── [Submit Final Vote]
+└── Confirmation message
+
+Live Results (if couple viewing)
+├── Votes received counter
+├── Current leader
+└── [View Detailed Results] (after voting closes)
+```
+
+### Page 5: Vendor Dashboard (`/vendor/dashboard`)
+
+**Layout:**
+```
+Stats Cards
+├── Total Bookings
+├── Active Quotes
+├── Pending Invitations
+├── This Month Revenue
+└── Verification Progress
+
+Pending Invitations
+├── Wedding name
+├── Date
+├── Guest count
+├── [Accept] [Decline]
+└── View details
+
+Active Quotes
+├── Wedding name
+├── Quote amount
+├── Status (Submitted/Under Review/Accepted/Rejected)
+├── Expires in X days
+└── [Edit] [Withdraw]
+
+Booked Weddings
+├── Upcoming bookings
+├── Date + time
+├── Payment status
+├── [View Details]
+└── [Mark Complete]
+
+Calendar
+├── Month view
+├── Booked dates marked
+├── Available dates
+└── Blocked dates
+
+Profile Section
+├── [Edit Profile]
+├── [Manage Portfolio]
+├── [Subscription: Free/Paid]
+└── [View Public Profile]
+```
+
+### Page 6: Create Quote (`/vendor/wedding/:id/quote`)
+
+**Layout:**
+```
+Wedding Details Panel (Read-only)
+├── Couple names
+├── Date
+├── Venue
+├── Guest count
+├── Event timeline
+└── Budget hint (if shared)
+
+Quote Form
+├── Package name
+├── Description
+├── Items included (checklist + custom)
+├── Base price
+├── Additional charges (add rows)
+├── Total calculation (auto)
+├── Payment terms
+├── Validity period
+├── Terms & conditions
+└── [Save Draft] [Submit Quote]
+
+Preview Panel
+├── How quote appears to couple
+├── Professional formatting
+└── [Edit] button
+```
+
+---
+
+## API ENDPOINTS
+
+### POST `/api/vendor-profiles/create`
+**Request:**
+```json
+{
+  "business_name": "Studio Flash",
+  "category": "photographer",
+  "description": "Professional wedding photography...",
+  "services_offered": ["photography", "videography", "drone"],
+  "base_price": 120000,
+  "price_range_min": 80000,
+  "price_range_max": 300000,
+  "city": "Mumbai",
+  "service_areas": ["Mumbai", "Pune", "Goa"],
+  "phone": "+91-9876543210",
+  "website": "https://studioflash.com",
+  "portfolio_urls": ["url1", "url2"]
+}
+```
+
+### POST `/api/vendor-invitations/send`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "vendor_email": "vendor@example.com",
+  "business_name": "Studio Flash",
+  "category": "photographer",
+  "message": "We'd love to have you photograph our wedding"
+}
+```
+
+### POST `/api/vendor-invitations/accept`
+**Request:**
+```json
+{
+  "invitation_id": "uuid",
+  "vendor_id": "uuid"
+}
+```
+
+### POST `/api/vendor-quotes/create`
+**Request:**
+```json
+{
+  "vendor_invitation_id": "uuid",
+  "package_name": "Premium Wedding Package",
+  "description": "Full day coverage...",
+  "items_included": ["12 hour coverage", "2 photographers", "500 edited photos"],
+  "base_price": 150000,
+  "additional_charges": {
+    "extra_hour": 8000,
+    "destination": 20000
+  },
+  "total_price": 150000,
+  "payment_terms": "30-40-30",
+  "validity_days": 30
+}
+```
+
+### POST `/api/vendor-votes/submit`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "vendor_id": "uuid",
+  "category": "photographer",
+  "rank": 1,
+  "price_rating": 4,
+  "quality_rating": 5,
+  "comments": "Excellent portfolio and reasonable price"
+}
+```
+
+### GET `/api/vendor-votes/results/:wedding_id/:category`
+**Response:**
+```json
+{
+  "votes_received": 8,
+  "total_voters": 8,
+  "results": [
+    {
+      "vendor_id": "uuid",
+      "vendor_name": "Studio Flash",
+      "overall_score": 4.7,
+      "ranking_points": 38,
+      "first_choice_votes": 6,
+      "avg_price_rating": 4.2,
+      "avg_quality_rating": 4.9,
+      "comments": ["Great work", "Professional"]
+    }
+  ]
+}
+```
+
+### POST `/api/vendor-bookings/create`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "vendor_id": "uuid",
+  "quote_id": "uuid",
+  "category": "photographer",
+  "booking_date": "2025-11-05",
+  "event_dates": ["2025-12-15"],
+  "start_time": "12:00",
+  "end_time": "20:00",
+  "total_amount": 150000,
+  "advance_paid": 45000
+}
+```
+
+### POST `/api/vendor-availability/check`
+**Request:**
+```json
+{
+  "vendor_id": "uuid",
+  "date": "2025-12-15",
+  "start_time": "12:00",
+  "end_time": "20:00"
+}
+```
+**Response:**
+```json
+{
+  "available": false,
+  "conflict_exists": true,
+  "conflicting_booking": {
+    "wedding_name": "Rahul & Priya",
+    "start_time": "14:00",
+    "end_time": "18:00"
+  },
+  "vendor_has_multiple_teams": true,
+  "suggested_action": "ask_vendor_about_capacity"
+}
+```
+
+### POST `/api/vendor-rejections/bulk`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "category": "photographer",
+  "selected_vendor_id": "uuid",
+  "rejected_vendor_ids": ["uuid1", "uuid2"],
+  "reason": "price_too_high",
+  "custom_message": "Thank you for your time..."
+}
+```
+
+### GET `/api/vendors/search`
+**Query Params:**
+```
+?category=photographer
+&city=Mumbai
+&min_price=80000
+&max_price=200000
+&verified_only=true
+&available_on=2025-12-15
+&min_rating=4
+```
+
+### GET `/api/vendors/:id/profile`
+**Response:**
+```json
+{
+  "id": "uuid",
+  "business_name": "Studio Flash",
+  "category": "photographer",
+  "verified": true,
+  "verification_star": true,
+  "wedding_count": 15,
+  "rating": 4.8,
+  "total_reviews": 42,
+  "base_price": 120000,
+  "portfolio_urls": ["url1"],
+  "services_offered": ["photography", "videography"]
+}
+```
+
+### POST `/api/vendor-reviews/create`
+**Request:**
+```json
+{
+  "vendor_id": "uuid",
+  "wedding_id": "uuid",
+  "rating": 5,
+  "review_text": "Excellent service...",
+  "pros": ["Professional", "On time"],
+  "cons": ["Slightly expensive"],
+  "would_recommend": true,
+  "images": ["review_photo_url"]
+}
+```
+
+---
+
+## BUSINESS RULES
+
+### Vendor Invitation
+- Only couple can invite vendors
+- Maximum 50 vendors per category
+- Invitation valid for 7 days
+- Vendor must accept before submitting quote
+
+### Quote Validity
+- Default 30 days from submission
+- Vendor can set custom validity (7-90 days)
+- Expired quotes marked inactive
+- Vendor can renew expired quote
+
+### Voting Rules
+- Hosting team only: Groom + Bride + Parents + Siblings
+- All voters equal weight
+- Voting window: 48-72 hours (couple decides)
+- Can vote before deadline closes
+- Couple has final override authority
+
+### Vendor Verification
+- Requires exactly 5 completed weddings
+- Weddings must be marked "completed" by couple
+- Auto-verification when 5th wedding completes
+- Cannot be manually removed once earned
+
+### Commission Structure
+- Free vendors: 12% of booking amount
+- Paid vendors: 3% of booking amount
+- Paid subscription: ₹5,000/month or ₹50,000/year
+- Commission deducted from final payment
+
+### Time Conflict Resolution
+- Vendor can accept conflicting bookings if:
+  - They confirm multiple teams available
+  - Couple approves after notification
+- Maximum 3 simultaneous bookings per vendor
+- System tracks team assignments
+
+### Profile Picture Rules
+- Locked until 5-wedding verification
+- Before verification: Generic business icon
+- After verification: Upload allowed
+- Max size: 2MB, formats: JPG, PNG
+
+### Rejection Rules
+- Bulk rejection allowed after vendor selection
+- Common reason required
+- Optional custom message
+- All rejected vendors notified simultaneously
+- Vendors can re-apply to other weddings
+
+---
+
+## NOTIFICATION TRIGGERS
+
+### Vendor Invitation Sent
+**To:** Vendor
+**Subject:** Wedding Opportunity: [Couple] on [Date]
+
+### Vendor Accepted Invitation
+**To:** Couple
+**Subject:** [Vendor] accepted your invitation
+
+### Quote Submitted
+**To:** Couple
+**Subject:** New quote from [Vendor] - ₹[Amount]
+
+### Voting Started
+**To:** All hosting team members
+**Subject:** Vote on [Category] vendors for [Couple]'s wedding
+
+### Voting Reminder (24 hours before close)
+**To:** Members who haven't voted
+**Subject:** Last chance to vote on vendors
+
+### Voting Complete
+**To:** Couple
+**Subject:** [Category] voting results ready
+
+### Vendor Selected
+**To:** Selected vendor
+**Subject:** Congratulations! You've been selected for [Couple]'s wedding
+
+### Vendor Rejected
+**To:** Rejected vendors
+**Subject:** Update on your quote for [Couple]'s wedding
+
+### Time Conflict Detected
+**To:** Couple
+**Subject:** Availability issue with [Vendor]
+
+### Booking Confirmed
+**To:** Vendor + Couple
+**Subject:** Booking confirmed: [Wedding] on [Date]
+
+### 5th Wedding Completed - Verification Earned
+**To:** Vendor
+**Subject:** 🎉 You're now a Verified Vendor!
+
+### Payment Due
+**To:** Couple
+**Subject:** Balance payment due for [Vendor]
+
+### Booking Completed
+**To:** Vendor
+**Subject:** [Wedding] marked complete - Please request review
+
+---
+
+## VALIDATION RULES
+
+### Vendor Profile
+- Business name: 3-100 characters
+- Category required
+- City required
+- Phone required, valid Indian format
+- Base price: ≥ ₹5,000
+- Price range: max ≥ min
+- Portfolio: Max 10 images, 5MB each
+
+### Vendor Quote
+- Package name: 5-100 characters
+- Base price: ≥ ₹1,000
+- Total price: ≥ base price
+- Validity: 7-90 days
+- Payment terms: Valid format
+
+### Vendor Vote
+- Rank: 1-10
+- Price rating: 1-5
+- Quality rating: 1-5
+- Comments: Max 500 characters
+- One vote per voter per vendor
+
+### Vendor Booking
+- Date must be future
+- Start time < end time
+- Total amount: ≥ ₹1,000
+- Advance: ≤ total amount
+
+---
+
+## PERFORMANCE REQUIREMENTS
+
+- Vendor search: < 2 seconds (with 1000+ vendors)
+- Quote submission: < 1 second
+- Voting calculation: < 500ms
+- Time conflict check: < 300ms
+- Profile page load: < 2 seconds
+
+---
+
+## SECURITY REQUIREMENTS
+
+- Only couple can invite vendors
+- Only invited vendors see wedding details
+- Voting restricted to hosting team
+- Vendor cannot see other vendors' votes
+- Commission rates not visible to couple
+- Vendor contact info hidden until booking
+
+---
+
+## SUCCESS METRICS
+
+- Average vendors per category: 3+
+- Quote submission rate: 70%+
+- Voting participation: 85%+
+- Vendor selection within 7 days: 60%+
+- Vendor verification rate: 40% reach 5 weddings
+- Commission revenue per wedding: ₹50,000+
+- Vendor subscription conversion: 15%+

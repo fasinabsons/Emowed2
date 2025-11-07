@@ -1,0 +1,481 @@
+# PAGE 05: WEDDING CREATION WIZARD
+
+## 📄 PAGE DETAILS
+
+**URL:** `/wedding/create`  
+**Access Level:** Authenticated (Engaged couples only)  
+**Purpose:** Multi-step wizard for creating a wedding  
+**Parent Layout:** App Layout (with header/sidebar)  
+**Priority:** HIGH - Required for MVP  
+
+---
+
+## 🎯 USER GOAL
+
+Create a complete wedding with all necessary details in 3 easy steps.
+
+**Success Criteria:**
+- Wedding created in database
+- Event timeline auto-generated (7 events)
+- Both partners notified
+- Redirected to wedding dashboard
+
+---
+
+## 📐 LAYOUT STRUCTURE
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Header: Wedding Creation                              [X]   │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │  Step Indicator:  ● ━━━━ ○ ━━━━ ○                     │ │
+│  │                 Step 1  Step 2  Step 3                 │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │                                                        │ │
+│  │             [STEP CONTENT HERE]                        │ │
+│  │                                                        │ │
+│  │                                                        │ │
+│  │                                                        │ │
+│  │                                                        │ │
+│  │                                                        │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │  [< Previous]              [Next >] or [Create Wedding]│ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🧩 STEP 1: BASIC DETAILS
+
+### Components
+
+**Wedding Name Input**
+- Label: "Wedding Name *"
+- Placeholder: "Faseen & Hanan's Wedding"
+- Validation: Required, min 5 chars
+- Auto-suggestion: "{Groom Name} & {Bride Name}'s Wedding"
+
+**Date Picker**
+- Label: "Wedding Date *"
+- Type: Date picker with calendar UI
+- Validation: Must be future date (at least 7 days from today)
+- Hint: "Choose a date at least 1 week from now"
+
+**Venue Input**
+- Label: "Venue *"
+- Placeholder: "Grand Palace Hotel"
+- Validation: Required, min 3 chars
+
+**City Input**
+- Label: "City *"
+- Type: Autocomplete dropdown (Indian cities)
+- Options: Mumbai, Delhi, Bangalore, Hyderabad, Chennai, Pune, etc.
+- Validation: Required
+
+**Next Button**
+- Variant: Primary
+- Text: "Next: Choose Mode"
+- Action: Validate Step 1 → Go to Step 2
+
+---
+
+## 🧩 STEP 2: MODE SELECTION & LIMITS
+
+### Mode Selection
+
+**Combined Mode (Recommended)**
+```
+○ Combined Wedding
+  • Share venue and vendors
+  • Split costs 50-50
+  • 💰 Save up to 50%!
+  
+  Benefits:
+  ✓ Single photographer for both sides
+  ✓ Shared decorator and caterer
+  ✓ One venue, less coordination
+  ✓ Significant cost savings
+```
+
+**Separate Mode**
+```
+○ Separate Events
+  • Individual vendors for each side
+  • Separate budgets
+  • ⚠️ Higher total costs
+  
+  Considerations:
+  ⚠ 2x photographers needed
+  ⚠ 2x caterers needed  
+  ⚠ 2x decorators needed
+  ⚠ Estimated 80% higher cost
+```
+
+**Warning Modal (If Separate Selected)**
+```
+┌─────────────────────────────────────────────┐
+│  ⚠️ Separate Mode Cost Impact               │
+├─────────────────────────────────────────────┤
+│                                             │
+│  Choosing Separate Mode means:              │
+│                                             │
+│  ❌ Double vendor bookings                  │
+│  ❌ Increased coordination complexity       │
+│  ❌ Estimated 80% cost increase             │
+│                                             │
+│  Example Budget:                            │
+│  Combined:  ₹10,00,000                      │
+│  Separate:  ₹18,00,000                      │
+│  Difference: ₹8,00,000 extra ⬆️             │
+│                                             │
+│  💡 We recommend Combined Mode               │
+│                                             │
+│  [Switch to Combined] [Keep Separate]       │
+└─────────────────────────────────────────────┘
+```
+
+### Guest Limit
+
+**Guest Limit Input (Optional)**
+- Label: "Guest Limit (Optional)"
+- Type: Number input
+- Default: 500
+- Range: 50 - 10,000
+- Hint: "You can adjust this later. Family can vote on final limit."
+- Toggle: "Let family vote on guest limit"
+
+### Budget Limit
+
+**Budget Input (Optional)**
+- Label: "Budget (Optional)"
+- Type: Currency input (₹)
+- Placeholder: "₹10,00,000"
+- Hint: "This helps us recommend suitable vendors"
+
+---
+
+## 🧩 STEP 3: REVIEW & CONFIRM
+
+### Review Summary
+
+```
+┌─────────────────────────────────────────────┐
+│  📋 Wedding Details Summary                 │
+├─────────────────────────────────────────────┤
+│                                             │
+│  Wedding Name:                              │
+│  Faseen & Hanan's Wedding     [Edit]        │
+│                                             │
+│  Date:                                      │
+│  December 15, 2025            [Edit]        │
+│  (32 days from now)                         │
+│                                             │
+│  Venue:                                     │
+│  Grand Palace Hotel, Mumbai   [Edit]        │
+│                                             │
+│  Mode:                                      │
+│  Combined (Recommended) ✓     [Edit]        │
+│                                             │
+│  Guest Limit:                               │
+│  500 guests                   [Edit]        │
+│  (Family voting: Enabled)                   │
+│                                             │
+│  Budget:                                    │
+│  ₹10,00,000                   [Edit]        │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+### What Happens Next
+
+```
+After creating your wedding:
+✓ 7 events will be auto-generated (Engagement to Reception)
+✓ Both partners will be notified
+✓ You can start inviting family members
+✓ Vendors can be searched and invited
+✓ Wedding dashboard will be unlocked
+```
+
+### Terms Acceptance
+
+```
+☐ I agree to Emowed Terms of Service
+☐ I confirm all details are correct
+```
+
+### Create Button
+
+- Variant: Primary
+- Size: Large
+- Text: "Create Wedding"
+- Loading state: "Creating your wedding..."
+- Disabled: Until both checkboxes checked
+
+---
+
+## 🔄 API INTEGRATION
+
+### Create Wedding Endpoint
+
+```typescript
+POST /api/weddings/create
+
+Request Body:
+{
+  couple_id: "uuid",
+  name: "Faseen & Hanan's Wedding",
+  date: "2025-12-15",
+  venue: "Grand Palace Hotel",
+  city: "Mumbai",
+  mode: "combined",
+  guest_limit: 500,
+  budget_limit: 1000000
+}
+
+Response:
+{
+  wedding_id: "uuid",
+  status: "planning",
+  events_generated: 7,
+  created_at: "2025-11-04T10:00:00Z"
+}
+```
+
+### Auto-Generate Events
+
+```typescript
+// Automatically called after wedding creation
+generateEventTimeline(weddingId, weddingDate)
+
+Events Created:
+1. Engagement (wedding_date - 60 days)
+2. Save The Date (wedding_date - 30 days)
+3. Haldi (wedding_date - 2 days)
+4. Mehendi (wedding_date - 1 day)
+5. Sangeet (wedding_date - 1 day, evening)
+6. Wedding (wedding_date)
+7. Reception (wedding_date, evening)
+```
+
+---
+
+## ✅ VALIDATION RULES
+
+### Step 1 Validation
+- Wedding name: Required, 5-100 chars
+- Date: Required, must be >= 7 days from today
+- Venue: Required, 3-200 chars
+- City: Required, must be from dropdown
+
+### Step 2 Validation
+- Mode: Required (default: combined)
+- Guest limit: Optional, 50-10,000 if provided
+- Budget: Optional, >= 10,000 if provided
+
+### Step 3 Validation
+- Both checkboxes must be checked
+- All previous steps must be valid
+
+---
+
+## 🎨 STYLING (REFERENCE: theme.txt)
+
+**Step Indicator:**
+- Active step: Primary color (#FF6B9D), filled circle
+- Inactive step: Gray (#9CA3AF), outline circle
+- Line between: Gray stroke
+
+**Form Inputs:**
+- Reference: theme.txt Lines 900-1100
+- Use standard Input component
+- Error state: Red border + error message below
+
+**Buttons:**
+- Previous: Secondary variant
+- Next/Create: Primary variant
+- Reference: theme.txt Lines 600-750
+
+**Modal:**
+- Reference: theme.txt Lines 1150-1250
+- Warning icon: Amber color
+- Actions: Ghost + Primary buttons
+
+---
+
+## 📱 MOBILE RESPONSIVE
+
+**Breakpoints:**
+- Mobile (<768px): Stack form fields vertically
+- Tablet (768-1024px): 2-column grid for some fields
+- Desktop (>1024px): Centered card with max-width 800px
+
+**Mobile Adjustments:**
+- Step indicator: Smaller circles, tighter spacing
+- Form fields: Full width
+- Buttons: Full width, stacked
+- Modal: Full screen on mobile
+
+---
+
+## 🔐 PERMISSIONS
+
+**Required:**
+- User must be authenticated
+- User status must be 'engaged' or 'married'
+- User must be part of a couple
+- Couple must not already have a wedding
+
+**Access Denied:**
+- If user is 'single' → Redirect to /dashboard with message
+- If couple already has wedding → Redirect to /wedding/{id}
+- If not authenticated → Redirect to /login
+
+---
+
+## 🚀 PERFORMANCE
+
+**Loading States:**
+- Initial load: Skeleton screen
+- Step transition: Smooth animation (300ms)
+- Form submission: Loading spinner on button
+
+**Optimization:**
+- Lazy load date picker library
+- Prefetch city list on Step 1 mount
+- Debounce venue autocomplete (300ms)
+- Cache form data in localStorage (prevent data loss)
+
+**Target Metrics:**
+- Time to Interactive: < 2s
+- Step transition: < 300ms
+- Form submission: < 2s
+- Success rate: > 95%
+
+---
+
+## 📊 SUCCESS METRICS
+
+**KPIs:**
+- Wedding creation completion rate: Target 85%+
+- Average time to complete: Target < 5 minutes
+- Separate mode selection rate: Target < 20%
+- Drop-off by step:
+  - Step 1: < 10%
+  - Step 2: < 15%
+  - Step 3: < 5%
+
+**Analytics Events:**
+```javascript
+// Track user progress
+trackEvent('wedding_creation_started', { userId, coupleId });
+trackEvent('wedding_creation_step_1_completed', { weddingName, date });
+trackEvent('wedding_creation_step_2_completed', { mode, guestLimit });
+trackEvent('wedding_creation_completed', { weddingId, duration });
+trackEvent('wedding_creation_abandoned', { step, duration });
+```
+
+---
+
+## 🐛 ERROR HANDLING
+
+**Common Errors:**
+
+1. **Date in past:** "Wedding date must be at least 7 days from today"
+2. **Couple already has wedding:** "You already have a wedding. Go to dashboard."
+3. **Network error:** "Unable to create wedding. Please try again."
+4. **Validation error:** Show inline error under relevant field
+5. **Session expired:** Redirect to login with return URL
+
+**Error Display:**
+- Inline errors: Below the field, red text, small font
+- Toast errors: Top-right corner, 5s auto-dismiss
+- Modal errors: For critical failures, requires action
+
+---
+
+## ✨ ANIMATIONS
+
+**Step Transitions:**
+- Fade out current step (200ms)
+- Slide in next step from right (300ms)
+- Ease-in-out timing function
+
+**Success Animation:**
+```
+On wedding creation:
+1. Confetti animation (2s)
+2. Success modal with checkmark
+3. Fade to wedding dashboard
+```
+
+---
+
+## 🧪 TESTING CHECKLIST
+
+### Functional Tests
+- [ ] Can navigate between steps
+- [ ] Can go back to previous steps (data persists)
+- [ ] Date picker shows future dates only
+- [ ] City autocomplete works
+- [ ] Separate mode warning shows correctly
+- [ ] Guest limit validation works (50-10,000)
+- [ ] Budget validation works (min 10,000)
+- [ ] Terms checkboxes required
+- [ ] Wedding created in database
+- [ ] Events auto-generated (7 events)
+- [ ] Both partners notified
+- [ ] Redirects to wedding dashboard
+
+### Edge Cases
+- [ ] Network failure during submission
+- [ ] User closes browser mid-creation (resume from localStorage)
+- [ ] Partner creates wedding while user is on page (handle conflict)
+- [ ] Extremely long wedding name (test character limit)
+- [ ] Special characters in inputs
+- [ ] Very large guest limit (10,000)
+- [ ] Very small guest limit (50)
+
+### UI/UX Tests
+- [ ] Mobile responsive on all steps
+- [ ] Keyboard navigation works (Tab, Enter)
+- [ ] Screen reader compatible
+- [ ] Loading states display correctly
+- [ ] Error messages clear and helpful
+- [ ] Success animation smooth
+- [ ] Back button handling (browser back)
+
+---
+
+## 🔗 RELATED FILES
+
+**Reference:**
+- `phase1.txt` Lines 450-750 (Wedding creation logic)
+- `architecture.txt` Lines 355-385 (Weddings table)
+- `architecture.txt` Lines 16-35 (Events table)
+- `theme.txt` Lines 600-1400 (Component library)
+- `PRD_REFINED.txt` Lines 100-150 (Business requirements)
+
+**Dependencies:**
+- Date picker library: react-datepicker
+- Form validation: Zod
+- State management: React Hook Form
+- Supabase: Weddings API
+
+---
+
+*Page Specification Complete*  
+*Status: Ready for implementation*  
+*Estimated Development Time: 12 hours*  
+*Priority: HIGH (Required for MVP)*
+
+**From First Swipe to Forever! 💕**
+

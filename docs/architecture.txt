@@ -1,0 +1,1432 @@
+# EMOWED - TECHNICAL ARCHITECTURE SPECIFICATION
+
+## EXECUTIVE SUMMARY
+
+**Project:** Emowed - Full-lifecycle relationship platform
+**Stack:** React + TypeScript + Tailwind CSS + Supabase
+**Development Tool:** Lovable.dev + Claude Code
+**Target Scale:** 10,000+ weddings/year by Year 3
+**Budget:** Phase 1: $72 | Production: $3,249/month at scale
+
+---
+
+## 1. SYSTEM ARCHITECTURE OVERVIEW
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CLIENT LAYER (Frontend)                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  React 18 + TypeScript + Tailwind CSS                       │
+│  ├── State: React Context API + React Query                 │
+│  ├── Routing: React Router v6                               │
+│  ├── Forms: React Hook Form + Zod                           │
+│  ├── UI: shadcn/ui components                               │
+│  ├── Animations: Framer Motion                              │
+│  ├── Charts: Recharts                                       │
+│  ├── Real-time: Supabase Realtime                           │
+│  └── PWA: Workbox + Service Workers                         │
+│                                                              │
+└──────────────────────┬───────────────────────────────────────┘
+                       │
+                       │ HTTPS / WSS
+                       │
+┌──────────────────────┴───────────────────────────────────────┐
+│                  API LAYER (Backend)                         │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Supabase (Backend-as-a-Service)                            │
+│  ├── Auth: Email/Password + OAuth (Google, Apple)           │
+│  ├── Database: PostgreSQL 14                                │
+│  ├── Storage: Object Storage (Images, Videos, Files)        │
+│  ├── Realtime: WebSocket subscriptions                      │
+│  ├── Edge Functions: Serverless API endpoints               │
+│  ├── Row Level Security (RLS): Policy-based access          │
+│  └── Functions: Custom PostgreSQL functions                 │
+│                                                              │
+└──────────────────────┬───────────────────────────────────────┘
+                       │
+                       │ SQL / REST / WebSocket
+                       │
+┌──────────────────────┴───────────────────────────────────────┐
+│                 DATA LAYER (Database)                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  PostgreSQL 14 (Supabase Managed)                           │
+│  ├── Tables: 45+ tables (see schema below)                  │
+│  ├── Indexes: 150+ for query optimization                   │
+│  ├── Triggers: 25+ for automation                           │
+│  ├── Functions: 30+ stored procedures                       │
+│  ├── Views: 15+ materialized views                          │
+│  └── Policies: 200+ RLS policies                            │
+│                                                              │
+└──────────────────────┬───────────────────────────────────────┘
+                       │
+                       │ Backup & Replication
+                       │
+┌──────────────────────┴───────────────────────────────────────┐
+│              EXTERNAL SERVICES LAYER                         │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Media Storage: Cloudinary                                   │
+│  ├── Image optimization & CDN                               │
+│  ├── Video transcoding                                      │
+│  └── Transformation API                                     │
+│                                                              │
+│  Caching: Redis Cloud (Upstash)                             │
+│  ├── Session storage                                        │
+│  ├── Query caching                                          │
+│  └── Rate limiting                                          │
+│                                                              │
+│  Email: Resend or SendGrid                                  │
+│  ├── Transactional emails                                   │
+│  ├── Email templates                                        │
+│  └── Deliverability tracking                                │
+│                                                              │
+│  SMS: Twilio                                                 │
+│  ├── OTP verification                                       │
+│  ├── Reminders                                              │
+│  └── Notifications                                          │
+│                                                              │
+│  Payments: Razorpay (India)                                 │
+│  ├── UPI integration                                        │
+│  ├── Card payments                                          │
+│  ├── Subscriptions                                          │
+│  └── Webhooks                                               │
+│                                                              │
+│  Analytics: Mixpanel + Google Analytics 4                   │
+│  ├── User behavior tracking                                 │
+│  ├── Conversion funnels                                     │
+│  ├── Cohort analysis                                        │
+│  └── Revenue tracking                                       │
+│                                                              │
+│  Monitoring: Sentry                                          │
+│  ├── Error tracking                                         │
+│  ├── Performance monitoring                                 │
+│  └── Release tracking                                       │
+│                                                              │
+│  Video Streaming: YouTube Live API                          │
+│  └── Live wedding streaming                                 │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 2. FRONTEND ARCHITECTURE
+
+### 2.1 Directory Structure
+
+```
+src/
+├── components/
+│   ├── auth/
+│   │   ├── SignupForm.tsx
+│   │   ├── LoginForm.tsx
+│   │   ├── ForgotPasswordForm.tsx
+│   │   ├── ResetPasswordForm.tsx
+│   │   └── EmailVerification.tsx
+│   │
+│   ├── dashboard/
+│   │   ├── SingleUserDashboard.tsx
+│   │   ├── EngagedDashboard.tsx
+│   │   ├── MarriedDashboard.tsx
+│   │   ├── StatsCard.tsx
+│   │   └── QuickActions.tsx
+│   │
+│   ├── invitations/
+│   │   ├── PartnerInviteForm.tsx
+│   │   ├── InviteCodeInput.tsx
+│   │   ├── AcceptInviteModal.tsx
+│   │   ├── RejectInviteModal.tsx
+│   │   └── InviteShareButtons.tsx
+│   │
+│   ├── wedding/
+│   │   ├── WeddingCreationForm.tsx
+│   │   ├── WeddingCard.tsx
+│   │   ├── WeddingTimeline.tsx
+│   │   ├── WeddingSettings.tsx
+│   │   └── CancelWeddingFlow.tsx
+│   │
+│   ├── events/
+│   │   ├── EventCard.tsx
+│   │   ├── EventForm.tsx
+│   │   ├── EventTimeline.tsx
+│   │   ├── EventDetails.tsx
+│   │   └── EventProgramList.tsx
+│   │
+│   ├── guests/
+│   │   ├── GuestInviteForm.tsx
+│   │   ├── GuestList.tsx
+│   │   ├── GuestCard.tsx
+│   │   ├── GuestDetails.tsx
+│   │   ├── GuestFilters.tsx
+│   │   └── BulkInviteUpload.tsx
+│   │
+│   ├── rsvp/
+│   │   ├── RSVPForm.tsx
+│   │   ├── RSVPList.tsx
+│   │   ├── RSVPCard.tsx
+│   │   ├── RSVPStats.tsx
+│   │   └── RSVPReminders.tsx
+│   │
+│   ├── family-tree/
+│   │   ├── FamilyTreeView.tsx
+│   │   ├── FamilyTreeNode.tsx
+│   │   ├── FamilyTreeControls.tsx
+│   │   └── FamilyTreeLegend.tsx
+│   │
+│   ├── vendors/
+│   │   ├── VendorInviteForm.tsx
+│   │   ├── VendorList.tsx
+│   │   ├── VendorCard.tsx
+│   │   ├── VendorQuote.tsx
+│   │   ├── VendorVoting.tsx
+│   │   ├── VendorComparison.tsx
+│   │   └── VendorProfile.tsx
+│   │
+│   ├── media/
+│   │   ├── Gallery.tsx
+│   │   ├── PhotoUpload.tsx
+│   │   ├── VideoUpload.tsx
+│   │   ├── MediaCard.tsx
+│   │   ├── BulkDownload.tsx
+│   │   └── LiveStream.tsx
+│   │
+│   ├── wedding-card/
+│   │   ├── CardCreator.tsx
+│   │   ├── TemplateSelector.tsx
+│   │   ├── CardPreview.tsx
+│   │   ├── AnimationSelector.tsx
+│   │   └── CardShare.tsx
+│   │
+│   ├── games/
+│   │   ├── GameCreator.tsx
+│   │   ├── GameList.tsx
+│   │   ├── GamePlayer.tsx
+│   │   ├── Leaderboard.tsx
+│   │   └── GameResults.tsx
+│   │
+│   ├── gifts/
+│   │   ├── GiftMarketplace.tsx
+│   │   ├── GiftCard.tsx
+│   │   ├── GiftCheckout.tsx
+│   │   ├── GiftTracker.tsx
+│   │   └── ThankYouNotes.tsx
+│   │
+│   ├── matchmaking/
+│   │   ├── MatchmakingProfile.tsx
+│   │   ├── MatchCard.tsx
+│   │   ├── SwipeInterface.tsx
+│   │   ├── MatchList.tsx
+│   │   ├── ChatWindow.tsx
+│   │   ├── VideoCall.tsx
+│   │   └── MatchProbability.tsx
+│   │
+│   ├── post-marriage/
+│   │   ├── CoupleDiary.tsx
+│   │   ├── DiaryEntry.tsx
+│   │   ├── SharedGoals.tsx
+│   │   ├── DateNightPlanner.tsx
+│   │   ├── TripPlanner.tsx
+│   │   ├── GiftTracker.tsx
+│   │   └── AnniversaryReminder.tsx
+│   │
+│   ├── community/
+│   │   ├── ForumList.tsx
+│   │   ├── PostCard.tsx
+│   │   ├── PostDetails.tsx
+│   │   ├── CommentSection.tsx
+│   │   ├── CreatePost.tsx
+│   │   └── CategoryFilter.tsx
+│   │
+│   ├── counseling/
+│   │   ├── CounselorList.tsx
+│   │   ├── CounselorCard.tsx
+│   │   ├── CounselorProfile.tsx
+│   │   ├── BookingForm.tsx
+│   │   ├── SessionRoom.tsx
+│   │   └── ReviewForm.tsx
+│   │
+│   ├── shared/
+│   │   ├── Header.tsx
+│   │   ├── Sidebar.tsx
+│   │   ├── Footer.tsx
+│   │   ├── Button.tsx
+│   │   ├── Input.tsx
+│   │   ├── Select.tsx
+│   │   ├── Modal.tsx
+│   │   ├── Dropdown.tsx
+│   │   ├── Tooltip.tsx
+│   │   ├── Badge.tsx
+│   │   ├── Avatar.tsx
+│   │   ├── Card.tsx
+│   │   ├── Tabs.tsx
+│   │   ├── Table.tsx
+│   │   ├── Pagination.tsx
+│   │   ├── LoadingSpinner.tsx
+│   │   ├── ErrorBoundary.tsx
+│   │   ├── ConfirmDialog.tsx
+│   │   └── StatusBadge.tsx
+│   │
+│   └── layouts/
+│       ├── MainLayout.tsx
+│       ├── AuthLayout.tsx
+│       ├── DashboardLayout.tsx
+│       └── WeddingLayout.tsx
+│
+├── hooks/
+│   ├── useAuth.ts
+│   ├── useUser.ts
+│   ├── useInvitations.ts
+│   ├── useWeddings.ts
+│   ├── useEvents.ts
+│   ├── useGuests.ts
+│   ├── useRSVPs.ts
+│   ├── useVendors.ts
+│   ├── useMedia.ts
+│   ├── useGames.ts
+│   ├── useMatchmaking.ts
+│   ├── useNotifications.ts
+│   ├── useRealtime.ts
+│   ├── useLocalStorage.ts
+│   ├── useDebounce.ts
+│   └── useInfiniteScroll.ts
+│
+├── lib/
+│   ├── supabase.ts
+│   ├── validations.ts
+│   ├── api.ts
+│   ├── constants.ts
+│   ├── utils.ts
+│   ├── formatters.ts
+│   ├── date-helpers.ts
+│   └── permissions.ts
+│
+├── types/
+│   ├── index.ts
+│   ├── database.ts
+│   ├── api.ts
+│   └── enums.ts
+│
+├── contexts/
+│   ├── AuthContext.tsx
+│   ├── WeddingContext.tsx
+│   ├── ThemeContext.tsx
+│   └── NotificationContext.tsx
+│
+├── pages/
+│   ├── Home.tsx
+│   ├── Signup.tsx
+│   ├── Login.tsx
+│   ├── Dashboard.tsx
+│   ├── AcceptInvite.tsx
+│   ├── CreateWedding.tsx
+│   ├── WeddingDashboard.tsx
+│   ├── EventTimeline.tsx
+│   ├── GuestManagement.tsx
+│   ├── RSVPManagement.tsx
+│   ├── FamilyTree.tsx
+│   ├── VendorManagement.tsx
+│   ├── MediaGallery.tsx
+│   ├── WeddingCard.tsx
+│   ├── Games.tsx
+│   ├── Gifts.tsx
+│   ├── Matchmaking.tsx
+│   ├── PostMarriage.tsx
+│   ├── Community.tsx
+│   ├── Counseling.tsx
+│   ├── Settings.tsx
+│   └── NotFound.tsx
+│
+├── styles/
+│   ├── globals.css
+│   ├── variables.css
+│   └── animations.css
+│
+├── assets/
+│   ├── images/
+│   ├── icons/
+│   └── fonts/
+│
+├── config/
+│   ├── routes.ts
+│   ├── env.ts
+│   └── features.ts
+│
+└── App.tsx
+```
+
+### 2.2 State Management Architecture
+
+```typescript
+// State Management Strategy
+
+// 1. Server State: React Query
+// - API data fetching
+// - Caching
+// - Background refetching
+// - Optimistic updates
+
+// 2. Client State: React Context
+// - User authentication
+// - Theme preferences
+// - UI state (modals, sidebars)
+
+// 3. Local State: useState/useReducer
+// - Form state
+// - Component-specific state
+
+// 4. URL State: React Router
+// - Current page
+// - Query parameters
+// - Navigation history
+```
+
+**Example: React Query Setup**
+
+```typescript
+// src/lib/react-query.ts
+import { QueryClient } from '@tanstack/react-query';
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      cacheTime: 1000 * 60 * 30, // 30 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+```
+
+### 2.3 Component Architecture Patterns
+
+**1. Compound Components Pattern**
+
+```typescript
+// Example: Modal Component
+<Modal>
+  <Modal.Header>Title</Modal.Header>
+  <Modal.Body>Content</Modal.Body>
+  <Modal.Footer>Actions</Modal.Footer>
+</Modal>
+```
+
+**2. Render Props Pattern**
+
+```typescript
+// Example: Data Fetcher
+<DataFetcher url="/api/guests">
+  {({ data, loading, error }) => (
+    loading ? <Spinner /> : <GuestList guests={data} />
+  )}
+</DataFetcher>
+```
+
+**3. Custom Hooks Pattern**
+
+```typescript
+// Example: useGuests hook
+const { guests, loading, addGuest, deleteGuest } = useGuests(weddingId);
+```
+
+---
+
+## 3. BACKEND ARCHITECTURE (Supabase)
+
+### 3.1 Database Schema Architecture
+
+**Core Entities:**
+
+```
+users (auth.users + custom fields)
+├── couples (relationship entity)
+│   └── weddings (wedding details)
+│       ├── events (timeline events)
+│       ├── guests (guest list)
+│       │   ├── guest_invitations (invitation tracking)
+│       │   ├── rsvps (attendance tracking)
+│       │   └── family_tree (relationships)
+│       ├── vendors (vendor list)
+│       │   ├── vendor_quotes (pricing)
+│       │   ├── vendor_votes (family voting)
+│       │   └── vendor_bookings (confirmed)
+│       ├── media_gallery (photos/videos)
+│       ├── wedding_cards (digital invites)
+│       ├── games (gamification)
+│       │   ├── game_submissions (entries)
+│       │   └── leaderboards (scores)
+│       ├── gifts (gift registry)
+│       │   └── gift_transactions (purchases)
+│       └── headcount_snapshots (final counts)
+│
+├── matchmaking_profiles (dating features)
+│   ├── matches (mutual likes)
+│   ├── likes (swipes)
+│   ├── messages (chat)
+│   └── video_calls (call logs)
+│
+├── post_marriage_diary (couple journal)
+├── shared_goals (couple goals)
+├── date_nights (date planning)
+├── trips (travel planning)
+│
+├── community_posts (forum)
+│   ├── comments
+│   └── votes
+│
+├── counselors (professional help)
+│   ├── counselor_sessions (bookings)
+│   └── counselor_reviews (ratings)
+│
+└── notifications (system notifications)
+```
+
+### 3.2 Row Level Security (RLS) Architecture
+
+**Security Model:**
+
+```sql
+-- Example RLS Policies
+
+-- Users can only view their own profile
+CREATE POLICY "Users can view own profile"
+ON users FOR SELECT
+USING (auth.uid() = id);
+
+-- Couples can access their wedding data
+CREATE POLICY "Couples can view their weddings"
+ON weddings FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM couples 
+    WHERE id = couple_id 
+    AND auth.uid() IN (user1_id, user2_id)
+  )
+);
+
+-- Guests can only view their assigned weddings
+CREATE POLICY "Guests can view their weddings"
+ON weddings FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM guests 
+    WHERE wedding_id = weddings.id 
+    AND user_id = auth.uid()
+  )
+);
+
+-- Vendors can only view weddings they're invited to
+CREATE POLICY "Vendors can view invited weddings"
+ON weddings FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM vendor_bookings 
+    WHERE wedding_id = weddings.id 
+    AND vendor_id = auth.uid()
+  )
+);
+```
+
+### 3.3 Database Functions Architecture
+
+**Critical Functions:**
+
+1. **Invitation Management**
+   - `generate_invite_code()` - Create unique 6-char codes
+   - `validate_invitation()` - Check expiry & status
+   - `accept_invitation()` - Update couple status
+
+2. **Wedding Timeline**
+   - `generate_event_timeline()` - Auto-create events
+   - `calculate_event_dates()` - Date calculations
+
+3. **Headcount Calculation**
+   - `calculate_food_headcount()` - Food multiplier logic
+   - `update_headcount_snapshot()` - Real-time updates
+   - `lock_headcount()` - 7-day lock trigger
+
+4. **Vendor Management**
+   - `check_vendor_availability()` - Conflict detection
+   - `calculate_vendor_rank()` - Ranking algorithm
+
+5. **Matchmaking**
+   - `calculate_match_probability()` - Success rate logic
+   - `get_potential_matches()` - Filtering algorithm
+
+### 3.4 Real-time Subscriptions
+
+```typescript
+// Real-time listeners for live updates
+
+// 1. Guest RSVPs (for couple dashboard)
+supabase
+  .from('rsvps')
+  .on('INSERT', payload => {
+    // Update headcount live
+  })
+  .subscribe();
+
+// 2. Vendor Quotes (for vendor comparison)
+supabase
+  .from('vendor_quotes')
+  .on('*', payload => {
+    // Refresh quotes list
+  })
+  .subscribe();
+
+// 3. Game Submissions (for leaderboard)
+supabase
+  .from('game_submissions')
+  .on('INSERT', payload => {
+    // Update leaderboard
+  })
+  .subscribe();
+
+// 4. Chat Messages (for matchmaking)
+supabase
+  .from('messages')
+  .on('INSERT', payload => {
+    // Show new message
+  })
+  .subscribe();
+```
+
+---
+
+## 4. API ARCHITECTURE
+
+### 4.1 Supabase Edge Functions
+
+**Edge Functions Structure:**
+
+```
+supabase/functions/
+├── send-invitation-email/
+│   └── index.ts
+├── send-rsvp-reminder/
+│   └── index.ts
+├── process-payment/
+│   └── index.ts
+├── generate-wedding-card-pdf/
+│   └── index.ts
+├── send-bulk-whatsapp/
+│   └── index.ts
+├── calculate-vendor-ranking/
+│   └── index.ts
+├── cleanup-expired-invitations/
+│   └── index.ts
+├── lock-headcounts/
+│   └── index.ts
+├── delete-free-user-media/
+│   └── index.ts
+└── send-anniversary-reminders/
+    └── index.ts
+```
+
+**Example Edge Function:**
+
+```typescript
+// supabase/functions/send-invitation-email/index.ts
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+serve(async (req) => {
+  const { invitation_id } = await req.json();
+  
+  // Get invitation details
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL'),
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  );
+  
+  const { data: invitation } = await supabase
+    .from('partner_invitations')
+    .select('*, sender:users(*)')
+    .eq('id', invitation_id)
+    .single();
+  
+  // Send email via Resend
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'Emowed <noreply@emowed.com>',
+      to: invitation.receiver_email,
+      subject: `${invitation.sender.full_name} invited you to plan your wedding!`,
+      html: `...email template...`,
+    }),
+  });
+  
+  return new Response(JSON.stringify({ success: true }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+});
+```
+
+### 4.2 API Rate Limiting
+
+```typescript
+// Rate limiting strategy using Upstash Redis
+
+const rateLimit = {
+  // Invitation creation: 3 per hour per user
+  invitation_create: { limit: 3, window: 3600 },
+  
+  // Guest invitation: 50 per hour per wedding
+  guest_invite: { limit: 50, window: 3600 },
+  
+  // Media upload: 100 per day per user
+  media_upload: { limit: 100, window: 86400 },
+  
+  // API calls: 1000 per hour per user
+  api_general: { limit: 1000, window: 3600 },
+};
+```
+
+---
+
+## 5. DATA STORAGE ARCHITECTURE
+
+### 5.1 Media Storage Strategy
+
+```
+Cloudinary Structure:
+
+emowed/
+├── users/
+│   └── {user_id}/
+│       ├── profile.jpg
+│       └── verification_docs/
+│
+├── weddings/
+│   └── {wedding_id}/
+│       ├── gallery/
+│       │   ├── photos/
+│       │   │   └── {timestamp}_{user_id}.jpg
+│       │   └── videos/
+│       │       └── {timestamp}_{user_id}.mp4
+│       ├── wedding_card/
+│       │   ├── main_image.jpg
+│       │   └── animations/
+│       └── vendor_work/
+│           └── {vendor_id}/
+│
+├── matchmaking/
+│   └── {user_id}/
+│       ├── photo1.jpg
+│       ├── photo2.jpg
+│       └── verification/
+│
+└── vendors/
+    └── {vendor_id}/
+        └── portfolio/
+```
+
+**Media Processing Pipeline:**
+
+```
+Upload → Cloudinary → Transformation → CDN → Client
+
+Transformations:
+- Photos: Auto-format (webp), quality 80%, max 1920x1080
+- Thumbnails: 300x300, crop, quality 70%
+- Videos: Transcode to H.264, max 1080p
+- Compression: Automatic based on device
+```
+
+### 5.2 Database Backup Strategy
+
+```
+Backup Schedule:
+├── Real-time: Supabase automatic backups (every 2 minutes)
+├── Daily: Full backup at 2 AM IST
+├── Weekly: Archive to AWS S3 (every Sunday)
+└── Monthly: Long-term archive (retained 1 year)
+
+Recovery Point Objective (RPO): 2 minutes
+Recovery Time Objective (RTO): 30 minutes
+```
+
+---
+
+## 6. CACHING ARCHITECTURE
+
+### 6.1 Multi-Layer Caching Strategy
+
+```
+┌─────────────────────────────────────────┐
+│  L1: Browser Cache (Service Worker)    │
+│  - Static assets (7 days)              │
+│  - API responses (5 minutes)           │
+└─────────────┬───────────────────────────┘
+              │
+              │ Cache Miss
+              ↓
+┌─────────────────────────────────────────┐
+│  L2: CDN Cache (Cloudflare)            │
+│  - Images (30 days)                    │
+│  - Videos (30 days)                    │
+│  - Static files (7 days)               │
+└─────────────┬───────────────────────────┘
+              │
+              │ Cache Miss
+              ↓
+┌─────────────────────────────────────────┐
+│  L3: Redis Cache (Upstash)             │
+│  - Query results (5 minutes)           │
+│  - Session data (24 hours)             │
+│  - Headcount snapshots (1 hour)        │
+└─────────────┬───────────────────────────┘
+              │
+              │ Cache Miss
+              ↓
+┌─────────────────────────────────────────┐
+│  L4: Database (Supabase)               │
+│  - Source of truth                     │
+└─────────────────────────────────────────┘
+```
+
+### 6.2 Cache Invalidation Strategy
+
+```typescript
+// Cache invalidation triggers
+
+// 1. On data mutation
+const { data } = await supabase.from('guests').insert(newGuest);
+await redis.del(`wedding:${weddingId}:guests`);
+
+// 2. On real-time events
+supabase
+  .from('rsvps')
+  .on('*', async (payload) => {
+    await redis.del(`event:${payload.new.event_id}:headcount`);
+  })
+  .subscribe();
+
+// 3. Time-based expiry (TTL)
+await redis.set(
+  `vendor:${vendorId}:quotes`,
+  JSON.stringify(quotes),
+  'EX',
+  300 // 5 minutes
+);
+```
+
+---
+
+## 7. SECURITY ARCHITECTURE
+
+### 7.1 Authentication Flow
+
+```
+User Login Flow:
+1. User enters email + password
+2. Frontend sends to Supabase Auth
+3. Supabase validates credentials
+4. Returns JWT access token + refresh token
+5. Frontend stores tokens in localStorage
+6. All API requests include Bearer token
+7. Token auto-refreshes every 55 minutes
+
+OAuth Flow (Google/Apple):
+1. User clicks "Sign in with Google"
+2. Redirect to Google OAuth
+3. User grants permissions
+4. Google returns auth code
+5. Supabase exchanges code for tokens
+6. User profile created/updated
+7. Redirect to dashboard
+```
+
+### 7.2 Authorization Model
+
+```
+Role-Based Access Control (RBAC):
+
+Roles:
+├── Guest (default)
+│   ├── View wedding details
+│   ├── Upload photos
+│   ├── RSVP to events
+│   └── Play games
+│
+├── Family Member (Parent/Sibling)
+│   ├── All Guest permissions
+│   ├── Invite other guests
+│   ├── Vote on vendors
+│   └── View family tree
+│
+├── Couple (Wedding Owners)
+│   ├── All Family permissions
+│   ├── Create/edit wedding
+│   ├── Invite vendors
+│   ├── Access analytics
+│   ├── Download media
+│   └── Cancel wedding
+│
+├── Vendor
+│   ├── View wedding details
+│   ├── Submit quotes
+│   ├── Upload portfolio
+│   └── Message couple
+│
+└── Admin (Emowed Team)
+    ├── View all weddings
+    ├── Moderate content
+    ├── Manage users
+    └── Access analytics
+```
+
+### 7.3 Data Encryption
+
+```
+Encryption Strategy:
+
+At Rest:
+├── Database: AES-256 (Supabase default)
+├── File Storage: AES-256 (Cloudinary)
+└── Backups: Encrypted with separate key
+
+In Transit:
+├── HTTPS/TLS 1.3 for all connections
+├── WebSocket Secure (WSS) for real-time
+└── Certificate pinning for mobile apps
+
+Sensitive Data:
+├── Phone numbers: Encrypted before storage
+├── Payment info: Tokenized (Razorpay)
+└── Passwords: Bcrypt hashed (Supabase Auth)
+```
+
+### 7.4 Security Headers
+
+```typescript
+// Security headers configuration
+
+headers: {
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+  'Content-Security-Policy': `
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: https://res.cloudinary.com;
+    connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+  `
+}
+```
+
+---
+
+## 8. SCALABILITY ARCHITECTURE
+
+### 8.1 Horizontal Scaling Strategy
+
+```
+User Load Distribution:
+
+1-1,000 Users:
+├── Supabase Free Tier
+├── Single database instance
+└── No load balancer needed
+
+1,000-10,000 Users:
+├── Supabase Pro
+├── Read replicas (2x)
+├── Connection pooling
+└── CDN for static assets
+
+10,000-100,000 Users:
+├── Supabase Team
+├── Read replicas (5x)
+├── Database sharding (by region)
+├── Redis cluster (3 nodes)
+└── Multiple CDN regions
+
+100,000+ Users:
+├── Supabase Enterprise
+├── Multi-region deployment
+├── Global load balancer
+├── Database federation
+└── Microservices architecture
+```
+
+### 8.2 Database Sharding Strategy
+
+```
+Sharding by Wedding Date:
+
+Shard 1: Weddings in Jan-Mar
+Shard 2: Weddings in Apr-Jun
+Shard 3: Weddings in Jul-Sep
+Shard 4: Weddings in Oct-Dec
+
+Benefits:
+- Older weddings (completed) can be archived
+- Hot data (upcoming weddings) stays fast
+- Easy to scale during wedding season
+```
+
+### 8.3 Performance Optimization
+
+```
+Performance Targets:
+
+Page Load:
+├── First Contentful Paint: < 1.5s
+├── Time to Interactive: < 3.0s
+├── Largest Contentful Paint: < 2.5s
+└── Cumulative Layout Shift: < 0.1
+
+API Response:
+├── Simple queries: < 100ms
+├── Complex queries: < 500ms
+├── File uploads: < 2s (per MB)
+└── Real-time updates: < 50ms
+
+Database:
+├── Query execution: < 50ms (average)
+├── Index usage: 95%+
+└── Connection pool: 80% utilization
+```
+
+---
+
+## 9. MONITORING & OBSERVABILITY
+
+### 9.1 Monitoring Stack
+
+```
+Application Monitoring:
+├── Sentry (Error tracking)
+│   ├── JavaScript errors
+│   ├── Backend errors
+│   ├── Performance metrics
+│   └── Release tracking
+│
+├── Mixpanel (Product analytics)
+│   ├── User behavior
+│   ├── Conversion funnels
+│   ├── Cohort analysis
+│   └── Revenue tracking
+│
+├── Google Analytics 4 (Web analytics)
+│   ├── Page views
+│   ├── Traffic sources
+│   ├── User demographics
+│   └── Goal tracking
+│
+└── Supabase Dashboard (Infrastructure)
+    ├── Database performance
+    ├── API usage
+    ├── Storage metrics
+    └── Auth statistics
+```
+
+### 9.2 Alerting Strategy
+
+```
+Critical Alerts (PagerDuty):
+├── Database down
+├── API error rate > 5%
+├── Payment processing failure
+└── Security breach
+
+Warning Alerts (Email):
+├── API response time > 1s
+├── Database CPU > 80%
+├── Storage > 90% capacity
+└── High rate limiting hits
+
+Info Alerts (Dashboard):
+├── New user signups
+├── Wedding creations
+├── Payment transactions
+└── Feature usage trends
+```
+
+---
+
+## 10. DEPLOYMENT ARCHITECTURE
+
+### 10.1 CI/CD Pipeline
+
+```
+GitHub Repository
+        ↓
+    Push to main
+        ↓
+GitHub Actions Workflow
+        ↓
+    ┌───────────────────────┐
+    │ 1. Install deps       │
+    │ 2. Run tests          │
+    │ 3. Run linter         │
+    │ 4. Build production   │
+    │ 5. Deploy to Vercel   │
+    │ 6. Run E2E tests      │
+    │ 7. Notify Slack       │
+    └───────────────────────┘
+        ↓
+    Production (Vercel)
+```
+
+### 10.2 Environment Strategy
+
+```
+Environments:
+
+1. Development (Local)
+   ├── localhost:3000
+   ├── Supabase local (Docker)
+   └── Mock external services
+
+2. Staging (Vercel)
+   ├── staging.emowed.com
+   ├── Supabase staging project
+   └── Test external services
+
+3. Production (Vercel)
+   ├── emowed.com
+   ├── Supabase production project
+   └── Live external services
+```
+
+### 10.3 Rollback Strategy
+
+```
+Rollback Procedure:
+
+1. Immediate Rollback (< 5 minutes)
+   ├── Revert to previous Vercel deployment
+   ├── No database changes needed
+   └── Automated via Vercel dashboard
+
+2. Database Rollback (< 30 minutes)
+   ├── Restore from Supabase backup
+   ├── Manual intervention required
+   └── Notify all users
+
+3. Hotfix Deployment (< 1 hour)
+   ├── Create fix branch
+   ├── Deploy to staging
+   ├── Test thoroughly
+   └── Deploy to production
+```
+
+---
+
+## 11. COST ARCHITECTURE
+
+### 11.1 Cost Breakdown by Phase
+
+**Phase 1: 0-100 Weddings**
+```
+Infrastructure:
+├── Vercel (Hobby): $0
+├── Supabase (Free): $0
+├── Cloudinary (Free): $0
+├── Domain: $12/year
+└── Total: $12/year ($1/month)
+
+Per Wedding Revenue: ₹84,999
+Break-even: 1 wedding
+```
+
+**Phase 2: 100-1,000 Weddings**
+```
+Infrastructure:
+├── Vercel (Pro): $20/month
+├── Supabase (Pro): $25/month
+├── Cloudinary (Plus): $99/month
+├── Redis (Upstash): $10/month
+├── Resend (Pro): $20/month
+├── Sentry (Team): $26/month
+└── Total: $200/month
+
+Annual Revenue: ₹8.5 Crore
+Annual Cost: $2,400 (₹2 Lakh)
+Profit Margin: 97.6%
+```
+
+**Phase 3: 1,000-10,000 Weddings**
+```
+Infrastructure:
+├── Vercel (Enterprise): $500/month
+├── Supabase (Team): $599/month
+├── Cloudinary (Advanced): $299/month
+├── Redis (Standard): $50/month
+├── Resend (Business): $100/month
+├── Twilio: $200/month
+├── Sentry (Business): $99/month
+├── Mixpanel (Growth): $100/month
+└── Total: $1,947/month
+
+Annual Revenue: ₹85 Crore
+Annual Cost: $23,364 (₹19.5 Lakh)
+Profit Margin: 97.7%
+```
+
+### 11.2 Cost Optimization Strategies
+
+```
+1. Media Storage Optimization
+   ├── Auto-delete free user media after 7 days
+   ├── Compress images (webp, quality 80%)
+   ├── Video transcoding (max 1080p)
+   └── Savings: 60% storage costs
+
+2. Database Optimization
+   ├── Archive old weddings (>1 year) to cold storage
+   ├── Use materialized views for heavy queries
+   ├── Connection pooling (reduce connections by 70%)
+   └── Savings: 40% database costs
+
+3. CDN Optimization
+   ├── Aggressive caching (30-day TTL)
+   ├── Image transformations at edge
+   ├── Lazy loading for images
+   └── Savings: 50% bandwidth costs
+
+4. API Optimization
+   ├── Rate limiting (prevent abuse)
+   ├── Query batching (reduce API calls)
+   ├── GraphQL over REST (fetch only needed data)
+   └── Savings: 30% API costs
+```
+
+---
+
+## 12. DISASTER RECOVERY
+
+### 12.1 Backup Strategy
+
+```
+Data Backup:
+├── Database: Point-in-time recovery (2-minute intervals)
+├── Media: Replicated across 3 regions
+├── Configs: Version controlled in Git
+└── User data: Encrypted backups daily
+
+Recovery Procedures:
+├── Database restore: < 30 minutes
+├── Media restore: < 1 hour
+├── Full system restore: < 2 hours
+└── Tested quarterly
+```
+
+### 12.2 High Availability
+
+```
+Uptime Targets:
+├── API: 99.9% (< 9 hours downtime/year)
+├── Database: 99.95% (< 4 hours downtime/year)
+├── Storage: 99.99% (< 1 hour downtime/year)
+└── Overall: 99.9% SLA
+
+Redundancy:
+├── Multi-region deployment
+├── Database read replicas (3x)
+├── CDN with 200+ edge locations
+└── Automatic failover (< 1 minute)
+```
+
+---
+
+## 13. TECHNOLOGY DECISIONS RATIONALE
+
+### 13.1 Why React + TypeScript?
+
+**Pros:**
+✅ Large ecosystem (npm packages)
+✅ Component reusability
+✅ Type safety (catch bugs early)
+✅ Hot module replacement (fast dev)
+✅ Excellent mobile support (React Native later)
+✅ Strong community & hiring pool
+
+**Cons:**
+❌ Bundle size (mitigated with code splitting)
+❌ SEO challenges (solved with SSR/SSG)
+
+### 13.2 Why Supabase?
+
+**Pros:**
+✅ PostgreSQL (battle-tested, reliable)
+✅ Real-time built-in (no custom WebSocket)
+✅ Auth included (saves 2 weeks dev time)
+✅ Row Level Security (secure by default)
+✅ Auto-generated APIs (REST & GraphQL)
+✅ Cost-effective ($0 to start)
+
+**Cons:**
+❌ Vendor lock-in (mitigated: self-hostable)
+❌ Limited customization (acceptable for MVP)
+
+### 13.3 Why Lovable.dev?
+
+**Pros:**
+✅ 10x faster development
+✅ AI-powered code generation
+✅ Built-in best practices
+✅ Automatic TypeScript types
+✅ Integrated with Supabase
+✅ Perfect for MVPs
+
+**Cons:**
+❌ Limited to supported tech stack (acceptable)
+❌ Requires refinement with Claude Code (planned)
+
+### 13.4 Why Cloudinary?
+
+**Pros:**
+✅ Automatic image optimization
+✅ CDN included
+✅ Video transcoding
+✅ Easy transformations
+✅ Free tier generous (25GB)
+✅ Used by Netflix, Airbnb
+
+**Cons:**
+❌ Cost at scale (mitigated: delete old media)
+
+---
+
+## 14. FUTURE ARCHITECTURE CONSIDERATIONS
+
+### 14.1 Mobile App Strategy
+
+```
+Phase 1: PWA (Progressive Web App)
+├── Install prompt on mobile
+├── Offline support
+├── Push notifications
+└── 80% native feel
+
+Phase 2: React Native App
+├── iOS + Android
+├── Code sharing with web (90%)
+├── Native features (camera, contacts)
+└── App Store distribution
+
+Benefits:
+✅ Single codebase
+✅ Faster development
+✅ Shared components
+```
+
+### 14.2 Internationalization (i18n)
+
+```
+Languages (Priority):
+1. English (India) - Primary
+2. Hindi - Phase 2
+3. Tamil - Phase 3
+4. Telugu - Phase 3
+5. Bengali - Phase 3
+
+Implementation:
+├── react-i18next library
+├── JSON translation files
+├── Currency formatting (₹ vs $)
+├── Date formatting (DD/MM/YYYY vs MM/DD/YYYY)
+└── RTL support (future: Arabic)
+```
+
+### 14.3 AI/ML Features (Future)
+
+```
+Potential AI Features:
+
+1. Smart Guest List Suggestions
+   ├── Analyze past weddings
+   ├── Suggest similar guest counts
+   └── Predict no-shows
+
+2. Vendor Recommendations
+   ├── ML-based matching
+   ├── Price prediction
+   └── Quality scoring
+
+3. Photo Auto-Tagging
+   ├── Face recognition
+   ├── Auto-organize by person
+   └── Privacy-compliant
+
+4. Chatbot Assistant
+   ├── Answer wedding FAQs
+   ├── Help with planning
+   └── 24/7 support
+```
+
+---
+
+## 15. COMPLIANCE & LEGAL
+
+### 15.1 Data Privacy
+
+```
+GDPR Compliance (if expanding to EU):
+├── User consent management
+├── Right to access data
+├── Right to deletion
+├── Data portability
+└── Privacy policy
+
+Indian IT Act 2000:
+├── Data protection
+├── Secure storage
+├── User consent
+└── Terms of service
+```
+
+### 15.2 Payment Compliance
+
+```
+PCI DSS Compliance:
+├── No card data stored (Razorpay handles)
+├── Tokenization only
+├── HTTPS enforced
+└── Regular security audits
+
+RBI Guidelines:
+├── Two-factor authentication
+├── Transaction limits
+├── Fraud detection
+└── Refund policies
+```
+
+---
+
+## CONCLUSION
+
+This architecture is designed to:
+
+✅ **Scale** from 0 to 100,000+ users
+✅ **Cost-effective** with 97%+ profit margins
+✅ **Secure** with multiple layers of protection
+✅ **Fast** with multi-layer caching
+✅ **Reliable** with 99.9% uptime
+✅ **Maintainable** with clean code structure
+✅ **Future-proof** with modular design
+
+**Next Steps:**
+1. Implement Phase 1 using this architecture
+2. Monitor performance metrics
+3. Optimize based on real user data
+4. Scale infrastructure as needed
+5. Add AI features in Phase 4+
+
+This architecture supports the ambitious goal of becoming India's #1 relationship platform! 🚀
+

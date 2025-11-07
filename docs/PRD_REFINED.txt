@@ -1,0 +1,633 @@
+# EMOWED - REFINED PRODUCT REQUIREMENTS DOCUMENT (PRD)
+
+## 🎯 REVISED BUSINESS MODEL (Realistic & Organic Growth)
+
+**Last Updated:** November 4, 2025
+**Version:** 2.0 (Refined for organic growth)
+
+---
+
+## 💡 KEY INSIGHTS FROM FOUNDER
+
+1. **Vendors need value BEFORE they pay**
+   - Can't charge vendors from day 1
+   - They'll pay once they see real bookings coming through
+   - Ease of use is critical for vendor adoption
+
+2. **Couples should be the primary revenue source**
+   - More predictable than vendor commissions
+   - Can charge upfront for premium features
+   - Easier to convert (direct value)
+
+3. **Price estimates were too high**
+   - Need more realistic projections
+   - Focus on volume, not high ticket prices
+   - Freemium to premium conversion is key
+
+4. **Organic growth is essential**
+   - Word of mouth from happy couples
+   - Vendors join when they see weddings happening
+   - Build marketplace liquidity slowly
+
+---
+
+## 🔄 REVISED MONETIZATION STRATEGY
+
+### PHASE 1: FREE FOR ALL (Months 1-6)
+**Goal:** Build user base and prove value
+
+**For Couples:**
+- ✅ FREE: Complete wedding planning
+- ✅ FREE: Unlimited guests
+- ✅ FREE: RSVP management
+- ✅ FREE: Basic vendor connections
+- ✅ FREE: Event timeline
+- ✅ FREE: Photo gallery (30 days storage)
+- ❌ PAID: Extended storage (>30 days)
+- ❌ PAID: Premium features (custom cards, analytics)
+
+**For Vendors:**
+- ✅ FREE: Profile creation
+- ✅ FREE: Quote submissions
+- ✅ FREE: Unlimited bookings
+- ✅ FREE: Payment through app
+- ❌ PAID: Featured listing (after proven success)
+
+**For Guests:**
+- ✅ FREE: Everything (RSVP, photos, games)
+
+**Revenue:** ₹0 (Investment phase)
+**Focus:** Get to 100 weddings, 1000+ guests
+
+---
+
+### PHASE 2: COUPLES PAY FIRST (Months 7-12)
+**Goal:** Start revenue from engaged couples
+
+**Freemium Model for Couples:**
+
+**FREE Tier (Basic Wedding):**
+- Create 1 wedding
+- Up to 100 guests
+- 3 events max
+- Basic RSVP
+- Photo gallery (30-day storage)
+- No vendor quotes
+- Basic wedding card
+
+**PREMIUM Tier: ₹999/wedding (One-time)**
+- Unlimited guests
+- Unlimited events
+- Vendor quote management (up to 5 vendors per category)
+- Family voting on vendors
+- Photo gallery (permanent storage)
+- Custom wedding card
+- Bulk photo download
+- Analytics dashboard
+- Priority support
+
+**PLUS Tier: ₹2,499/wedding (One-time)**
+- Everything in Premium
+- Unlimited vendor quotes
+- Advanced analytics
+- Video streaming support
+- Custom branding
+- Dedicated account manager
+- Post-wedding video compilation
+
+**Conversion Hook:**
+- Start free, upgrade when hitting limits
+- "You have 95/100 guests. Upgrade for unlimited?"
+- "Want to invite more vendors? Upgrade to Premium"
+- "Keep your photos forever? Upgrade now"
+
+**Vendors Still FREE**
+- No charges yet
+- Building vendor database
+- Proving value first
+
+**Expected Revenue:**
+- 50 weddings/month
+- 30% conversion to Premium = 15 × ₹999 = ₹14,985
+- 10% conversion to Plus = 5 × ₹2,499 = ₹12,495
+- **Monthly: ₹27,480**
+- **Yearly: ₹3,29,760**
+
+---
+
+### PHASE 3: VENDOR FREEMIUM (Months 13-18)
+**Goal:** Start monetizing vendors after proving value
+
+**FREE Tier for Vendors:**
+- Profile creation
+- Up to 10 quote submissions/month
+- Basic listing in marketplace
+- Customer reviews
+- Payment processing (no fee)
+
+**PRO Tier: ₹499/month**
+- Unlimited quotes
+- Priority listing (top 3 in category)
+- Verified badge
+- Advanced analytics
+- Lead notifications
+- Profile customization
+- 24/7 support
+
+**PREMIUM Tier: ₹999/month**
+- Everything in Pro
+- Featured on homepage
+- Sponsored placement
+- Premium badge
+- Video portfolio
+- SEO optimization
+- Dedicated account manager
+
+**Commission Model (Alternative to Subscription):**
+- Vendor can choose: Monthly subscription OR commission
+- Commission: 2% on bookings through app
+- Min ₹100, Max ₹2,000 per booking
+- Only charged AFTER wedding is completed
+
+**Expected Revenue:**
+- 200 vendors in system
+- 20% convert to Pro = 40 × ₹499 = ₹19,960
+- 5% convert to Premium = 10 × ₹999 = ₹9,990
+- Commission: 30 bookings × ₹500 avg = ₹15,000
+- **Monthly: ₹44,950**
+- **Yearly: ₹5,39,400**
+
+---
+
+### PHASE 4: GUESTS UPGRADE (Months 19-24)
+**Goal:** Convert guests for extended storage
+
+**FREE for Guests:**
+- RSVP to weddings
+- Upload photos (100 photos max)
+- Play games
+- View wedding details
+- 30-day storage after wedding
+
+**GUEST PREMIUM: ₹199 (One-time per wedding)**
+- Unlimited photo uploads
+- Permanent storage
+- Bulk download
+- HD video uploads (up to 10)
+- No ads
+- Special badge
+
+**Conversion Hook:**
+- Day 20 after wedding: "10 days left to download"
+- Day 25: "5 days left! Upgrade to keep forever"
+- Day 28: "2 days left! Don't lose memories"
+- Day 30: Delete photos, show upgrade prompt
+
+**Expected Revenue:**
+- Average 150 guests/wedding
+- 50 weddings/month = 7,500 guests
+- 5% conversion = 375 × ₹199 = ₹74,625
+- **Monthly: ₹74,625**
+- **Yearly: ₹8,95,500**
+
+---
+
+### PHASE 5: MATCHMAKING PREMIUM (Months 25-36)
+**Goal:** Launch dating/matchmaking features
+
+**FREE Matchmaking:**
+- Create profile
+- See 10 profiles/day
+- Send 5 likes/day
+- Match with 3 people/month
+- Text chat only
+
+**MATCHMAKING PREMIUM: ₹499/month**
+- Unlimited profile views
+- Unlimited likes
+- Unlimited matches
+- Video call feature
+- See who liked you
+- Advanced filters
+- Read receipts
+- Priority in matching
+
+**Expected Revenue:**
+- 5,000 singles using matchmaking
+- 10% convert = 500 × ₹499 = ₹2,49,500
+- **Monthly: ₹2,49,500**
+- **Yearly: ₹29,94,000**
+
+---
+
+## 📊 REVISED REVENUE PROJECTIONS (REALISTIC)
+
+### Year 1 (Months 1-12)
+```
+Q1 (Months 1-3): FREE FOR ALL
+- Revenue: ₹0
+- Users: 500
+- Weddings: 20
+- Vendors: 50
+- Cost: ₹50,000 (hosting, domain)
+- Net: -₹50,000
+
+Q2 (Months 4-6): FREE FOR ALL
+- Revenue: ₹0
+- Users: 2,000
+- Weddings: 60
+- Vendors: 150
+- Cost: ₹75,000
+- Net: -₹75,000
+
+Q3 (Months 7-9): COUPLES START PAYING
+- Revenue: ₹82,440 (3 months × ₹27,480)
+- Users: 5,000
+- Weddings: 150
+- Vendors: 300 (still free)
+- Cost: ₹1,50,000
+- Net: -₹67,560
+
+Q4 (Months 10-12): COUPLES PAYING
+- Revenue: ₹82,440
+- Users: 10,000
+- Weddings: 300
+- Vendors: 500 (still free)
+- Cost: ₹2,00,000
+- Net: -₹1,17,560
+
+Year 1 Total:
+Revenue: ₹1,64,880
+Costs: ₹4,75,000
+Net Loss: -₹3,10,120 (Expected - Investment phase)
+```
+
+### Year 2 (Months 13-24)
+```
+Q1 (Months 13-15): VENDORS START PAYING
+- Couple Revenue: ₹82,440
+- Vendor Revenue: ₹1,34,850
+- Total: ₹2,17,290
+- Cost: ₹3,00,000
+- Net: -₹82,710
+
+Q2 (Months 16-18): VENDORS PAYING
+- Couple Revenue: ₹82,440
+- Vendor Revenue: ₹1,34,850
+- Total: ₹2,17,290
+- Cost: ₹3,50,000
+- Net: -₹1,32,710
+
+Q3 (Months 19-21): GUESTS START PAYING
+- Couple Revenue: ₹82,440
+- Vendor Revenue: ₹1,34,850
+- Guest Revenue: ₹2,23,875
+- Total: ₹4,41,165
+- Cost: ₹4,00,000
+- Net: ₹41,165 (First Profit!)
+
+Q4 (Months 22-24): ALL TIERS ACTIVE
+- Couple Revenue: ₹82,440
+- Vendor Revenue: ₹1,34,850
+- Guest Revenue: ₹2,23,875
+- Total: ₹4,41,165
+- Cost: ₹4,50,000
+- Net: -₹8,835
+
+Year 2 Total:
+Revenue: ₹13,16,910
+Costs: ₹15,00,000
+Net Loss: -₹1,83,090 (Close to break-even!)
+```
+
+### Year 3 (Months 25-36)
+```
+Q1-Q4: ALL FEATURES + MATCHMAKING
+- Couple Revenue: ₹3,29,760
+- Vendor Revenue: ₹5,39,400
+- Guest Revenue: ₹8,95,500
+- Matchmaking Revenue: ₹29,94,000
+- Total: ₹47,58,660
+- Cost: ₹20,00,000
+- Net Profit: ₹27,58,660
+
+Year 3 Total:
+Revenue: ₹47,58,660
+Costs: ₹20,00,000
+Net Profit: ₹27,58,660 (PROFITABLE!)
+```
+
+### 5-Year Projection
+```
+Year 1: -₹3,10,120 (Investment)
+Year 2: -₹1,83,090 (Near break-even)
+Year 3: ₹27,58,660 (Profitable)
+Year 4: ₹1,50,00,000 (Scale)
+Year 5: ₹5,00,00,000 (Market leader)
+```
+
+---
+
+## 💎 VALUE PROPOSITION (WHY VENDORS WILL PAY)
+
+### For Vendors (After Free Period)
+
+**Problems We Solve:**
+1. **Lead Generation** - Get qualified leads automatically
+2. **Trust Building** - Verified reviews from real couples
+3. **Easy Booking** - No back-and-forth, all in one place
+4. **Payment Security** - Escrow system, guaranteed payment
+5. **Portfolio Showcase** - Beautiful gallery of work
+6. **Repeat Business** - Couples recommend you to friends
+
+**Value Metrics:**
+- Average vendor gets 5-10 bookings/year through app
+- Average booking value: ₹50,000
+- Total business through app: ₹2,50,000 - ₹5,00,000/year
+- Subscription cost: ₹5,988 - ₹11,988/year
+- ROI: 20-80x return on investment
+
+**When Vendors Will Pay:**
+- After they get their first 2-3 bookings (proof of value)
+- When they see competitors getting more leads
+- When they want to rank higher in search
+- When they need more quotes/month
+
+---
+
+## 💎 VALUE PROPOSITION (WHY COUPLES WILL PAY)
+
+### For Couples
+
+**FREE Limitations:**
+- Only 100 guests (most Indian weddings have 200-500)
+- Only 3 events (need 7: engagement, haldi, mehendi, etc.)
+- No vendor comparison (have to manage outside app)
+- Photos deleted after 30 days (lose memories)
+- Basic wedding card (no customization)
+
+**PREMIUM Benefits:**
+- Unlimited guests (invite whole family)
+- Unlimited events (full wedding timeline)
+- Vendor voting (family helps decide)
+- Photos forever (never lose memories)
+- Custom card (beautiful, personalized)
+- Analytics (track RSVPs, headcount)
+- Support (help when needed)
+
+**Value Calculation:**
+- Traditional wedding planner: ₹15,000 - ₹50,000
+- Photo storage service: ₹500/year
+- Wedding website: ₹2,000 - ₹5,000
+- RSVP management: ₹1,000
+- **Total traditional cost: ₹18,500 - ₹56,000**
+- **Emowed Premium: ₹999 (95% savings!)**
+
+**When Couples Will Pay:**
+- When they hit 100 guest limit (happens in first week)
+- When they want to add more events
+- When they get first vendor quote (need comparison feature)
+- When wedding is over and they want to keep photos
+
+---
+
+## 🎯 REVISED SUCCESS METRICS
+
+### Year 1 Goals
+- ✅ 10,000 registered users
+- ✅ 300 weddings created
+- ✅ 500 vendors on platform
+- ✅ 30,000 guests using app
+- ✅ 30% couple conversion to Premium
+- ✅ ₹1,64,880 revenue (investment phase)
+
+### Year 2 Goals
+- ✅ 50,000 registered users
+- ✅ 2,000 weddings created
+- ✅ 2,000 vendors on platform
+- ✅ 2,00,000 guests using app
+- ✅ 20% vendor conversion to Pro
+- ✅ 5% guest conversion to Premium
+- ✅ Break-even (₹13,16,910 revenue)
+
+### Year 3 Goals
+- ✅ 2,00,000 registered users
+- ✅ 10,000 weddings created
+- ✅ 5,000 vendors on platform
+- ✅ 10,00,000 guests using app
+- ✅ 5,000 matchmaking users (premium)
+- ✅ ₹47,58,660 profit
+
+---
+
+## 🚀 GO-TO-MARKET STRATEGY (REVISED)
+
+### Phase 1: FREE LAUNCH (Months 1-6)
+
+**Target:** Get first 100 weddings
+
+**Strategy:**
+1. **Launch for free** - No payments at all
+2. **Focus on Delhi/Mumbai** - High wedding density
+3. **Direct outreach** - Contact engaged couples on Facebook/Instagram
+4. **Referral program** - "Refer 3 friends, get premium free for life"
+5. **Wedding planner partnerships** - They get commission, we get users
+6. **Content marketing** - "How to plan wedding in 2025" blogs
+
+**Budget:** ₹1,50,000
+- ₹50,000 - Hosting & infrastructure
+- ₹50,000 - Social media ads
+- ₹50,000 - Referral incentives
+
+**Expected Result:**
+- 100 weddings created
+- 500 vendors onboarded
+- 10,000 guests using app
+- Proof of concept validated
+
+---
+
+### Phase 2: COUPLE MONETIZATION (Months 7-12)
+
+**Target:** Convert 30% of couples to Premium
+
+**Strategy:**
+1. **Limit free tier** - 100 guests, 3 events
+2. **Smart upgrade prompts** - "You have 95/100 guests. Upgrade?"
+3. **Wedding season push** - Oct-Mar special pricing
+4. **Success stories** - Show happy couples
+5. **Photo deletion threat** - "30 days left, upgrade to keep"
+
+**Pricing Test:**
+- A/B test: ₹999 vs ₹1,499 vs ₹2,499
+- Monitor conversion rates
+- Optimize pricing based on data
+
+**Expected Result:**
+- 300 weddings (50/month × 6 months)
+- 30% premium = 90 couples
+- Revenue: ₹89,910 (if ₹999 price point works)
+
+---
+
+### Phase 3: VENDOR MONETIZATION (Months 13-18)
+
+**Target:** Convert 20% of vendors to Pro
+
+**Strategy:**
+1. **Prove value first** - Show them real bookings
+2. **ROI calculator** - "You'll make ₹2,50,000/year, pay only ₹5,988"
+3. **Featured vendor program** - Top 10 in each category
+4. **Case studies** - "Vendor X got 15 bookings"
+5. **Competitor pressure** - "Other vendors are Pro, you're not visible"
+
+**Pricing:**
+- Start with ₹499/month (low barrier)
+- Commission alternative: 2% per booking
+- Let vendors choose
+
+**Expected Result:**
+- 1,000 vendors total
+- 20% convert = 200 vendors
+- Revenue: ₹99,800/month
+
+---
+
+### Phase 4: GUEST MONETIZATION (Months 19-24)
+
+**Target:** Convert 5% of guests to Premium
+
+**Strategy:**
+1. **30-day deletion** - Clear warning emails
+2. **Photo albums** - "347 photos will be deleted"
+3. **Emotional hook** - "Don't lose these memories"
+4. **Limited time** - "24 hours left to save"
+5. **Social proof** - "1,234 guests upgraded"
+
+**Expected Result:**
+- 7,500 guests/month
+- 5% convert = 375 guests
+- Revenue: ₹74,625/month
+
+---
+
+## 💰 REVISED PRICING (FINAL)
+
+### COUPLES
+
+**FREE:**
+- 1 wedding
+- 100 guests
+- 3 events
+- Basic RSVP
+- 30-day photo storage
+
+**PREMIUM (₹999):** ⭐ RECOMMENDED
+- Unlimited guests
+- Unlimited events
+- Vendor quotes (5/category)
+- Family voting
+- Permanent photos
+- Custom card
+- Analytics
+
+**PLUS (₹2,499):**
+- Everything Premium
+- Unlimited vendor quotes
+- Video streaming
+- Advanced analytics
+- Custom branding
+- Dedicated support
+
+---
+
+### VENDORS
+
+**FREE:**
+- Profile creation
+- 10 quotes/month
+- Basic listing
+- Reviews
+- 0% commission
+
+**PRO (₹499/month):**
+- Unlimited quotes
+- Priority listing
+- Verified badge
+- Analytics
+- Lead notifications
+
+**PREMIUM (₹999/month):**
+- Featured placement
+- Homepage visibility
+- Video portfolio
+- SEO optimization
+- Dedicated support
+
+**COMMISSION ALTERNATIVE:**
+- 2% per booking
+- Min ₹100, Max ₹2,000
+- Only after wedding completion
+
+---
+
+### GUESTS
+
+**FREE:**
+- RSVP
+- 100 photos
+- Games
+- 30-day storage
+
+**PREMIUM (₹199):**
+- Unlimited photos
+- Permanent storage
+- HD videos
+- Bulk download
+- No ads
+
+---
+
+### MATCHMAKING (Future)
+
+**FREE:**
+- 10 profiles/day
+- 5 likes/day
+- 3 matches/month
+- Text chat
+
+**PREMIUM (₹499/month):**
+- Unlimited everything
+- Video calls
+- See who liked you
+- Advanced filters
+- Priority matching
+
+---
+
+## 🎯 CONCLUSION
+
+**Why This Model Works:**
+
+1. **Free First** - Build user base without payment friction
+2. **Couples Pay Early** - They have most urgent need, highest willingness to pay
+3. **Vendors Pay Later** - After seeing ROI, easier conversion
+4. **Guests Pay Last** - Emotional hook (don't lose photos)
+5. **Realistic Pricing** - ₹999-₹2,499 is affordable, not ₹9,999
+6. **Organic Growth** - Word of mouth from happy couples
+7. **Scalable** - Each tier builds on previous
+
+**3-Year Path to Profitability:**
+- Year 1: Lose ₹3L (expected investment)
+- Year 2: Near break-even (₹13L revenue)
+- Year 3: Profit ₹27L+ (sustainable business)
+
+**From First Swipe to Forever! 💕**
+
+---
+
+*PRD Refined: November 4, 2025*
+*Version: 2.0*
+*Status: Ready for implementation*
+*Next: Build MVP with FREE model, monetize in Month 7*
+

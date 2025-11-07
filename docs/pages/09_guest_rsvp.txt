@@ -1,0 +1,62 @@
+# PAGE 09: GUEST RSVP MANAGEMENT
+
+## 📄 PAGE DETAILS
+
+**URL:** `/wedding/{weddingId}/rsvp`  
+**Access Level:** Authenticated (Couple + Guests)  
+**Purpose:** RSVP tracking and headcount management  
+**Priority:** HIGH - Required for MVP  
+
+---
+
+## 🎯 PAGE GOAL
+
+Track RSVPs and calculate accurate headcount for vendors.
+
+---
+
+## 📐 LAYOUT
+
+```
+┌───────────────────────────────────────────────┐
+│  RSVP Management - Wedding Ceremony           │
+├───────────────────────────────────────────────┤
+│                                               │
+│  Event: Dec 15, 2025 | Status: 🟢 Open       │
+│  Closes in: 6 days 14 hours                   │
+│                                               │
+│  Summary Cards:                               │
+│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐        │
+│  │ 165  │ │  22  │ │  5   │ │188.2 │        │
+│  │Attend│ │Pending│ │Decline│ │Meals │       │
+│  └──────┘ └──────┘ └──────┘ └──────┘        │
+│                                               │
+├───────────────────────────────────────────────┤
+│                                               │
+│  Detailed Breakdown:                          │
+│  Groom Side: 98.9 meals                       │
+│  • Adults: 85 (85.0)                          │
+│  • Teens: 12 (9.0)                            │
+│  • Children: 8 (2.4)                          │
+│                                               │
+│  Bride Side: 89.3 meals                       │
+│  • Adults: 78 (78.0)                          │
+│  • Teens: 10 (7.5)                            │
+│  • Children: 6 (1.8)                          │
+│                                               │
+│  Dietary Preferences:                         │
+│  🥗 Vegetarian: 45  🥦 Vegan: 12              │
+│  🍖 Halal: 130  🌾 Gluten-free: 8            │
+│                                               │
+│  [Download Report] [Share with Vendors]       │
+│                                               │
+└───────────────────────────────────────────────┘
+```
+
+---
+
+*Full spec continues with RSVP form, calculations, locking mechanism...*
+
+**Status:** Ready for implementation  
+**Est. Time:** 12 hours
+

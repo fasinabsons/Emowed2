@@ -1,0 +1,1990 @@
+# PHASE 5: Games, Leaderboards & Gifts
+
+## OVERVIEW
+
+**Goal:** Interactive games, competitive leaderboards, digital gifting, engagement mechanics
+
+**Timeline:** Weeks 13-15
+
+**Prerequisites:** Phase 4 complete (media gallery functional)
+
+---
+
+## DATABASE SCHEMA
+
+### game_types table
+```sql
+CREATE TABLE game_types (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  game_code TEXT UNIQUE NOT NULL,
+  game_name TEXT NOT NULL,
+  game_category TEXT CHECK (game_category IN ('quiz', 'prediction', 'photo_challenge', 'trivia', 'voting', 'custom')),
+  description TEXT,
+  rules TEXT,
+  min_players INTEGER DEFAULT 1,
+  max_players INTEGER,
+  duration_minutes INTEGER,
+  is_team_based BOOLEAN DEFAULT FALSE,
+  scoring_method TEXT CHECK (scoring_method IN ('points', 'time', 'accuracy', 'votes')),
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_game_types_category ON game_types(game_category);
+CREATE INDEX idx_game_types_active ON game_types(is_active);
+```
+
+### wedding_games table
+```sql
+CREATE TABLE wedding_games (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  game_type_id UUID REFERENCES game_types(id),
+  game_title TEXT NOT NULL,
+  game_description TEXT,
+  is_enabled BOOLEAN DEFAULT TRUE,
+  is_team_based BOOLEAN DEFAULT FALSE,
+  groom_side_only BOOLEAN DEFAULT FALSE,
+  bride_side_only BOOLEAN DEFAULT FALSE,
+  both_sides_compete BOOLEAN DEFAULT TRUE,
+  start_time TIMESTAMP,
+  end_time TIMESTAMP,
+  status TEXT DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'active', 'completed', 'cancelled')),
+  total_participants INTEGER DEFAULT 0,
+  total_plays INTEGER DEFAULT 0,
+  winner_announced BOOLEAN DEFAULT FALSE,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_wedding_games_wedding ON wedding_games(wedding_id);
+CREATE INDEX idx_wedding_games_status ON wedding_games(status);
+CREATE INDEX idx_wedding_games_type ON wedding_games(game_type_id);
+```
+
+### game_questions table
+```sql
+CREATE TABLE game_questions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_game_id UUID REFERENCES wedding_games(id) ON DELETE CASCADE,
+  question_order INTEGER NOT NULL,
+  question_text TEXT NOT NULL,
+  question_type TEXT CHECK (question_type IN ('multiple_choice', 'true_false', 'open_ended', 'number', 'date')),
+  options JSONB,
+  correct_answer TEXT,
+  points INTEGER DEFAULT 10,
+  time_limit_seconds INTEGER,
+  hint TEXT,
+  explanation TEXT,
+  difficulty TEXT CHECK (difficulty IN ('easy', 'medium', 'hard')),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_game_questions_game ON game_questions(wedding_game_id);
+CREATE INDEX idx_game_questions_order ON game_questions(question_order);
+```
+
+### game_participants table
+```sql
+CREATE TABLE game_participants (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_game_id UUID REFERENCES wedding_games(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  guest_id UUID REFERENCES guests(id),
+  participant_name TEXT NOT NULL,
+  side TEXT CHECK (side IN ('groom', 'bride', 'neutral')),
+  team_name TEXT,
+  total_score INTEGER DEFAULT 0,
+  games_played INTEGER DEFAULT 0,
+  games_won INTEGER DEFAULT 0,
+  rank INTEGER,
+  joined_at TIMESTAMP DEFAULT NOW(),
+  last_played_at TIMESTAMP,
+  UNIQUE(wedding_game_id, user_id)
+);
+
+CREATE INDEX idx_game_participants_game ON game_participants(wedding_game_id);
+CREATE INDEX idx_game_participants_user ON game_participants(user_id);
+CREATE INDEX idx_game_participants_score ON game_participants(total_score DESC);
+```
+
+### game_responses table
+```sql
+CREATE TABLE game_responses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_game_id UUID REFERENCES wedding_games(id) ON DELETE CASCADE,
+  game_question_id UUID REFERENCES game_questions(id) ON DELETE CASCADE,
+  participant_id UUID REFERENCES game_participants(id) ON DELETE CASCADE,
+  response_text TEXT,
+  is_correct BOOLEAN,
+  points_earned INTEGER DEFAULT 0,
+  time_taken_seconds INTEGER,
+  response_time TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_game_responses_game ON game_responses(wedding_game_id);
+CREATE INDEX idx_game_responses_question ON game_responses(game_question_id);
+CREATE INDEX idx_game_responses_participant ON game_responses(participant_id);
+```
+
+### leaderboard_categories table
+```sql
+CREATE TABLE leaderboard_categories (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_code TEXT UNIQUE NOT NULL,
+  category_name TEXT NOT NULL,
+  category_type TEXT CHECK (category_type IN ('singles_personal', 'singles_career', 'couples', 'game', 'wedding_specific')),
+  description TEXT,
+  icon TEXT,
+  scoring_criteria JSONB,
+  is_active BOOLEAN DEFAULT TRUE,
+  display_order INTEGER,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_leaderboard_categories_type ON leaderboard_categories(category_type);
+```
+
+### singles_leaderboard table
+```sql
+CREATE TABLE singles_leaderboard (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  category_id UUID REFERENCES leaderboard_categories(id),
+  category_type TEXT CHECK (category_type IN ('personal', 'career')),
+  overall_score INTEGER DEFAULT 0,
+  personal_growth_score INTEGER DEFAULT 0,
+  career_achievement_score INTEGER DEFAULT 0,
+  fitness_score INTEGER DEFAULT 0,
+  social_engagement_score INTEGER DEFAULT 0,
+  skills_score INTEGER DEFAULT 0,
+  achievements JSONB,
+  badges TEXT[],
+  rank_overall INTEGER,
+  rank_personal INTEGER,
+  rank_career INTEGER,
+  last_updated TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+CREATE INDEX idx_singles_leaderboard_user ON singles_leaderboard(user_id);
+CREATE INDEX idx_singles_leaderboard_overall ON singles_leaderboard(overall_score DESC);
+CREATE INDEX idx_singles_leaderboard_personal ON singles_leaderboard(personal_growth_score DESC);
+CREATE INDEX idx_singles_leaderboard_career ON singles_leaderboard(career_achievement_score DESC);
+```
+
+### singles_activities table
+```sql
+CREATE TABLE singles_activities (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  activity_type TEXT CHECK (activity_type IN (
+    'fitness_goal', 'skill_learned', 'book_read', 'course_completed', 
+    'certification', 'project_completed', 'volunteer_work', 'travel'
+  )),
+  activity_title TEXT NOT NULL,
+  activity_description TEXT,
+  proof_url TEXT,
+  points_earned INTEGER DEFAULT 0,
+  category TEXT CHECK (category IN ('personal', 'career', 'both')),
+  verified BOOLEAN DEFAULT FALSE,
+  verified_by UUID REFERENCES users(id),
+  activity_date DATE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_singles_activities_user ON singles_activities(user_id);
+CREATE INDEX idx_singles_activities_type ON singles_activities(activity_type);
+CREATE INDEX idx_singles_activities_date ON singles_activities(activity_date);
+```
+
+### couples_leaderboard table
+```sql
+CREATE TABLE couples_leaderboard (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE,
+  overall_score INTEGER DEFAULT 0,
+  relationship_health_score INTEGER DEFAULT 0,
+  communication_score INTEGER DEFAULT 0,
+  shared_goals_score INTEGER DEFAULT 0,
+  quality_time_score INTEGER DEFAULT 0,
+  milestones_achieved INTEGER DEFAULT 0,
+  challenges_completed INTEGER DEFAULT 0,
+  diary_entries_count INTEGER DEFAULT 0,
+  date_nights_count INTEGER DEFAULT 0,
+  achievements JSONB,
+  badges TEXT[],
+  rank_overall INTEGER,
+  last_updated TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(couple_id)
+);
+
+CREATE INDEX idx_couples_leaderboard_couple ON couples_leaderboard(couple_id);
+CREATE INDEX idx_couples_leaderboard_overall ON couples_leaderboard(overall_score DESC);
+```
+
+### couples_milestones table
+```sql
+CREATE TABLE couples_milestones (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE,
+  milestone_type TEXT CHECK (milestone_type IN (
+    'first_date', 'engagement', 'wedding', 'first_anniversary',
+    'home_purchase', 'first_child', 'career_goal', 'travel_goal', 'custom'
+  )),
+  milestone_title TEXT NOT NULL,
+  milestone_description TEXT,
+  milestone_date DATE,
+  points_earned INTEGER DEFAULT 0,
+  photos TEXT[],
+  is_private BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_couples_milestones_couple ON couples_milestones(couple_id);
+CREATE INDEX idx_couples_milestones_date ON couples_milestones(milestone_date);
+```
+
+### wedding_side_competition table
+```sql
+CREATE TABLE wedding_side_competition (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  competition_name TEXT NOT NULL,
+  groom_side_score INTEGER DEFAULT 0,
+  bride_side_score INTEGER DEFAULT 0,
+  groom_side_participants INTEGER DEFAULT 0,
+  bride_side_participants INTEGER DEFAULT 0,
+  total_games INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  winner_side TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(wedding_id)
+);
+
+CREATE INDEX idx_wedding_competition_wedding ON wedding_side_competition(wedding_id);
+```
+
+### gift_categories table
+```sql
+CREATE TABLE gift_categories (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_name TEXT NOT NULL,
+  category_code TEXT UNIQUE NOT NULL,
+  description TEXT,
+  icon TEXT,
+  is_physical BOOLEAN DEFAULT FALSE,
+  is_digital BOOLEAN DEFAULT FALSE,
+  display_order INTEGER,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### gift_products table
+```sql
+CREATE TABLE gift_products (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_id UUID REFERENCES gift_categories(id),
+  product_name TEXT NOT NULL,
+  product_code TEXT UNIQUE NOT NULL,
+  description TEXT,
+  brand TEXT,
+  product_type TEXT CHECK (product_type IN ('physical', 'digital', 'gift_card', 'experience')),
+  base_price DECIMAL(10, 2) NOT NULL,
+  discounted_price DECIMAL(10, 2),
+  currency TEXT DEFAULT 'INR',
+  stock_quantity INTEGER,
+  is_unlimited BOOLEAN DEFAULT FALSE,
+  images TEXT[],
+  product_url TEXT,
+  vendor_name TEXT,
+  commission_rate DECIMAL(5, 2) DEFAULT 5.0,
+  delivery_days INTEGER,
+  is_active BOOLEAN DEFAULT TRUE,
+  featured BOOLEAN DEFAULT FALSE,
+  rating DECIMAL(3, 2) DEFAULT 0,
+  total_sales INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_gift_products_category ON gift_products(category_id);
+CREATE INDEX idx_gift_products_type ON gift_products(product_type);
+CREATE INDEX idx_gift_products_price ON gift_products(base_price);
+CREATE INDEX idx_gift_products_active ON gift_products(is_active);
+```
+
+### guest_gifts table
+```sql
+CREATE TABLE guest_gifts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  sender_name TEXT NOT NULL,
+  sender_email TEXT NOT NULL,
+  sender_phone TEXT,
+  gift_type TEXT CHECK (gift_type IN ('physical_product', 'digital_product', 'gift_card', 'cash', 'custom')),
+  product_id UUID REFERENCES gift_products(id),
+  gift_amount DECIMAL(10, 2),
+  currency TEXT DEFAULT 'INR',
+  gift_message TEXT,
+  delivery_address JSONB,
+  delivery_status TEXT DEFAULT 'pending' CHECK (delivery_status IN ('pending', 'processing', 'shipped', 'delivered', 'failed')),
+  payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'completed', 'failed', 'refunded')),
+  payment_method TEXT,
+  transaction_id TEXT,
+  commission_amount DECIMAL(10, 2),
+  gift_card_code TEXT,
+  gift_card_pin TEXT,
+  redeemed BOOLEAN DEFAULT FALSE,
+  redeemed_at TIMESTAMP,
+  thank_you_sent BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_guest_gifts_wedding ON guest_gifts(wedding_id);
+CREATE INDEX idx_guest_gifts_sender ON guest_gifts(sender_id);
+CREATE INDEX idx_guest_gifts_payment ON guest_gifts(payment_status);
+CREATE INDEX idx_guest_gifts_delivery ON guest_gifts(delivery_status);
+```
+
+### gift_wishlists table
+```sql
+CREATE TABLE gift_wishlists (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_id UUID REFERENCES weddings(id) ON DELETE CASCADE,
+  couple_id UUID REFERENCES couples(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES gift_products(id),
+  priority TEXT CHECK (priority IN ('high', 'medium', 'low')),
+  quantity_desired INTEGER DEFAULT 1,
+  quantity_received INTEGER DEFAULT 0,
+  notes TEXT,
+  is_public BOOLEAN DEFAULT TRUE,
+  added_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_gift_wishlists_wedding ON gift_wishlists(wedding_id);
+CREATE INDEX idx_gift_wishlists_couple ON gift_wishlists(couple_id);
+```
+
+### photo_challenge_submissions table
+```sql
+CREATE TABLE photo_challenge_submissions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wedding_game_id UUID REFERENCES wedding_games(id) ON DELETE CASCADE,
+  participant_id UUID REFERENCES game_participants(id) ON DELETE CASCADE,
+  photo_url TEXT NOT NULL,
+  caption TEXT,
+  votes_count INTEGER DEFAULT 0,
+  rank INTEGER,
+  is_winner BOOLEAN DEFAULT FALSE,
+  submitted_at TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_photo_submissions_game ON photo_challenge_submissions(wedding_game_id);
+CREATE INDEX idx_photo_submissions_votes ON photo_challenge_submissions(votes_count DESC);
+```
+
+### photo_challenge_votes table
+```sql
+CREATE TABLE photo_challenge_votes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  submission_id UUID REFERENCES photo_challenge_submissions(id) ON DELETE CASCADE,
+  voter_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(submission_id, voter_id)
+);
+```
+
+---
+
+## FUNCTIONS & TRIGGERS
+
+### Update participant score
+```sql
+CREATE OR REPLACE FUNCTION update_participant_score()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE game_participants
+  SET total_score = total_score + NEW.points_earned,
+      games_played = games_played + 1,
+      last_played_at = NOW()
+  WHERE id = NEW.participant_id;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_game_response
+AFTER INSERT ON game_responses
+FOR EACH ROW
+EXECUTE FUNCTION update_participant_score();
+```
+
+### Update side competition scores
+```sql
+CREATE OR REPLACE FUNCTION update_side_competition()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_wedding_id UUID;
+  v_side TEXT;
+  v_points INTEGER;
+BEGIN
+  SELECT wg.wedding_id, gp.side, SUM(gr.points_earned)
+  INTO v_wedding_id, v_side, v_points
+  FROM game_participants gp
+  JOIN wedding_games wg ON gp.wedding_game_id = wg.id
+  JOIN game_responses gr ON gr.participant_id = gp.id
+  WHERE gp.id = NEW.participant_id
+  GROUP BY wg.wedding_id, gp.side;
+
+  IF v_side = 'groom' THEN
+    UPDATE wedding_side_competition
+    SET groom_side_score = groom_side_score + NEW.points_earned
+    WHERE wedding_id = v_wedding_id;
+  ELSIF v_side = 'bride' THEN
+    UPDATE wedding_side_competition
+    SET bride_side_score = bride_side_score + NEW.points_earned
+    WHERE wedding_id = v_wedding_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_game_score_update
+AFTER INSERT ON game_responses
+FOR EACH ROW
+EXECUTE FUNCTION update_side_competition();
+```
+
+### Calculate leaderboard ranks
+```sql
+CREATE OR REPLACE FUNCTION calculate_singles_ranks()
+RETURNS VOID AS $$
+BEGIN
+  WITH ranked_users AS (
+    SELECT 
+      id,
+      ROW_NUMBER() OVER (ORDER BY overall_score DESC) as overall_rank,
+      ROW_NUMBER() OVER (ORDER BY personal_growth_score DESC) as personal_rank,
+      ROW_NUMBER() OVER (ORDER BY career_achievement_score DESC) as career_rank
+    FROM singles_leaderboard
+  )
+  UPDATE singles_leaderboard sl
+  SET 
+    rank_overall = ru.overall_rank,
+    rank_personal = ru.personal_rank,
+    rank_career = ru.career_rank
+  FROM ranked_users ru
+  WHERE sl.id = ru.id;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Update singles score on activity
+```sql
+CREATE OR REPLACE FUNCTION update_singles_score_on_activity()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.verified = TRUE THEN
+    IF NEW.category = 'personal' OR NEW.category = 'both' THEN
+      UPDATE singles_leaderboard
+      SET personal_growth_score = personal_growth_score + NEW.points_earned,
+          overall_score = overall_score + NEW.points_earned
+      WHERE user_id = NEW.user_id;
+    END IF;
+    
+    IF NEW.category = 'career' OR NEW.category = 'both' THEN
+      UPDATE singles_leaderboard
+      SET career_achievement_score = career_achievement_score + NEW.points_earned,
+          overall_score = overall_score + NEW.points_earned
+      WHERE user_id = NEW.user_id;
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_activity_verification
+AFTER UPDATE ON singles_activities
+FOR EACH ROW
+WHEN (NEW.verified = TRUE AND OLD.verified = FALSE)
+EXECUTE FUNCTION update_singles_score_on_activity();
+```
+
+### Update couples score on milestone
+```sql
+CREATE OR REPLACE FUNCTION update_couples_score_on_milestone()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE couples_leaderboard
+  SET milestones_achieved = milestones_achieved + 1,
+      overall_score = overall_score + NEW.points_earned
+  WHERE couple_id = NEW.couple_id;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_milestone_creation
+AFTER INSERT ON couples_milestones
+FOR EACH ROW
+EXECUTE FUNCTION update_couples_score_on_milestone();
+```
+
+### Calculate gift commission
+```sql
+CREATE OR REPLACE FUNCTION calculate_gift_commission()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_commission_rate DECIMAL(5,2);
+  v_commission_amount DECIMAL(10,2);
+BEGIN
+  IF NEW.product_id IS NOT NULL THEN
+    SELECT commission_rate INTO v_commission_rate
+    FROM gift_products
+    WHERE id = NEW.product_id;
+    
+    v_commission_amount := NEW.gift_amount * v_commission_rate / 100;
+    
+    NEW.commission_amount := v_commission_amount;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_gift_insert
+BEFORE INSERT ON guest_gifts
+FOR EACH ROW
+EXECUTE FUNCTION calculate_gift_commission();
+```
+
+### Update photo challenge votes
+```sql
+CREATE OR REPLACE FUNCTION update_photo_challenge_votes()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE photo_challenge_submissions
+    SET votes_count = votes_count + 1
+    WHERE id = NEW.submission_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE photo_challenge_submissions
+    SET votes_count = votes_count - 1
+    WHERE id = OLD.submission_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_photo_vote
+AFTER INSERT OR DELETE ON photo_challenge_votes
+FOR EACH ROW
+EXECUTE FUNCTION update_photo_challenge_votes();
+```
+
+---
+
+## USER FLOWS
+
+### Flow 1: Couple Creates Wedding Game
+
+**Trigger:** Couple wants to add games for guest engagement
+
+**Steps:**
+1. Navigate to Games section
+2. Browse game templates:
+   - Quiz: "How well do you know the couple?"
+   - Prediction: "Guess the couple's future"
+   - Photo Challenge: "Best wedding moment"
+   - Trivia: "Wedding traditions around the world"
+   - Custom: Create your own
+3. Select game template
+4. Configure game:
+   - Title (can customize)
+   - Description
+   - Enable/disable for guests
+   - Team-based or individual
+   - Side-specific or combined
+   - Start/end times (optional)
+5. Add questions (if quiz/trivia):
+   - Question text
+   - Answer options
+   - Correct answer
+   - Points per question
+   - Time limit
+6. Preview game
+7. Publish game
+8. Guests receive notification
+9. Game appears in wedding app
+
+**Game Type Selection:**
+```
+Choose a Game
+
+┌─────────────────────────────────────┐
+│  🎯 QUIZ GAMES                      │
+├─────────────────────────────────────┤
+│  How Well Do You Know the Couple?   │
+│  Test guests' knowledge about you   │
+│  🎮 10-20 questions | ⏱️ 15 min     │
+│  [Select]                           │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  🔮 PREDICTION GAMES                │
+├─────────────────────────────────────┤
+│  Predict the Couple's Future        │
+│  Guests predict milestones          │
+│  🎮 5-10 predictions | ⏱️ 10 min    │
+│  [Select]                           │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  📸 PHOTO CHALLENGES                │
+├─────────────────────────────────────┤
+│  Best Wedding Moment                │
+│  Guests submit photos, others vote  │
+│  🎮 Unlimited entries | 🗳️ Voting   │
+│  [Select]                           │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  🌍 TRIVIA GAMES                    │
+├─────────────────────────────────────┤
+│  Wedding Traditions Quiz            │
+│  Test knowledge of global weddings  │
+│  🎮 15 questions | ⏱️ 20 min        │
+│  [Select]                           │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  ✏️ CUSTOM GAME                     │
+├─────────────────────────────────────┤
+│  Create Your Own                    │
+│  Build a game from scratch          │
+│  [Create Custom]                    │
+└─────────────────────────────────────┘
+```
+
+**Game Configuration:**
+```
+Configure Game: "How Well Do You Know Us?"
+
+Basic Settings:
+
+Game Title:
+[How Well Do You Know Faseen & Hanan?______]
+
+Description:
+[Test your knowledge about our love story and
+ funny quirks! Top 3 winners get prizes!_____]
+
+Game Settings:
+
+Availability:
+[✓] All guests can play
+[ ] Groom's side only
+[ ] Bride's side only
+
+Mode:
+● Individual competition
+○ Team-based (Groom vs Bride side)
+
+Timing:
+Start: [Dec 15, 2025] [7:00 PM] (Reception)
+End: [Dec 15, 2025] [9:00 PM]
+[ ] No time limit
+
+Scoring:
+Points per question: [10]
+Time bonus: [✓] +5 points for quick answers
+Lives: [3] (wrong answers allowed)
+
+Prizes:
+1st Place: [Dinner voucher worth ₹5,000____]
+2nd Place: [Movie tickets for 2__________]
+3rd Place: [Gift hamper_________________]
+
+[Next: Add Questions]
+```
+
+**Add Questions:**
+```
+Question 1 of 10
+
+Question Text:
+[Where did Faseen propose to Hanan?_________]
+
+Question Type:
+● Multiple Choice
+○ True/False
+○ Open Ended
+○ Number Input
+
+Options:
+A. [Beach in Goa___________________]
+B. [Restaurant in Mumbai___________]
+C. [Hanan's home__________________]
+D. [Mountain top in Kashmir_______]
+
+Correct Answer: [A ▼]
+
+Points: [10]
+Time Limit: [30] seconds
+Difficulty: [Medium ▼]
+
+Hint (optional):
+[It was during our anniversary trip______]
+
+Explanation (shown after answer):
+[Faseen proposed on Calangute Beach at sunset
+ with a ring hidden in a seashell!________]
+
+[Save & Add Next] [Preview Question]
+```
+
+---
+
+### Flow 2: Guest Plays Quiz Game
+
+**Trigger:** Guest receives game notification
+
+**Steps:**
+1. Guest opens game from notification
+2. Views game instructions
+3. Clicks Start Game
+4. Question appears with timer
+5. Selects answer
+6. Immediate feedback (correct/wrong)
+7. Next question loads
+8. Process repeats for all questions
+9. Final score displayed
+10. Leaderboard shown
+11. Option to share score
+12. Winner announced at end time
+
+**Game Start Screen:**
+```
+┌─────────────────────────────────────┐
+│  How Well Do You Know Faseen & Hanan?│
+├─────────────────────────────────────┤
+│                                     │
+│  🎯 Test your knowledge!            │
+│                                     │
+│  Rules:                             │
+│  • 10 multiple choice questions     │
+│  • 30 seconds per question          │
+│  • 10 points per correct answer     │
+│  • Bonus for speed                  │
+│  • 3 lives (wrong answers)          │
+│                                     │
+│  Current Players: 47                │
+│  Top Score: 95 pts (Uncle Ahmed)    │
+│                                     │
+│  Prizes:                            │
+│  🥇 Dinner voucher ₹5,000           │
+│  🥈 Movie tickets                   │
+│  🥉 Gift hamper                     │
+│                                     │
+│     [Start Game]                    │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Question Screen:**
+```
+┌─────────────────────────────────────┐
+│  Question 1 of 10           ⏱️ 28s │
+│  Lives: ❤️❤️❤️                      │
+│  Score: 0                           │
+├─────────────────────────────────────┤
+│                                     │
+│  Where did Faseen propose to Hanan? │
+│                                     │
+│  A. 🏖️ Beach in Goa                │
+│  B. 🍽️ Restaurant in Mumbai        │
+│  C. 🏠 Hanan's home                 │
+│  D. 🏔️ Mountain in Kashmir         │
+│                                     │
+│  💡 Hint: Anniversary trip          │
+│     [Use Hint] (-2 points)          │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Correct Answer Feedback:**
+```
+┌─────────────────────────────────────┐
+│  ✅ Correct! +10 points             │
+│  ⚡ Speed Bonus: +5 points          │
+├─────────────────────────────────────┤
+│  Total Earned: 15 points            │
+│  Your Score: 15                     │
+│                                     │
+│  📖 Did you know?                   │
+│  Faseen proposed on Calangute Beach │
+│  at sunset with a ring hidden in a  │
+│  seashell!                          │
+│                                     │
+│     [Next Question]                 │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Final Score:**
+```
+┌─────────────────────────────────────┐
+│  🎉 Game Complete!                  │
+├─────────────────────────────────────┤
+│                                     │
+│  Your Final Score: 85 / 100         │
+│                                     │
+│  📊 Performance:                    │
+│  • Correct: 8 / 10                  │
+│  • Accuracy: 80%                    │
+│  • Average Time: 18 sec/question    │
+│  • Speed Bonuses: 5                 │
+│                                     │
+│  🏆 Your Rank: #3 / 47 players      │
+│                                     │
+│  🥉 Congratulations!                │
+│  You won: Gift Hamper               │
+│                                     │
+│     [View Leaderboard]              │
+│     [Play Again]                    │
+│     [Share Score]                   │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Flow 3: Photo Challenge
+
+**Trigger:** Couple creates photo challenge game
+
+**Steps:**
+1. Couple creates challenge:
+   - Theme: "Best wedding moment"
+   - Submission deadline
+   - Voting period
+2. Game published
+3. Guests submit photos:
+   - Upload from gallery/camera
+   - Add caption
+   - Submit entry
+4. Submission deadline passes
+5. Voting opens
+6. Guests vote on favorite photos
+7. Voting deadline passes
+8. Winner announced (most votes)
+9. Prize awarded
+
+**Challenge Creation:**
+```
+Create Photo Challenge
+
+Challenge Title:
+[Capture the Best Wedding Moment________]
+
+Description:
+[Submit your favorite photo from the wedding!
+ It could be a candid moment, funny shot, or
+ beautiful memory. Most votes wins!________]
+
+Submission Rules:
+Start: [Dec 15, 2025] [12:00 PM]
+Deadline: [Dec 15, 2025] [11:59 PM]
+
+Max submissions per guest: [3]
+Min photo resolution: [1080p ▼]
+Max file size: [5MB]
+
+Voting Period:
+Start: [Dec 16, 2025] [12:00 AM]
+End: [Dec 17, 2025] [11:59 PM]
+
+Voting Rules:
+Votes per guest: [5]
+[ ] Can vote for own submission
+[✓] Show vote counts
+[✓] Show rankings live
+
+Prizes:
+Winner: [Professional photo print & frame__]
+Runner-up: [₹1,000 gift card____________]
+
+[Create Challenge]
+```
+
+**Guest Submission:**
+```
+Submit Your Entry
+
+Challenge: Best Wedding Moment
+Deadline: 8 hours remaining
+
+[📤 Upload Photo] [📷 Take Photo]
+
+Selected Photo:
+[Image Preview]
+
+Caption:
+[Faseen's reaction when he saw Hanan for the
+ first time - pure joy! 😍________________]
+
+Tags:
+[Faseen] [Hanan] [Ceremony] [+ Add]
+
+By submitting, you agree that this photo can
+be shared publicly in the wedding gallery.
+
+[Submit Entry] [Cancel]
+```
+
+**Voting Interface:**
+```
+Vote for Best Wedding Moment
+
+Voting Period: 1 day 5 hours remaining
+Your Votes: 3 / 5 used
+
+Sort: [Most Votes ▼] [Most Recent] [Random]
+
+┌─────────────────────────────────────┐
+│  Entry #1                  🥇 #1    │
+│  By: Aunt Fatima          ❤️ 87     │
+├─────────────────────────────────────┤
+│  [Photo: Couple's first dance]      │
+│                                     │
+│  Caption:                           │
+│  "The moment they realized they're  │
+│   going to dance through life together"│
+│                                     │
+│  [❤️ Vote] (3 votes left)           │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  Entry #2                  🥈 #2    │
+│  By: Best Friend Rahul    ❤️ 65     │
+├─────────────────────────────────────┤
+│  [Photo: Groom crying during vows]  │
+│  Caption: "Real men cry at weddings"│
+│                                     │
+│  [❤️ Vote]                          │
+└─────────────────────────────────────┘
+
+[Load More Entries]
+```
+
+**Winner Announcement:**
+```
+┌─────────────────────────────────────┐
+│  🏆 Challenge Winner!               │
+├─────────────────────────────────────┤
+│                                     │
+│  Best Wedding Moment                │
+│                                     │
+│  [Winning Photo: First Dance]       │
+│                                     │
+│  📸 By: Aunt Fatima                 │
+│  ❤️ Total Votes: 87 / 47 voters    │
+│                                     │
+│  Caption:                           │
+│  "The moment they realized they're  │
+│   going to dance through life       │
+│   together"                         │
+│                                     │
+│  🎁 Prize: Professional photo print │
+│                                     │
+│  Congratulations, Aunt Fatima! 🎉   │
+│                                     │
+│     [View All Entries]              │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Flow 4: Groom vs Bride Side Competition
+
+**Trigger:** Couple enables side-based competition
+
+**Steps:**
+1. Couple enables team mode for games
+2. All games track side-specific scores
+3. Real-time leaderboard shows:
+   - Groom side total points
+   - Bride side total points
+   - Individual game winners per side
+4. Competition visible on home screen
+5. Running tally throughout wedding
+6. Final winner announced
+7. Bragging rights awarded
+
+**Competition Dashboard:**
+```
+┌─────────────────────────────────────┐
+│  GROOM vs BRIDE SIDE SHOWDOWN 🏆    │
+├─────────────────────────────────────┤
+│                                     │
+│  GROOM SIDE         vs    BRIDE SIDE│
+│                                     │
+│      847                    923     │
+│   👥 52 players        👥 48 players│
+│                                     │
+│  ████████████░░   ░░████████████    │
+│       48%                 52%       │
+│                                     │
+│  🎮 Games Played:                   │
+│  • Quiz: Bride wins (+120)          │
+│  • Photo Challenge: Bride wins (+87)│
+│  • Trivia: Groom wins (+95)         │
+│  • Prediction: In Progress...       │
+│                                     │
+│  🏆 Current Leader: BRIDE SIDE      │
+│     Lead: 76 points                 │
+│                                     │
+│     [View Detailed Stats]           │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Home Screen Widget:**
+```
+┌─────────────────────────────────────┐
+│  Faseen 💍 Hanan's Wedding          │
+├─────────────────────────────────────┤
+│  🏆 Team Competition                │
+│                                     │
+│  Groom Side    [████████░] 847      │
+│  Bride Side    [█████████] 923      │
+│                                     │
+│  Bride Side Leading! 🎉             │
+│                                     │
+│  [Join a Game] [View Leaderboard]   │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Flow 5: Singles Leaderboard (Personal Growth)
+
+**Trigger:** Single user logs activities
+
+**Steps:**
+1. Single user navigates to Leaderboard
+2. Selects Personal Growth category
+3. Clicks Log Activity
+4. Chooses activity type:
+   - Fitness goal achieved
+   - Book read
+   - Skill learned
+   - Course completed
+   - Volunteer work
+   - Travel milestone
+5. Fills activity details
+6. Uploads proof (optional)
+7. Submits for verification
+8. System/Admin verifies
+9. Points awarded
+10. Leaderboard updated
+11. Badges earned (milestones)
+
+**Leaderboard Home:**
+```
+Singles Leaderboard
+
+Your Rank: #127 / 1,847 singles
+
+Categories:
+[Personal Growth] [Career] [Overall]
+
+┌─────────────────────────────────────┐
+│  🏃 PERSONAL GROWTH LEADERBOARD     │
+├─────────────────────────────────────┤
+│                                     │
+│  #1  Priya Sharma          2,450 pts│
+│      🏅🏅🏅 Fitness Guru             │
+│                                     │
+│  #2  Arjun Patel           2,280 pts│
+│      🏅🏅 Book Worm                 │
+│                                     │
+│  #3  Meera Singh           2,150 pts│
+│      🏅🏅 Skill Master              │
+│                                     │
+│  ...                                │
+│                                     │
+│  #127 You (Ahmed)          450 pts  │
+│       🏅 Getting Started            │
+│                                     │
+│     [Log New Activity]              │
+│     [View Your Profile]             │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Log Activity:**
+```
+Log Personal Growth Activity
+
+Activity Type: [Fitness Goal ▼]
+             [Skill Learned]
+             [Book Read]
+             [Course Completed]
+             [Volunteer Work]
+             [Travel]
+             [Custom]
+
+Activity Title:
+[Completed 30-day yoga challenge________]
+
+Description:
+[Successfully completed 30 consecutive days
+ of morning yoga practice. Improved flexibility
+ and mental health significantly.__________]
+
+Date Completed: [Nov 4, 2025]
+
+Category:
+● Personal Growth
+○ Career
+○ Both
+
+Proof (Optional):
+[📤 Upload Certificate/Photo]
+
+Estimated Points: 50-100
+(Will be verified by admin)
+
+[Submit for Verification] [Save Draft]
+```
+
+**Activity Verified:**
+```
+┌─────────────────────────────────────┐
+│  ✅ Activity Verified!              │
+├─────────────────────────────────────┤
+│                                     │
+│  30-Day Yoga Challenge              │
+│                                     │
+│  Points Earned: 75                  │
+│  Category: Personal Growth          │
+│                                     │
+│  Your Stats:                        │
+│  • Total Score: 525 pts             │
+│  • Personal: 325 pts                │
+│  • Career: 200 pts                  │
+│  • New Rank: #98 (⬆️ 29)           │
+│                                     │
+│  🎖️ New Badge Unlocked!             │
+│  "Health Warrior" - 5 fitness goals │
+│                                     │
+│     [View Profile] [Share]          │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Profile View:**
+```
+Ahmed's Growth Profile
+
+Overall Rank: #98 / 1,847
+Personal Rank: #75
+Career Rank: #145
+
+Total Points: 525
+Badges Earned: 3
+
+Recent Activities:
+• 30-day yoga challenge (75 pts) ✅
+• Read "Atomic Habits" (50 pts) ✅
+• Completed Python course (100 pts) ✅
+• Volunteered at shelter (60 pts) ✅
+
+Badges:
+🏅 Health Warrior (5 fitness goals)
+🏅 Book Lover (10 books read)
+🏅 Lifelong Learner (3 courses)
+
+Next Milestone:
+100 pts away from "Gold Member" badge
+
+[Share Profile] [Log Activity]
+```
+
+---
+
+### Flow 6: Couples Leaderboard
+
+**Trigger:** Engaged/married couples track milestones
+
+**Steps:**
+1. Couple navigates to Couples Leaderboard
+2. Views their rank
+3. Clicks Log Milestone
+4. Selects milestone type:
+   - First date anniversary
+   - Home purchase
+   - Career achievement
+   - Travel goal
+   - Custom
+5. Adds details and photos
+6. Sets privacy (public/private)
+7. Submits milestone
+8. Points awarded automatically
+9. Leaderboard updated
+10. Badges earned
+
+**Couples Leaderboard:**
+```
+Couples Leaderboard
+
+Your Rank: #34 / 892 couples
+
+┌─────────────────────────────────────┐
+│  💑 TOP COUPLES                     │
+├─────────────────────────────────────┤
+│                                     │
+│  #1  Rahul & Priya         3,850 pts│
+│      🏆🏆🏆 Power Couple            │
+│      25 milestones | 3 years        │
+│                                     │
+│  #2  Arjun & Meera         3,420 pts│
+│      🏆🏆 Adventure Duo             │
+│      22 milestones | 2 years        │
+│                                     │
+│  #3  Rohan & Sneha         3,100 pts│
+│      🏆🏆 Goal Crushers             │
+│      28 milestones | 4 years        │
+│                                     │
+│  ...                                │
+│                                     │
+│  #34 Faseen & Hanan        1,200 pts│
+│      🏆 Rising Stars                │
+│      8 milestones | 6 months        │
+│                                     │
+│     [Log Milestone]                 │
+│     [View Journey]                  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Log Milestone:**
+```
+Log Couple Milestone
+
+Milestone Type:
+[First Anniversary ▼]
+[Home Purchase]
+[First Child]
+[Career Goal]
+[Travel Goal]
+[Custom]
+
+Title:
+[Bought Our First Home!_____________]
+
+Description:
+[Finally closed on our dream apartment in
+ Mumbai! 2BHK with a beautiful view. Can't
+ wait to make memories here together!_____]
+
+Date: [Nov 1, 2025]
+
+Photos:
+[📤 Upload Photos] (Max 5)
+
+Privacy:
+● Public (visible on leaderboard)
+○ Private (only us)
+
+Points: 200 (auto-calculated)
+
+[Submit Milestone]
+```
+
+---
+
+### Flow 7: Digital Gifting
+
+**Trigger:** Guest wants to send gift
+
+**Steps:**
+1. Guest navigates to Gifts section
+2. Browses gift categories:
+   - Home & Kitchen
+   - Electronics
+   - Gift Cards
+   - Cash Gift
+   - Experiences
+3. Filters by price, brand, rating
+4. Views couple's wishlist (if any)
+5. Selects gift/amount
+6. Adds gift message
+7. Enters delivery details (if physical)
+8. Proceeds to payment
+9. Completes transaction
+10. Confirmation sent to guest & couple
+11. Gift tracked until delivery
+12. Thank you note sent by couple
+
+**Gift Marketplace:**
+```
+Gifts for Faseen & Hanan
+
+Categories:
+[All] [Home] [Electronics] [Gift Cards] [Cash]
+
+Price: [₹0 - ₹50,000]
+Sort: [Popular ▼]
+
+Couple's Wishlist (3 items):
+
+┌─────────────────────────────────────┐
+│  🎁 Air Fryer              Priority │
+│  Brand: Philips              High   │
+│  ₹12,499                            │
+│  [Gift This]                        │
+└─────────────────────────────────────┘
+
+Popular Gifts:
+
+┌─────────────────────────────────────┐
+│  🎁 Dinner Set (32 pcs)             │
+│  Borosil                            │
+│  ₹3,999    ⭐ 4.5/5 (234 reviews)   │
+│  [Add to Cart]                      │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  🎁 Amazon Gift Card                │
+│  Choose Amount: ₹500 - ₹10,000      │
+│  Instant Delivery                   │
+│  [Choose Amount]                    │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  💰 Cash Gift                       │
+│  Transfer directly to couple        │
+│  [Send Cash Gift]                   │
+└─────────────────────────────────────┘
+```
+
+**Gift Checkout:**
+```
+Complete Your Gift
+
+Product: Philips Air Fryer
+Price: ₹12,499
+Commission: ₹625 (5%)
+Your Total: ₹12,499
+
+Gift Message:
+[Wishing you both a lifetime of delicious
+ meals and happy moments together! Love,
+ Uncle Ahmed_____________________________]
+
+Delivery Address:
+[Use Couple's Registered Address]
+○ Enter Custom Address
+
+Payment Method:
+● UPI
+○ Credit/Debit Card
+○ Net Banking
+○ Wallet
+
+[Complete Payment]
+```
+
+**Gift Confirmation:**
+```
+┌─────────────────────────────────────┐
+│  ✅ Gift Sent Successfully!         │
+├─────────────────────────────────────┤
+│                                     │
+│  Philips Air Fryer                  │
+│  Amount: ₹12,499                    │
+│  Order ID: EMWD-12345               │
+│                                     │
+│  Delivery Details:                  │
+│  • Address: Couple's home           │
+│  • Expected: Dec 20, 2025           │
+│  • Tracking: [Track Order]          │
+│                                     │
+│  Your Message:                      │
+│  "Wishing you both..."              │
+│                                     │
+│  📧 Confirmation sent to your email │
+│  📧 Couple notified about your gift │
+│                                     │
+│     [View All Gifts]                │
+│     [Send Another]                  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Couple View - Gifts Received:**
+```
+Gifts Received
+
+Total Value: ₹87,450
+Total Gifts: 23
+Cash Gifts: ₹45,000
+
+┌─────────────────────────────────────┐
+│  🎁 Philips Air Fryer               │
+│  From: Uncle Ahmed                  │
+│  Value: ₹12,499                     │
+│  Status: 🚚 In Transit (Arrives Dec 20)│
+│  Message: "Wishing you both..."     │
+│  [Send Thank You] [Track]           │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  💰 Cash Gift                       │
+│  From: Aunt Fatima                  │
+│  Amount: ₹10,000                    │
+│  Status: ✅ Received                │
+│  [Send Thank You] [Received]        │
+└─────────────────────────────────────┘
+
+[Send Bulk Thank You Notes]
+[Download Gift List]
+```
+
+---
+
+## PAGE SPECIFICATIONS
+
+### Page 1: Games Dashboard (`/wedding/:id/games`)
+
+**Layout:**
+```
+Header
+├── [Create Game] button
+├── Active games counter
+└── Total participants
+
+Active Games Section
+├── Game cards (grid)
+│   ├── Game title
+│   ├── Type badge
+│   ├── Participants count
+│   ├── Time remaining
+│   ├── [Play] button
+│   └── Leaderboard preview
+└── [View All]
+
+Completed Games
+├── Winner badges
+├── Final scores
+└── [View Results]
+
+Side Competition Widget
+├── Groom vs Bride scores
+├── Live updates
+└── [View Details]
+```
+
+### Page 2: Leaderboards (`/leaderboards`)
+
+**Layout:**
+```
+Header
+├── Category tabs (Singles/Couples/Games)
+├── Search bar
+└── Filter options
+
+Singles Tab
+├── Sub-tabs (Personal/Career/Overall)
+├── Top 10 (podium style)
+├── Scrollable list
+├── [Log Activity] button
+└── Your rank badge
+
+Couples Tab
+├── Top couples
+├── Milestones counter
+├── [Log Milestone] button
+└── Your rank
+
+Game Leaderboard
+├── Per-game rankings
+├── Overall game champion
+└── Prizes section
+```
+
+### Page 3: Gift Marketplace (`/wedding/:id/gifts`)
+
+**Layout:**
+```
+Header
+├── Search bar
+├── Cart icon
+└── Wishlist link
+
+Sidebar Filters
+├── Categories
+├── Price range
+├── Brands
+├── Ratings
+└── Delivery time
+
+Main Grid
+├── Product cards
+│   ├── Image
+│   ├── Title
+│   ├── Price
+│   ├── Rating
+│   ├── Wishlist badge
+│   └── [Add to Cart]
+└── Pagination
+
+Couple's Wishlist Banner
+├── Priority items
+└── [View Full Wishlist]
+```
+
+### Page 4: Singles Profile (`/profile/singles/:id`)
+
+**Layout:**
+```
+Header
+├── Avatar
+├── Name
+├── Overall rank badge
+└── [Edit Profile]
+
+Stats Cards
+├── Total Points
+├── Activities Logged
+├── Badges Earned
+└── Rank Progress
+
+Activity Timeline
+├── Recent activities
+├── Verification status
+├── Points earned
+└── [Log New Activity]
+
+Badges Section
+├── Earned badges (displayed)
+├── Locked badges (grayed)
+└── Next milestone
+
+Leaderboard Position
+├── Personal rank
+├── Career rank
+└── Overall rank
+```
+
+### Page 5: Couples Profile (`/profile/couples/:id`)
+
+**Layout:**
+```
+Header
+├── Couple photo
+├── Names
+├── Rank badge
+└── [Edit Profile]
+
+Journey Timeline
+├── Engagement date
+├── Wedding date
+├── Milestones (chronological)
+└── [Add Milestone]
+
+Stats Cards
+├── Total Points
+├── Milestones Count
+├── Days Together
+└── Badges Earned
+
+Shared Goals Section
+├── Active goals
+├── Progress bars
+└── [Add Goal]
+
+Badges Display
+├── Relationship badges
+├── Achievement badges
+└── Special badges
+```
+
+---
+
+## API ENDPOINTS
+
+### POST `/api/wedding-games/create`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "game_type_id": "uuid",
+  "game_title": "How Well Do You Know Us?",
+  "game_description": "Test your knowledge...",
+  "is_team_based": false,
+  "both_sides_compete": true,
+  "start_time": "2025-12-15T19:00:00Z",
+  "end_time": "2025-12-15T21:00:00Z"
+}
+```
+
+### POST `/api/game-questions/bulk-create`
+**Request:**
+```json
+{
+  "wedding_game_id": "uuid",
+  "questions": [
+    {
+      "question_text": "Where did we meet?",
+      "question_type": "multiple_choice",
+      "options": ["College", "Work", "Dating App", "Through Friends"],
+      "correct_answer": "College",
+      "points": 10,
+      "time_limit_seconds": 30
+    }
+  ]
+}
+```
+
+### POST `/api/game-participants/join`
+**Request:**
+```json
+{
+  "wedding_game_id": "uuid",
+  "user_id": "uuid",
+  "side": "groom"
+}
+```
+
+### POST `/api/game-responses/submit`
+**Request:**
+```json
+{
+  "wedding_game_id": "uuid",
+  "game_question_id": "uuid",
+  "participant_id": "uuid",
+  "response_text": "College",
+  "time_taken_seconds": 15
+}
+```
+
+### GET `/api/wedding-games/:id/leaderboard`
+**Response:**
+```json
+{
+  "game_title": "How Well Do You Know Us?",
+  "total_participants": 47,
+  "leaderboard": [
+    {
+      "rank": 1,
+      "participant_name": "Uncle Ahmed",
+      "side": "groom",
+      "total_score": 95,
+      "games_played": 1,
+      "accuracy": 90
+    }
+  ]
+}
+```
+
+### POST `/api/photo-challenge/submit`
+**Multipart form data:**
+```
+wedding_game_id: uuid
+participant_id: uuid
+photo: File
+caption: string
+```
+
+### POST `/api/photo-challenge/:submission_id/vote`
+
+### GET `/api/wedding-side-competition/:wedding_id`
+**Response:**
+```json
+{
+  "groom_side_score": 847,
+  "bride_side_score": 923,
+  "groom_side_participants": 52,
+  "bride_side_participants": 48,
+  "total_games": 4,
+  "winner_side": "bride",
+  "game_breakdown": [
+    {
+      "game_name": "Quiz",
+      "groom_points": 250,
+      "bride_points": 320
+    }
+  ]
+}
+```
+
+### POST `/api/singles-activities/log`
+**Request:**
+```json
+{
+  "user_id": "uuid",
+  "activity_type": "fitness_goal",
+  "activity_title": "30-day yoga challenge",
+  "activity_description": "Completed 30 consecutive days...",
+  "category": "personal",
+  "activity_date": "2025-11-04",
+  "proof_url": "certificate_url"
+}
+```
+
+### GET `/api/singles-leaderboard`
+**Query params:**
+```
+?category=personal
+&limit=100
+&offset=0
+```
+
+### POST `/api/couples-milestones/create`
+**Request:**
+```json
+{
+  "couple_id": "uuid",
+  "milestone_type": "home_purchase",
+  "milestone_title": "Bought Our First Home",
+  "milestone_description": "2BHK apartment in Mumbai",
+  "milestone_date": "2025-11-01",
+  "is_private": false,
+  "photos": ["url1", "url2"]
+}
+```
+
+### GET `/api/couples-leaderboard`
+
+### POST `/api/guest-gifts/purchase`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "sender_id": "uuid",
+  "gift_type": "physical_product",
+  "product_id": "uuid",
+  "gift_amount": 12499,
+  "gift_message": "Wishing you both...",
+  "delivery_address": {
+    "line1": "123 Street",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "pincode": "400001"
+  }
+}
+```
+
+### POST `/api/guest-gifts/cash`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "sender_id": "uuid",
+  "gift_type": "cash",
+  "gift_amount": 10000,
+  "gift_message": "Congratulations!",
+  "payment_method": "upi"
+}
+```
+
+### GET `/api/gift-wishlists/:wedding_id`
+
+### POST `/api/gift-wishlists/add`
+**Request:**
+```json
+{
+  "wedding_id": "uuid",
+  "product_id": "uuid",
+  "priority": "high",
+  "quantity_desired": 1,
+  "notes": "Kitchen essential"
+}
+```
+
+---
+
+## BUSINESS RULES
+
+### Games
+- Couple can create unlimited games
+- Each game can have 5-50 questions
+- Games can be time-limited or always available
+- Side-based competition optional
+- Prizes optional but recommended
+- Winners announced automatically at end time
+- Guests can replay games (lowest score kept)
+
+### Photo Challenges
+- Max 5 submissions per guest
+- Voting starts after submission deadline
+- Each guest gets 5 votes
+- Cannot vote for own submissions
+- Winner = most votes
+- Ties broken by submission timestamp
+
+### Leaderboards
+- **Singles:**
+  - Personal: Fitness, books, skills, volunteer
+  - Career: Certifications, projects, promotions
+  - Overall: Combined score
+  - Verification required for points
+  - Admins can verify or auto-verify with proof
+  
+- **Couples:**
+  - Milestones auto-award points
+  - Privacy settings respected
+  - Points range: 50-500 per milestone
+  - Badges at 5, 10, 25, 50 milestones
+
+### Gifting
+- **Commission Structure:**
+  - Physical products: 5% commission
+  - Gift cards: 3% commission
+  - Cash gifts: No commission
+  
+- **Delivery:**
+  - Physical: 5-15 days
+  - Digital: Instant
+  - Gift cards: Instant
+  
+- **Returns:**
+  - 7-day return window
+  - Refund to original payment method
+  - Cash gifts non-refundable
+
+### Side Competition
+- Points accumulated from all games
+- Real-time leaderboard
+- Winner announced at reception end
+- Optional prizes for winning side
+- Individual winners also recognized
+
+---
+
+## NOTIFICATION TRIGGERS
+
+### Game Created
+**To:** All guests
+**Subject:** New game available: [Game Title]
+
+### Game Starting Soon
+**To:** Participants
+**Push:** "[Game] starts in 15 minutes!"
+
+### New High Score
+**To:** Previous leader
+**Subject:** You've been overtaken in [Game]!
+
+### Game Winner Announced
+**To:** Winner + all participants
+**Subject:** 🏆 [Winner] won [Game]!
+
+### Photo Challenge Voting Opens
+**To:** All guests
+**Subject:** Vote for your favorite photo!
+
+### Photo Challenge Winner
+**To:** Winner
+**Subject:** 🎉 Your photo won!
+
+### New Leaderboard Rank
+**To:** User
+**Push:** "You moved up to rank #[X]!"
+
+### Badge Earned
+**To:** User
+**Subject:** 🎖️ New badge unlocked: [Badge Name]
+
+### Gift Received
+**To:** Couple
+**Subject:** [Sender] sent you a gift!
+
+### Gift Delivered
+**To:** Sender + Couple
+**Subject:** Your gift has been delivered
+
+### Wishlist Item Gifted
+**To:** Couple
+**Subject:** [Item] from your wishlist was gifted!
+
+---
+
+## VALIDATION RULES
+
+### Game Creation
+- Title: 5-200 characters
+- Min 5 questions for quiz games
+- End time > start time
+- Points per question: 1-100
+
+### Question Creation
+- Text: 10-500 characters
+- Multiple choice: 2-6 options
+- Time limit: 10-300 seconds
+
+### Activity Logging
+- Title: 5-100 characters
+- Description: 20-1000 characters
+- Proof URL optional but increases verification speed
+- Date must be past
+
+### Milestone Logging
+- Title: 5-100 characters
+- Date must be past or today
+- Max 5 photos
+- Photo size: Max 5MB each
+
+### Gift Purchase
+- Amount: Min ₹100, Max ₹50,000
+- Message: Max 500 characters
+- Valid payment method required
+
+---
+
+## PERFORMANCE REQUIREMENTS
+
+- Game load: < 2 seconds
+- Question submit: < 500ms
+- Leaderboard update: < 1 second
+- Photo challenge load: < 3 seconds (with images)
+- Gift marketplace: < 2 seconds
+
+---
+
+## SECURITY REQUIREMENTS
+
+- Game answers encrypted in database
+- Leaderboard ranks calculated server-side
+- Vote manipulation detection
+- Payment gateway PCI compliant
+- Gift transactions encrypted
+- Admin verification for activities >500 points
+
+---
+
+## SUCCESS METRICS
+
+- Game participation: 60%+ guests play
+- Photo challenge entries: 40%+ guests submit
+- Singles leaderboard: 30%+ singles log activities
+- Couples leaderboard: 50%+ couples log milestones
+- Gift conversion: 40%+ guests send gifts
+- Average gift value: ₹3,000+
+- Side competition engagement: 70%+ guests participate
