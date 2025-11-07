@@ -1,0 +1,238 @@
+# EMOWED - API ENDPOINTS REFERENCE
+
+## 🔌 SUPABASE API ENDPOINTS
+
+All API calls use Supabase client. This document shows the complete API structure.
+
+---
+
+## 🔐 AUTHENTICATION
+
+### Sign Up
+```typescript
+const { data, error } = await supabase.auth.signUp({
+  email: 'user@example.com',
+  password: 'SecurePass123!',
+});
+```
+
+### Sign In
+```typescript
+const { data, error } = await supabase.auth.signInWithPassword({
+  email: 'user@example.com',
+  password: 'SecurePass123!',
+});
+```
+
+### Sign Out
+```typescript
+const { error } = await supabase.auth.signOut();
+```
+
+### Get Session
+```typescript
+const { data: { session } } = await supabase.auth.getSession();
+```
+
+---
+
+## 👤 USERS
+
+### Get User Profile
+```typescript
+const { data, error } = await supabase
+  .from('users')
+  .select('*')
+  .eq('id', userId)
+  .single();
+```
+
+### Update User Profile
+```typescript
+const { data, error } = await supabase
+  .from('users')
+  .update({
+    full_name: 'New Name',
+    age: 28,
+  })
+  .eq('id', userId);
+```
+
+---
+
+## 💍 PARTNER INVITATIONS
+
+### Generate Invitation Code
+```typescript
+const { data, error } = await supabase
+  .from('partner_invitations')
+  .insert({
+    sender_id: userId,
+    receiver_email: 'partner@example.com',
+    code: generateCode(), // ABC123
+    expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000),
+  })
+  .select()
+  .single();
+```
+
+### Accept Invitation
+```typescript
+// 1. Validate code
+const { data: invitation } = await supabase
+  .from('partner_invitations')
+  .select('*')
+  .eq('code', code)
+  .single();
+
+// 2. Create couple
+const { data: couple } = await supabase
+  .from('couples')
+  .insert({
+    user1_id: invitation.sender_id,
+    user2_id: currentUserId,
+    status: 'engaged',
+  })
+  .select()
+  .single();
+
+// 3. Update invitation
+await supabase
+  .from('partner_invitations')
+  .update({ status: 'accepted' })
+  .eq('id', invitation.id);
+```
+
+---
+
+## 💒 WEDDINGS
+
+### Create Wedding
+```typescript
+const { data, error } = await supabase
+  .from('weddings')
+  .insert({
+    couple_id: coupleId,
+    name: 'Faseen & Hanan Wedding',
+    date: '2025-12-15',
+    venue: 'Grand Palace Hotel',
+    city: 'Mumbai',
+    mode: 'combined',
+    guest_limit: 500,
+  })
+  .select()
+  .single();
+
+// Auto-generate events (call Supabase function)
+await supabase.rpc('generate_event_timeline', {
+  p_wedding_id: data.id,
+  p_wedding_date: data.date,
+});
+```
+
+### Get Wedding Details
+```typescript
+const { data, error } = await supabase
+  .from('weddings')
+  .select(`
+    *,
+    couple:couples(
+      user1:users!couples_user1_id_fkey(*),
+      user2:users!couples_user2_id_fkey(*)
+    ),
+    events(*),
+    guests(count)
+  `)
+  .eq('id', weddingId)
+  .single();
+```
+
+---
+
+## 👥 GUESTS
+
+### Invite Guest
+```typescript
+const { data, error } = await supabase
+  .from('guest_invitations')
+  .insert({
+    wedding_id: weddingId,
+    inviter_id: userId,
+    invitee_email: 'guest@example.com',
+    invitee_name: 'Guest Name',
+    role: 'uncle',
+    side: 'groom',
+    can_invite: false,
+  });
+```
+
+### Get Guest List
+```typescript
+const { data, error } = await supabase
+  .from('guests')
+  .select(`
+    *,
+    rsvps(*)
+  `)
+  .eq('wedding_id', weddingId)
+  .order('created_at', { ascending: false });
+```
+
+---
+
+## ✉️ RSVP
+
+### Submit RSVP
+```typescript
+const { data, error } = await supabase
+  .from('rsvps')
+  .insert({
+    event_id: eventId,
+    guest_id: guestId,
+    status: 'attending',
+    adults_count: 2,
+    teens_count: 1,
+    children_count: 1,
+    dietary_notes: 'Vegetarian',
+  });
+```
+
+### Get Headcount
+```typescript
+const { data, error } = await supabase
+  .from('headcount_snapshots')
+  .select('*')
+  .eq('wedding_id', weddingId)
+  .eq('event_id', eventId)
+  .single();
+```
+
+---
+
+## 🎭 REAL-TIME SUBSCRIPTIONS
+
+### Listen to RSVP Updates
+```typescript
+const channel = supabase
+  .channel('rsvp-changes')
+  .on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'rsvps',
+      filter: `event_id=eq.${eventId}`,
+    },
+    (payload) => {
+      console.log('RSVP updated:', payload);
+      // Update UI
+    }
+  )
+  .subscribe();
+```
+
+---
+
+**Status:** Complete API reference
+**Next:** Use in frontend implementation
+

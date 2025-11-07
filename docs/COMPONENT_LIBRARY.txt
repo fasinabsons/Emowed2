@@ -1,0 +1,335 @@
+# EMOWED COMPONENT LIBRARY - COMPLETE REFERENCE
+
+## 🎨 PURPOSE
+
+This document provides **ready-to-use component code** for all Emowed UI elements.
+Copy-paste these components directly into your React/TypeScript project.
+
+**Reference:** Based on `theme.txt` design system
+
+---
+
+## 🔘 BUTTONS
+
+### Primary Button
+```typescript
+// src/components/common/Button.tsx
+import React from 'react';
+import clsx from 'clsx';
+
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  fullWidth?: boolean;
+  loading?: boolean;
+  children: React.ReactNode;
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  variant = 'primary',
+  size = 'md',
+  fullWidth = false,
+  loading = false,
+  children,
+  className,
+  disabled,
+  ...props
+}) => {
+  const baseStyles = 'font-semibold rounded-lg transition-all duration-200 flex items-center justify-center';
+  
+  const variants = {
+    primary: 'bg-primary-400 text-white hover:bg-primary-500 active:bg-primary-600 disabled:bg-gray-300',
+    secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300',
+    outline: 'border-2 border-primary-400 text-primary-400 hover:bg-primary-50',
+    ghost: 'text-primary-400 hover:bg-primary-50',
+    danger: 'bg-red-500 text-white hover:bg-red-600 active:bg-red-700',
+  };
+  
+  const sizes = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-base',
+    lg: 'px-6 py-3 text-lg',
+  };
+  
+  return (
+    <button
+      className={clsx(
+        baseStyles,
+        variants[variant],
+        sizes[size],
+        fullWidth && 'w-full',
+        disabled && 'cursor-not-allowed opacity-50',
+        className
+      )}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {loading ? (
+        <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+      ) : null}
+      {children}
+    </button>
+  );
+};
+```
+
+**Usage:**
+```tsx
+<Button variant="primary" onClick={handleSubmit}>Submit</Button>
+<Button variant="outline" size="sm">Cancel</Button>
+<Button variant="danger" loading={isLoading}>Delete</Button>
+```
+
+---
+
+## 📝 INPUTS
+
+### Text Input
+```typescript
+// src/components/common/Input.tsx
+import React from 'react';
+import clsx from 'clsx';
+
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+  error?: string;
+  hint?: string;
+  icon?: React.ReactNode;
+}
+
+export const Input: React.FC<InputProps> = ({
+  label,
+  error,
+  hint,
+  icon,
+  className,
+  ...props
+}) => {
+  return (
+    <div className="w-full">
+      {label && (
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label}
+          {props.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
+      
+      <div className="relative">
+        {icon && (
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            {icon}
+          </div>
+        )}
+        
+        <input
+          className={clsx(
+            'w-full px-4 py-2 border rounded-lg transition-colors',
+            'focus:ring-2 focus:ring-primary-400 focus:border-transparent',
+            error ? 'border-red-500' : 'border-gray-300',
+            icon && 'pl-10',
+            className
+          )}
+          {...props}
+        />
+      </div>
+      
+      {error && (
+        <p className="text-red-500 text-sm mt-1">{error}</p>
+      )}
+      
+      {hint && !error && (
+        <p className="text-gray-500 text-sm mt-1">{hint}</p>
+      )}
+    </div>
+  );
+};
+```
+
+**Usage:**
+```tsx
+<Input 
+  label="Email"
+  type="email"
+  placeholder="you@example.com"
+  error={errors.email}
+  required
+/>
+```
+
+---
+
+## 🎴 CARDS
+
+### Card Component
+```typescript
+// src/components/common/Card.tsx
+import React from 'react';
+import clsx from 'clsx';
+
+interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+  hover?: boolean;
+  padding?: 'none' | 'sm' | 'md' | 'lg';
+}
+
+export const Card: React.FC<CardProps> = ({
+  children,
+  className,
+  hover = false,
+  padding = 'md',
+}) => {
+  const paddings = {
+    none: '',
+    sm: 'p-4',
+    md: 'p-6',
+    lg: 'p-8',
+  };
+  
+  return (
+    <div
+      className={clsx(
+        'bg-white rounded-xl shadow-md',
+        hover && 'hover:shadow-lg transition-shadow duration-200',
+        paddings[padding],
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+};
+```
+
+**Usage:**
+```tsx
+<Card hover>
+  <h3 className="text-xl font-bold mb-2">Card Title</h3>
+  <p>Card content here...</p>
+</Card>
+```
+
+---
+
+## 🔲 MODAL
+
+### Modal Component
+```typescript
+// src/components/common/Modal.tsx
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import clsx from 'clsx';
+
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+}
+
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  size = 'md',
+}) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const sizes = {
+    sm: 'max-w-md',
+    md: 'max-w-lg',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl',
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div
+        className={clsx(
+          'relative bg-white rounded-xl shadow-xl p-6 m-4',
+          'max-h-[90vh] overflow-y-auto',
+          sizes[size],
+          'w-full'
+        )}
+      >
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        
+        {/* Title */}
+        {title && (
+          <h2 className="text-2xl font-bold mb-4 pr-8">{title}</h2>
+        )}
+        
+        {/* Content */}
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+};
+```
+
+**Usage:**
+```tsx
+<Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Confirm Action">
+  <p>Are you sure you want to proceed?</p>
+  <div className="flex gap-4 mt-6">
+    <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
+    <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+  </div>
+</Modal>
+```
+
+---
+
+## ✅ COMPLETE COMPONENT LIST
+
+**Status:** Ready to use
+
+1. ✅ Button (5 variants)
+2. ✅ Input (with validation)
+3. ✅ Card (with hover)
+4. ✅ Modal (with backdrop)
+5. ✅ Badge (see theme.txt)
+6. ✅ Avatar (see theme.txt)
+7. ✅ Toast (use react-hot-toast)
+8. ✅ Dropdown (see theme.txt)
+9. ✅ Checkbox (see theme.txt)
+10. ✅ Radio (see theme.txt)
+
+---
+
+**Reference:** See `theme.txt` Lines 600-1400 for complete specifications
+
+**Status:** Ready for implementation
+
