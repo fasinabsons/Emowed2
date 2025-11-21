@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase, VendorProfile, VendorReview } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
-import Card from '../components/Card'
-import Button from '../components/Button'
-import Modal from '../components/Modal'
+import { Card } from '../components/Card'
+import { Button } from '../components/Button'
+import { Modal } from '../components/Modal'
 
 export default function VendorProfilePage() {
   const { vendorId } = useParams<{ vendorId: string }>()

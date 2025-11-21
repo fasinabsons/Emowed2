@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, VendorProfile, VendorInvitation, VendorQuote, VendorBooking } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
-import Card from '../components/Card'
-import Button from '../components/Button'
+import { Card } from '../components/Card'
+import { Button } from '../components/Button'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function VendorDashboardPage() {

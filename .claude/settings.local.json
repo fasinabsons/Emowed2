@@ -3,7 +3,12 @@
     "allow": [
       "Bash(test:*)",
       "Bash(\"C:\\Users\\fasee\\OneDrive\\Documents\\Emowed\\Emowed2\\QUICK_START_NEW.md\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nComplete Emowed wedding platform - Production ready\n\n✅ Phase 1-2 Core Features:\n- Authentication system with email verification\n- Partner invitation workflow with code generation\n- Wedding creation wizard with auto-event generation\n- Event management (7 auto-generated + custom events)\n- Hierarchical guest management system\n- RSVP tracking with intelligent headcount calculation\n- Real-time headcount dashboard\n\n✅ Phase 3-6 Extended Features:\n- Vendor management system with verification\n- Media gallery and program builder\n- Interactive games and leaderboards\n- Matchmaking and post-marriage support\n\n✅ Database:\n- 67 tables across 6 phases\n- 50+ stored procedures and functions\n- RLS policies separated for safe testing\n- Clean schema with simple variable names\n- All migrations organized by phase\n\n✅ Frontend:\n- TypeScript + React 18 + Tailwind CSS\n- 20+ pages fully implemented\n- Form validation with Zod\n- Protected routes with auth guards\n- Professional UI/UX\n\n✅ Documentation:\n- Comprehensive README\n- Quick Start guide\n- SQL execution order guide\n- Complete project status report\n\n🚀 Ready for production deployment!\n\n💕 From First Swipe to Forever\n\nGenerated with Claude Code\nhttps://claude.com/claude-code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git config:*)",
+      "Bash(git push:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install)"
     ],
     "deny": [],
     "ask": []
