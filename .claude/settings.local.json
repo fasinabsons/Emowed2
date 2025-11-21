@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(test:*)",
+      "Bash(\"C:\\Users\\fasee\\OneDrive\\Documents\\Emowed\\Emowed2\\QUICK_START_NEW.md\")",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

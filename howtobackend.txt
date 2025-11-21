@@ -1,0 +1,1227 @@
+# EMOWED COMPLETE BACKEND & DEPLOYMENT GUIDE
+
+**From Database to Production in 6 Steps**
+
+Last Updated: November 17, 2025
+Status: Complete Step-by-Step Guide
+Time to Complete: 3-4 hours
+
+---
+
+## 📋 TABLE OF CONTENTS
+
+1. Prerequisites & Requirements
+2. Supabase Database Setup
+3. SQL Migration Execution
+4. Supabase Configuration
+5. Frontend Deployment to Netlify
+6. Custom Domain with Hostinger
+7. Environment Variables Configuration
+8. Testing & Verification
+9. Going Live Checklist
+10. Troubleshooting
+11. Maintenance & Updates
+
+---
+
+## ✅ STEP 1: PREREQUISITES & REQUIREMENTS
+
+### What You Need:
+
+**Accounts (All Free Tier Available):**
+- [ ] Supabase account (https://supabase.com) - Database & Auth
+- [ ] Netlify account (https://netlify.com) - Frontend hosting
+- [ ] Hostinger account (https://hostinger.com) - Domain (optional)
+- [ ] GitHub account - Code repository
+
+**Software Installed:**
+- [ ] Node.js v18+ (https://nodejs.org)
+- [ ] Git (https://git-scm.com)
+- [ ] VS Code or preferred editor
+- [ ] Modern web browser (Chrome/Firefox)
+
+**Files Ready:**
+- [ ] All SQL migration files in `sql/` folder
+- [ ] Frontend code (React + Vite project)
+- [ ] Environment variables template
+
+**Budget:**
+- Supabase: FREE (up to 500MB database, 50MB storage)
+- Netlify: FREE (100GB bandwidth/month)
+- Hostinger: ₹149/month (~$2/month) for domain + hosting
+
+**Time Commitment:**
+- Database setup: 30 minutes
+- SQL execution: 15 minutes
+- Netlify deployment: 30 minutes
+- Domain setup: 20 minutes
+- Testing: 30 minutes
+**Total:** ~2-3 hours
+
+---
+
+## 🗄️ STEP 2: SUPABASE DATABASE SETUP
+
+### 2.1: Create Supabase Project
+
+1. **Go to Supabase**
+   ```
+   https://supabase.com
+   ```
+
+2. **Sign Up / Log In**
+   - Click "Start your project"
+   - Sign in with GitHub (recommended) or email
+
+3. **Create New Project**
+   - Click "New Project" button
+   - Fill in details:
+     ```
+     Organization: Create new or select existing
+     Project Name: Emowed
+     Database Password: [CREATE STRONG PASSWORD]
+                       Example: Em0w3d!Str0ng#2025
+                       Save this password securely!
+     Region: South East Asia (Singapore) or Asia South (Mumbai)
+     Pricing Plan: Free
+     ```
+   - Click "Create new project"
+
+4. **Wait for Provisioning**
+   - Takes 2-3 minutes
+   - You'll see "Setting up project..." message
+   - Coffee break! ☕
+
+5. **Save Your Credentials**
+   ```
+   Once project is ready, go to:
+   Settings → API
+
+   Copy and save:
+   - Project URL: https://xxxxxxxxxxxxx.supabase.co
+   - anon/public key: eyJhbGci...
+   - service_role key: eyJhbGci... (keep secret!)
+
+   IMPORTANT: Store these in password manager or secure note
+   ```
+
+### 2.2: Enable Required Extensions
+
+1. **Go to SQL Editor**
+   ```
+   Supabase Dashboard → SQL Editor
+   ```
+
+2. **Create New Query**
+   - Click "+ New query"
+
+3. **Run Extension Setup**
+   ```sql
+   -- Enable UUID extension
+   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+   -- Enable pg_trgm for text search (optional)
+   CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+   -- Verify extensions
+   SELECT * FROM pg_extension;
+   ```
+
+4. **Click "Run"**
+   - Should see "Success. No rows returned"
+
+---
+
+## 📊 STEP 3: SQL MIGRATION EXECUTION
+
+### 3.1: Understanding Migration Files
+
+Your `sql/` folder contains:
+```
+sql/
+├── 00_MASTER_MIGRATION.sql          # Guide (don't execute)
+├── phase1_auth_couples_weddings.sql # Execute 1st
+├── phase2_events_guests_rsvp.sql    # Execute 2nd
+├── phase3_vendor_system.sql         # Execute 3rd
+├── phase4_media_program.sql         # Execute 4th
+├── phase5_games_leaderboards_gifts.sql # Execute 5th
+├── phase6_matchmaking_postmarriage.sql # Execute 6th
+├── seed_data_test.sql              # Execute last (optional)
+├── views_common_queries.sql        # Execute after phases
+└── helper_functions_utilities.sql  # Execute after phases
+```
+
+**CRITICAL:** Execute in exact order listed above!
+
+### 3.2: Execute Phase 1 - Core Tables
+
+1. **Open File**
+   ```
+   Open: sql/phase1_auth_couples_weddings.sql
+   ```
+
+2. **Copy All Contents**
+   ```
+   Select All (Ctrl+A or Cmd+A)
+   Copy (Ctrl+C or Cmd+C)
+   ```
+
+3. **Paste in Supabase SQL Editor**
+   ```
+   Supabase Dashboard → SQL Editor → New query
+   Paste the SQL code
+   ```
+
+4. **Execute**
+   ```
+   Click "Run" button (or F5)
+   Wait for completion (~30 seconds)
+   ```
+
+5. **Verify Success**
+   ```
+   - Look for green "Success" message
+   - Check for error messages (there should be none)
+   - If errors: Read error message, fix, and retry
+   ```
+
+6. **Verify Tables Created**
+   ```
+   Supabase Dashboard → Table Editor
+
+   Should see these tables:
+   ✅ users
+   ✅ partner_invitations
+   ✅ couples
+   ✅ weddings
+   ✅ notifications
+   ✅ cooldown_periods
+   ```
+
+### 3.3: Execute Phase 2 - Events & Guests
+
+1. **Repeat same process with:**
+   ```
+   sql/phase2_events_guests_rsvp.sql
+   ```
+
+2. **Verify New Tables:**
+   ```
+   ✅ events
+   ✅ guests
+   ✅ guest_invitations
+   ✅ family_tree
+   ✅ rsvps
+   ✅ headcount_snapshots
+   ✅ event_attendees
+   ```
+
+### 3.4: Execute Phase 3 - Vendors
+
+1. **Execute:**
+   ```
+   sql/phase3_vendor_system.sql
+   ```
+
+2. **Verify Tables:**
+   ```
+   ✅ vendor_profiles
+   ✅ vendor_invitations
+   ✅ vendor_quotes
+   ✅ vendor_votes
+   ✅ vendor_bookings
+   ✅ vendor_availability
+   ✅ vendor_verifications
+   ✅ vendor_reviews
+   ```
+
+### 3.5: Execute Phase 4 - Media & Program
+
+1. **Execute:**
+   ```
+   sql/phase4_media_program.sql
+   ```
+
+2. **Verify Tables:**
+   ```
+   ✅ media_albums
+   ✅ media_items
+   ✅ media_likes
+   ✅ media_comments
+   ✅ program_sections
+   ✅ ceremony_details
+   ✅ music_playlists
+   ✅ playlist_songs
+   ✅ wedding_timeline
+   ✅ media_shares
+   ```
+
+### 3.6: Execute Phase 5 - Games & Gifts
+
+1. **Execute:**
+   ```
+   sql/phase5_games_leaderboards_gifts.sql
+   ```
+
+2. **Verify Tables:**
+   ```
+   ✅ game_types
+   ✅ wedding_games
+   ✅ game_questions
+   ✅ game_participants
+   ✅ game_responses
+   ✅ wedding_side_competition
+   ✅ photo_challenge_submissions
+   ✅ photo_challenge_votes
+   ✅ leaderboard_categories
+   ✅ singles_leaderboard
+   ✅ singles_activities
+   ✅ couples_leaderboard
+   ✅ couples_milestones
+   ✅ gift_categories
+   ✅ gift_products
+   ✅ guest_gifts
+   ✅ gift_wishlists
+   ```
+
+### 3.7: Execute Phase 6 - Matchmaking
+
+1. **Execute:**
+   ```
+   sql/phase6_matchmaking_postmarriage.sql
+   ```
+
+2. **Verify Tables:**
+   ```
+   ✅ matchmaking_profiles
+   ✅ match_preferences
+   ✅ match_swipes
+   ✅ matches
+   ✅ match_conversations
+   ✅ parent_invitations
+   ✅ match_probability_cache
+   ✅ couple_diary_entries
+   ✅ couple_shared_goals
+   ✅ date_night_plans
+   ✅ trip_plans
+   ✅ gift_tracking
+   ✅ community_forum_categories
+   ✅ community_forum_posts
+   ✅ community_forum_comments
+   ✅ community_forum_votes
+   ✅ spam_prevention
+   ✅ counselor_profiles
+   ✅ counseling_sessions
+   ```
+
+### 3.8: Execute Views (Optional but Recommended)
+
+1. **Execute:**
+   ```
+   sql/views_common_queries.sql
+   ```
+
+2. **Benefit:**
+   - Simplifies frontend queries
+   - Better performance
+   - Cleaner code
+
+### 3.9: Execute Helper Functions (Optional)
+
+1. **Execute:**
+   ```
+   sql/helper_functions_utilities.sql
+   ```
+
+2. **Benefit:**
+   - Reusable utility functions
+   - Consistent business logic
+   - Easier maintenance
+
+### 3.10: Execute Seed Data (Development Only)
+
+⚠️ **WARNING:** Only for development/testing!
+
+1. **Execute:**
+   ```
+   sql/seed_data_test.sql
+   ```
+
+2. **What it does:**
+   - Creates test users
+   - Creates sample weddings
+   - Creates sample guests
+   - Creates sample vendors
+
+3. **Test Credentials:**
+   ```
+   Email: faseen@test.com (Engaged user)
+   Email: ahmed@test.com (Single user)
+   Email: arjun@test.com (Married user)
+   Password: You need to create these in Supabase Auth
+   ```
+
+### 3.11: Verify Complete Migration
+
+1. **Check Table Count**
+   ```sql
+   SELECT COUNT(*) as total_tables
+   FROM information_schema.tables
+   WHERE table_schema = 'public'
+   AND table_type = 'BASE TABLE';
+
+   -- Expected result: ~67 tables
+   ```
+
+2. **Check Functions**
+   ```sql
+   SELECT COUNT(*) as total_functions
+   FROM information_schema.routines
+   WHERE routine_schema = 'public'
+   AND routine_type = 'FUNCTION';
+
+   -- Expected result: ~20+ functions
+   ```
+
+3. **Check RLS Enabled**
+   ```sql
+   SELECT schemaname, tablename
+   FROM pg_tables
+   WHERE schemaname = 'public'
+   AND rowsecurity = true;
+
+   -- All tables should have RLS enabled
+   ```
+
+---
+
+## ⚙️ STEP 4: SUPABASE CONFIGURATION
+
+### 4.1: Configure Authentication
+
+1. **Go to Authentication Settings**
+   ```
+   Supabase Dashboard → Authentication → Settings
+   ```
+
+2. **Enable Email Provider**
+   ```
+   Email Auth: Enabled ✅
+   Confirm email: Enabled (recommended)
+   ```
+
+3. **Configure Email Templates**
+   ```
+   Templates → Confirmation
+   Subject: Welcome to Emowed - Confirm Your Email
+   Message: Customize with your branding
+   ```
+
+4. **Set Redirect URLs**
+   ```
+   URL Configuration:
+   - Site URL: https://emowed.netlify.app (will update later)
+   - Redirect URLs:
+     - https://emowed.netlify.app/**
+     - http://localhost:5173/** (for development)
+   ```
+
+5. **Configure JWT Settings**
+   ```
+   JWT Settings:
+   - JWT expiry: 604800 (1 week)
+   - Enable refresh token: Yes
+   ```
+
+### 4.2: Configure Storage
+
+1. **Create Storage Buckets**
+   ```
+   Supabase Dashboard → Storage → Create Bucket
+
+   Bucket 1:
+   Name: profile-photos
+   Public: Yes
+   File size limit: 5MB
+   Allowed MIME types: image/jpeg, image/png, image/webp
+
+   Bucket 2:
+   Name: wedding-media
+   Public: No (RLS controlled)
+   File size limit: 50MB
+   Allowed MIME types: image/*, video/*
+
+   Bucket 3:
+   Name: vendor-portfolios
+   Public: Yes
+   File size limit: 10MB
+   Allowed MIME types: image/jpeg, image/png
+   ```
+
+2. **Set Storage Policies**
+   ```sql
+   -- Profile photos: Users can upload own photos
+   CREATE POLICY "Users can upload profile photos"
+   ON storage.objects FOR INSERT
+   TO authenticated
+   WITH CHECK (bucket_id = 'profile-photos' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+   -- Users can update own photos
+   CREATE POLICY "Users can update own photos"
+   ON storage.objects FOR UPDATE
+   TO authenticated
+   USING (bucket_id = 'profile-photos' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+   -- Anyone can view profile photos
+   CREATE POLICY "Profile photos are public"
+   ON storage.objects FOR SELECT
+   TO public
+   USING (bucket_id = 'profile-photos');
+   ```
+
+### 4.3: Configure Realtime (Optional)
+
+1. **Enable Realtime for Tables**
+   ```
+   Supabase Dashboard → Database → Replication
+
+   Enable replication for:
+   ✅ notifications (real-time notifications)
+   ✅ rsvps (real-time RSVP updates)
+   ✅ messages (real-time chat)
+   ✅ game_responses (real-time game scores)
+   ```
+
+2. **Why Realtime?**
+   - Live RSVP count updates
+   - Real-time notifications
+   - Live game leaderboards
+   - Instant messaging
+
+### 4.4: Set Up Database Backups
+
+1. **Automatic Backups (Free tier: Daily)**
+   ```
+   Supabase Dashboard → Settings → Database
+
+   Backup Schedule: Daily (automatic)
+   Retention: 7 days (Free tier)
+   ```
+
+2. **Manual Backup (Recommended Before Big Changes)**
+   ```bash
+   # Install Supabase CLI
+   npm install -g supabase
+
+   # Login
+   supabase login
+
+   # Backup database
+   supabase db dump -f backup-$(date +%Y%m%d).sql
+   ```
+
+---
+
+## 🚀 STEP 5: FRONTEND DEPLOYMENT TO NETLIFY
+
+### 5.1: Prepare Frontend Code
+
+1. **Update Environment Variables**
+   ```bash
+   # Create .env.local file
+   VITE_SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
+   VITE_SUPABASE_ANON_KEY=eyJhbGci...
+
+   # Optional:
+   VITE_APP_NAME=Emowed
+   VITE_APP_URL=https://emowed.netlify.app
+   ```
+
+2. **Test Build Locally**
+   ```bash
+   # Install dependencies
+   npm install
+
+   # Test build
+   npm run build
+
+   # Test production build locally
+   npm run preview
+
+   # Should open http://localhost:4173
+   # Test thoroughly!
+   ```
+
+3. **Commit to GitHub**
+   ```bash
+   git add .
+   git commit -m "Ready for deployment"
+   git push origin main
+   ```
+
+### 5.2: Connect Netlify to GitHub
+
+1. **Go to Netlify**
+   ```
+   https://netlify.com
+   ```
+
+2. **Sign Up / Log In**
+   - Click "Sign up"
+   - Choose "Sign up with GitHub" (easiest)
+   - Authorize Netlify to access GitHub
+
+3. **Import Project**
+   ```
+   Click "Add new site" → "Import an existing project"
+   ```
+
+4. **Connect to GitHub**
+   ```
+   - Click "GitHub"
+   - Authorize Netlify (if first time)
+   - Search for "Emowed" repository
+   - Click on your repository
+   ```
+
+### 5.3: Configure Build Settings
+
+1. **Site Settings**
+   ```
+   Branch to deploy: main
+   Base directory: (leave empty)
+   Build command: npm run build
+   Publish directory: dist
+
+   Click "Deploy site"
+   ```
+
+2. **Add Environment Variables**
+   ```
+   Site settings → Build & deploy → Environment
+
+   Add variables:
+   - VITE_SUPABASE_URL = your-supabase-url
+   - VITE_SUPABASE_ANON_KEY = your-anon-key
+
+   Click "Save"
+   ```
+
+3. **Deploy**
+   - Netlify will automatically build and deploy
+   - Takes 2-3 minutes
+   - You'll get a URL like: https://random-name-123.netlify.app
+
+### 5.4: Custom Netlify Subdomain
+
+1. **Change Site Name**
+   ```
+   Site settings → General → Site details → Change site name
+
+   New name: emowed (if available)
+   New URL: https://emowed.netlify.app
+   ```
+
+2. **Test Your Site**
+   ```
+   Open: https://emowed.netlify.app
+   Test all features
+   ```
+
+---
+
+## 🌐 STEP 6: CUSTOM DOMAIN WITH HOSTINGER
+
+### 6.1: Purchase Domain (Hostinger)
+
+1. **Go to Hostinger**
+   ```
+   https://hostinger.com
+   ```
+
+2. **Search Domain**
+   ```
+   Search: emowed.com
+   Or: emowed.in, emowed.co.in, etc.
+
+   Price: ~₹149-699/year depending on extension
+   ```
+
+3. **Purchase Domain**
+   - Add to cart
+   - Complete checkout
+   - Domain registered!
+
+4. **Access DNS Settings**
+   ```
+   Hostinger Dashboard → Domains → Manage → DNS/Name Servers
+   ```
+
+### 6.2: Connect Domain to Netlify
+
+**METHOD 1: Using Netlify DNS (Recommended - Easier)**
+
+1. **Add Domain in Netlify**
+   ```
+   Netlify Dashboard → Domain settings → Add custom domain
+
+   Enter: emowed.com
+   Click "Verify"
+   ```
+
+2. **Get Netlify Name Servers**
+   ```
+   Netlify will show 4 name servers:
+   dns1.p01.nsone.net
+   dns2.p01.nsone.net
+   dns3.p01.nsone.net
+   dns4.p01.nsone.net
+   ```
+
+3. **Update Hostinger Name Servers**
+   ```
+   Hostinger → Domains → emowed.com → Name Servers
+
+   Change from "Hostinger nameservers" to "Custom nameservers"
+
+   Add Netlify nameservers:
+   ns1.p01.nsone.net
+   ns2.p01.nsone.net
+   ns3.p01.nsone.net
+   ns4.p01.nsone.net
+
+   Click "Change Nameservers"
+   ```
+
+4. **Wait for Propagation**
+   ```
+   Time: 24-48 hours (usually faster, 1-2 hours)
+   Check status: https://dnschecker.org
+   ```
+
+5. **Enable HTTPS in Netlify**
+   ```
+   Netlify → Domain settings → HTTPS
+
+   Wait for SSL certificate provisioning (~30 mins)
+   Auto-enable: Let's Encrypt certificate
+   Force HTTPS: Enabled
+   ```
+
+**METHOD 2: Using Hostinger DNS (Alternative)**
+
+1. **Keep Hostinger DNS**
+   ```
+   Hostinger → Domains → emowed.com → DNS Records
+   ```
+
+2. **Add A Record**
+   ```
+   Type: A
+   Name: @
+   Value: 75.2.60.5 (Netlify load balancer)
+   TTL: 3600
+   ```
+
+3. **Add CNAME for www**
+   ```
+   Type: CNAME
+   Name: www
+   Value: emowed.netlify.app
+   TTL: 3600
+   ```
+
+4. **Add in Netlify**
+   ```
+   Netlify → Domain settings → Add domain
+
+   Primary: emowed.com
+   Alias: www.emowed.com
+   ```
+
+### 6.3: Verify Domain Setup
+
+1. **Check DNS**
+   ```bash
+   # Command line:
+   nslookup emowed.com
+
+   # Should show Netlify IP
+   ```
+
+2. **Check Website**
+   ```
+   Open: https://emowed.com
+   Should load your site
+   ```
+
+3. **Check HTTPS**
+   ```
+   URL should show 🔒 padlock
+   Certificate should be valid
+   ```
+
+4. **Check Redirects**
+   ```
+   http://emowed.com → https://emowed.com ✅
+   http://www.emowed.com → https://emowed.com ✅
+   www.emowed.com → emowed.com ✅
+   ```
+
+### 6.4: Update URLs
+
+1. **Update Supabase Site URL**
+   ```
+   Supabase → Authentication → URL Configuration
+
+   Site URL: https://emowed.com
+   Redirect URLs:
+   - https://emowed.com/**
+   - https://www.emowed.com/**
+   ```
+
+2. **Update in Frontend Code**
+   ```javascript
+   // .env.production
+   VITE_APP_URL=https://emowed.com
+   ```
+
+3. **Redeploy**
+   ```bash
+   git add .
+   git commit -m "Update production URLs"
+   git push
+
+   # Netlify auto-deploys
+   ```
+
+---
+
+## 🔧 STEP 7: ENVIRONMENT VARIABLES
+
+### 7.1: Development (.env.local)
+
+```env
+# Supabase
+VITE_SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGci...
+
+# App Config
+VITE_APP_NAME=Emowed
+VITE_APP_URL=http://localhost:5173
+
+# Optional: Third-party services
+VITE_CLOUDINARY_CLOUD_NAME=your-cloud-name
+VITE_CLOUDINARY_UPLOAD_PRESET=your-preset
+VITE_RAZORPAY_KEY=rzp_test_xxxxxxxx
+VITE_GOOGLE_MAPS_API_KEY=AIza...
+```
+
+### 7.2: Production (Netlify Environment Variables)
+
+```
+Netlify Dashboard → Site settings → Environment variables
+
+Add:
+- VITE_SUPABASE_URL
+- VITE_SUPABASE_ANON_KEY
+- VITE_APP_NAME
+- VITE_APP_URL=https://emowed.com
+- VITE_CLOUDINARY_CLOUD_NAME (when ready)
+- VITE_RAZORPAY_KEY=rzp_live_xxxxxxxx (when ready)
+- VITE_GOOGLE_MAPS_API_KEY (when ready)
+```
+
+### 7.3: Supabase Secrets
+
+```
+Supabase Dashboard → Settings → API
+
+Store securely (DO NOT commit to Git):
+- service_role key (for admin operations)
+- JWT secret
+- Database password
+```
+
+---
+
+## ✅ STEP 8: TESTING & VERIFICATION
+
+### 8.1: Database Tests
+
+```sql
+-- Test 1: Create test user
+INSERT INTO users (email, full_name, age, relationship_status)
+VALUES ('test@emowed.com', 'Test User', 28, 'single')
+RETURNING *;
+
+-- Test 2: Check RLS
+-- Should only return data for authenticated user
+SELECT * FROM users;
+
+-- Test 3: Check triggers
+-- Create couple and verify user status updates
+```
+
+### 8.2: Authentication Tests
+
+1. **Sign Up Flow**
+   - Go to your site
+   - Click Sign Up
+   - Enter email and password
+   - Verify email confirmation sent
+   - Confirm email
+   - Login successful
+
+2. **Login Flow**
+   - Logout
+   - Click Login
+   - Enter credentials
+   - Successfully logged in
+   - Dashboard shows correct data
+
+### 8.3: Core Features Test
+
+- [ ] User can sign up
+- [ ] User can login
+- [ ] User can send partner invitation
+- [ ] Partner can accept invitation
+- [ ] Couple is formed
+- [ ] Couple can create wedding
+- [ ] 7 events auto-generated
+- [ ] Can invite guests
+- [ ] Guests can RSVP
+- [ ] Headcount updates
+- [ ] Can invite vendors
+- [ ] Can upload photos
+- [ ] Can create games
+
+### 8.4: Performance Tests
+
+```bash
+# Test site speed
+# Go to: https://pagespeed.web.dev
+
+# Enter your URL
+# Check scores:
+# - Performance: 90+
+# - Accessibility: 90+
+# - Best Practices: 90+
+# - SEO: 90+
+```
+
+### 8.5: Mobile Tests
+
+1. **Responsive Design**
+   - Open on phone
+   - Test all pages
+   - Check mobile menu
+   - Test forms
+
+2. **PWA Features**
+   - Install app prompt
+   - Offline functionality
+   - Push notifications
+
+---
+
+## 🎉 STEP 9: GOING LIVE CHECKLIST
+
+### Pre-Launch Checklist
+
+**Database:**
+- [ ] All migrations executed successfully
+- [ ] RLS policies enabled and tested
+- [ ] Storage buckets created
+- [ ] Backups configured
+- [ ] Test data removed (keep only prod data)
+
+**Frontend:**
+- [ ] All features working
+- [ ] Mobile responsive
+- [ ] SEO optimized
+- [ ] Analytics integrated (Google Analytics)
+- [ ] Error tracking setup (Sentry)
+- [ ] Performance optimized
+
+**Security:**
+- [ ] HTTPS enabled
+- [ ] Environment variables secured
+- [ ] API keys not exposed
+- [ ] Rate limiting configured
+- [ ] CORS configured correctly
+
+**Legal:**
+- [ ] Privacy Policy page
+- [ ] Terms of Service page
+- [ ] Cookie consent
+- [ ] Data protection compliance
+
+**Marketing:**
+- [ ] Social media accounts created
+- [ ] Meta tags for sharing
+- [ ] Sitemap.xml generated
+- [ ] robots.txt configured
+- [ ] Google Search Console setup
+
+### Launch Day
+
+1. **Final Deploy**
+   ```bash
+   git add .
+   git commit -m "Production ready v1.0"
+   git push origin main
+   ```
+
+2. **Monitor**
+   - Watch Netlify deploy logs
+   - Check for errors
+   - Test critical paths
+
+3. **Announce**
+   - Share on social media
+   - Send to beta testers
+   - Post in communities
+
+---
+
+## 🐛 STEP 10: TROUBLESHOOTING
+
+### Common Issues
+
+**Issue 1: SQL Errors During Migration**
+```
+Error: relation "table_name" already exists
+
+Solution:
+- Check if you ran migration twice
+- Drop table and re-run: DROP TABLE table_name CASCADE;
+- Or skip that CREATE TABLE statement
+```
+
+**Issue 2: RLS Blocking Queries**
+```
+Error: new row violates row-level security policy
+
+Solution:
+- Check if user is authenticated: SELECT auth.uid();
+- Verify RLS policies: SELECT * FROM pg_policies;
+- Test query as authenticated user
+```
+
+**Issue 3: Build Fails on Netlify**
+```
+Error: Cannot find module 'x'
+
+Solution:
+- Check package.json has all dependencies
+- Run: npm install
+- Commit package-lock.json
+- Push and redeploy
+```
+
+**Issue 4: Environment Variables Not Working**
+```
+undefined or null values
+
+Solution:
+- Netlify: Check variables start with VITE_
+- Redeploy after adding variables
+- Clear cache and redeploy
+```
+
+**Issue 5: Domain Not Resolving**
+```
+Site not found
+
+Solution:
+- Wait 24-48 hours for DNS propagation
+- Check nameservers: nslookup emowed.com
+- Verify in https://dnschecker.org
+- Contact Hostinger support if stuck
+```
+
+**Issue 6: CORS Errors**
+```
+Access blocked by CORS policy
+
+Solution:
+- Add domain to Supabase allowed URLs
+- Check Netlify headers configuration
+- Verify API requests use correct URL
+```
+
+---
+
+## 🔄 STEP 11: MAINTENANCE & UPDATES
+
+### Database Maintenance
+
+**Monthly Tasks:**
+- [ ] Check database size (stay under limits)
+- [ ] Review and archive old notifications
+- [ ] Clean up expired invitations
+- [ ] Backup database manually
+
+```sql
+-- Cleanup script
+SELECT cleanup_expired_invitations();
+SELECT archive_old_notifications(90);
+```
+
+**Quarterly Tasks:**
+- [ ] Recalculate leaderboard ranks
+- [ ] Analyze slow queries
+- [ ] Optimize indexes if needed
+- [ ] Review RLS policies
+
+### Application Updates
+
+```bash
+# Update dependencies
+npm update
+
+# Test thoroughly
+npm run build
+npm run preview
+
+# Deploy
+git add package-lock.json
+git commit -m "Update dependencies"
+git push
+```
+
+### Monitoring
+
+**Set Up Alerts:**
+- Supabase: Monitor database size, query performance
+- Netlify: Monitor build failures, deploy status
+- UptimeRobot: Monitor site uptime (free 50 monitors)
+
+**Check Weekly:**
+- Error logs in browser console
+- Supabase logs for database errors
+- Netlify analytics for traffic
+- User feedback and bug reports
+
+---
+
+## 📞 SUPPORT & RESOURCES
+
+### Official Documentation
+- Supabase: https://supabase.com/docs
+- Netlify: https://docs.netlify.com
+- Hostinger: https://support.hostinger.com
+
+### Community
+- Supabase Discord: https://discord.supabase.com
+- Netlify Forum: https://answers.netlify.com
+
+### Emergency Contacts
+- Supabase Support: support@supabase.io
+- Netlify Support: support@netlify.com
+- Hostinger Support: 24/7 live chat
+
+---
+
+## 🎯 QUICK REFERENCE COMMANDS
+
+### Supabase CLI
+```bash
+# Install
+npm install -g supabase
+
+# Login
+supabase login
+
+# Link project
+supabase link --project-ref xxxxxxxxxxxxx
+
+# Pull schema
+supabase db pull
+
+# Push migrations
+supabase db push
+
+# Reset database (DANGER!)
+supabase db reset
+```
+
+### Netlify CLI
+```bash
+# Install
+npm install -g netlify-cli
+
+# Login
+netlify login
+
+# Link site
+netlify link
+
+# Deploy preview
+netlify deploy
+
+# Deploy production
+netlify deploy --prod
+
+# View logs
+netlify logs
+```
+
+### Git Commands
+```bash
+# Status
+git status
+
+# Add all
+git add .
+
+# Commit
+git commit -m "Your message"
+
+# Push
+git push origin main
+
+# Pull latest
+git pull origin main
+```
+
+---
+
+## ✨ SUCCESS!
+
+If you've followed all steps:
+✅ Database is live on Supabase
+✅ Frontend is deployed on Netlify
+✅ Custom domain is connected
+✅ HTTPS is enabled
+✅ All features are working
+
+**Your wedding platform is now LIVE! 🎉**
+
+Users can:
+- Sign up and create accounts
+- Find their life partner
+- Plan their wedding
+- Manage guests and RSVPs
+- Book vendors
+- Share photos and memories
+- Play games
+- Track their journey
+
+---
+
+**Next Steps:**
+1. Share with friends and family for testing
+2. Collect feedback
+3. Iterate and improve
+4. Market your platform
+5. Scale as you grow
+
+**From First Swipe to Forever! 💕**
+
+---
+
+*Last Updated: November 17, 2025*
+*Guide Version: 1.0*
+*Questions? Check docs/ folder or create GitHub issue*
